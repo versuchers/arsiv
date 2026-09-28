@@ -72,10 +72,12 @@ p{margin-top:.55rem}
 .ctl{display:flex;flex-wrap:wrap;gap:.7rem;margin:1.1rem 0 1.6rem}
 .ctl input,.ctl select{font-family:var(--ui);font-size:.88rem;background:var(--well);border:1px solid var(--line);color:var(--text);padding:.5rem .7rem;border-radius:3px;box-shadow:inset 0 2px 5px var(--sh1)}
 .ctl input{flex:1 1 200px;max-width:320px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:1.7rem 1.2rem}
-.niche{background:var(--well);border-radius:4px;padding:1.2rem 1.1rem 0;overflow:hidden;box-shadow:inset 0 10px 18px -6px var(--sh1),inset 0 -1px 0 var(--hi)}
+.grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:1.5rem 1.1rem}
+@media (max-width:1080px){.grid{grid-template-columns:repeat(5,minmax(0,1fr))}}
+@media (max-width:880px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (max-width:700px){.grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:1.2rem .7rem}}
+.niche{background:var(--well);border-radius:4px;padding:1.2rem 1.1rem;overflow:hidden;box-shadow:inset 0 10px 18px -6px var(--sh1),inset 0 -1px 0 var(--hi)}
 .niche::after{content:"";display:block;height:11px;margin:0 -1.1rem;background:linear-gradient(var(--ledge-a),var(--ledge-b));border-top:1px solid var(--hi);box-shadow:0 -8px 12px -8px var(--sh1)}
-.row{display:grid;grid-auto-flow:column;grid-auto-columns:150px;gap:1.1rem;overflow-x:auto;padding:0 .1rem 1rem}
 .poster-card{min-width:0}
 .poster{position:relative;display:block;text-decoration:none;background:none;border:0;padding:0;text-align:left;cursor:pointer;transition:transform .15s}
 .poster:hover{transform:translateY(-4px)}
@@ -96,11 +98,8 @@ p{margin-top:.55rem}
 .pal4{background:linear-gradient(#2c4237,#122019)}
 .pal5{background:linear-gradient(#43303a,#20141b)}
 .badge{position:absolute;top:14px;left:14px;z-index:4;font-family:var(--ui);font-weight:600;font-size:.65rem;padding:.1rem .45rem;background:rgba(0,0,0,.55);border:1px solid rgba(233,228,216,.35);color:#E9E4D8;border-radius:2px}
-.cap{font-family:var(--ui);margin-top:.55rem;font-size:.78rem;color:var(--muted)}
-.cap-title{display:block;color:var(--text);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cap-bottom{display:flex;justify-content:space-between;gap:.4rem;margin-top:.15rem}
+.cap{font-family:var(--ui);margin-top:.5rem;font-size:.82rem;color:var(--muted);text-align:center}
 .st{color:var(--star);letter-spacing:.05em;white-space:nowrap}
-.cr{white-space:nowrap;text-align:right}
 @media (prefers-reduced-motion:reduce){.poster,.cover{transition:none}.poster:hover{transform:none}}
 .favs{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:1.4rem}
 .favs section{background:var(--raise);border-radius:4px;padding:1rem 1.2rem 1.1rem;box-shadow:inset 0 1px 0 var(--hi),0 1px 2px var(--sh1),0 10px 20px -6px var(--sh1)}
@@ -179,9 +178,9 @@ p{margin-top:.55rem}
 const DATA_FILES={books:'data/books.json',films:'data/films.json',series:'data/series.json'};
 
 const CFG={
-  films:{label:'Filmler',unit:'film',recent:'Son izlenen filmler',dateLabel:'İzlenme tarihi'},
-  series:{label:'Diziler',unit:'dizi',recent:'Son izlenen diziler',dateLabel:'İzlenme tarihi'},
-  books:{label:'Kitaplar',unit:'kitap',recent:'Son okunan kitaplar',dateLabel:'İlk okunma tarihi'},
+  films:{label:'Filmler',unit:'film',fav:'Favori filmler',dateLabel:'İzlenme tarihi'},
+  series:{label:'Diziler',unit:'dizi',fav:'Favori diziler',dateLabel:'İzlenme tarihi'},
+  books:{label:'Kitaplar',unit:'kitap',fav:'Favori kitaplar',dateLabel:'İlk okunma tarihi'},
   concerts:{label:'Konserler',unit:'konser',recent:'Konserler',dateLabel:'Tarih'},
   lists:{label:'Playlistler',unit:'playlist',recent:'Playlistler',dateLabel:''}
 };
@@ -387,17 +386,21 @@ function imageFrame(item,large=false){
 }
 function poster(item){
   const status=item.sec==='series'?(item.ongoing?'Sürüyor':item.unwatched?'İzlenmedi':item.partial?'Yarım':''):'';
-  const count=item.sec==='books'?item.readCount:item.sec==='films'?item.watchCount:item.completionCount;
-  return `<article class="poster-card"><a class="poster" href="${esc(hrefFor(item.route))}" data-route="${esc(item.route)}" aria-label="${esc(displayName(item))}${item.score==null?'':', '+esc(stars(item.score))+' puan'}">${imageFrame(item)}${status?`<span class="badge">${status}</span>`:''}</a><div class="cap"><span class="cap-title" title="${esc(displayName(item))}">${esc(displayName(item))}</span><div class="cap-bottom"><span class="st">${esc(stars(item.score))}</span><span class="cr">${count?`${esc(count)}× · `:''}${esc(item.yearNumber||item.year||'')}</span></div></div></article>`;
+  const name=displayName(item);
+  return `<article class="poster-card"><a class="poster" href="${esc(hrefFor(item.route))}" data-route="${esc(item.route)}" title="${esc(name)}" aria-label="${esc(name)}${item.score==null?'':', '+esc(stars(item.score))+' puan'}">${imageFrame(item)}${status?`<span class="badge">${status}</span>`:''}</a><div class="cap"><span class="st">${esc(stars(item.score))}</span></div></article>`;
 }
 function unique(values){return [...new Set(values.filter(v=>!missing(v)))].sort((a,b)=>a.localeCompare(b,'tr'))}
-function shelfRow(kind,count){
-  const list=sortItems(D[kind],'date').slice(0,count);
-  return `<div class="sh"><h2>${CFG[kind].recent}</h2><a class="link" href="${esc(hrefFor('/'+kind))}" data-route="/${kind}">Tümünü gör</a></div><div class="niche"><div class="row">${list.length?list.map(poster).join(''):'<p class="empty">Kayıt bulunamadı.</p>'}</div></div>`;
+/* Sheets'teki "anasayfa sıra" sütunundan gelen favori kayıtlar (1-12). */
+function favoriteItems(kind){
+  return D[kind].filter(item=>item.homeOrder!=null).sort((x,y)=>x.homeOrder-y.homeOrder||y.rowIndex-x.rowIndex);
+}
+function favRow(kind){
+  const list=favoriteItems(kind);
+  return `<div class="sh"><h2>${CFG[kind].fav}</h2><a class="link" href="${esc(hrefFor('/'+kind))}" data-route="/${kind}">Tümünü gör</a></div><div class="niche"><div class="grid">${list.length?list.map(poster).join(''):'<p class="empty">Henüz favori işaretlenmedi.</p>'}</div></div>`;
 }
 function home(){
   const index=['films','series','books'].map(kind=>`<li><a href="${esc(hrefFor('/'+kind))}" data-route="/${kind}"><span>${CFG[kind].label}</span><span>${D[kind].length}</span></a></li>`).join('');
-  main.innerHTML=`<section class="welcome"><p class="eyebrow">Kişisel arşiv</p><h1>Film, dizi ve kitaplar</h1><p class="sub">Sheets kayıtlarından üretilmiş arşiv; her kutu kendi kişisel sayfasına bağlanır.</p></section>${shelfRow('films',6)}${shelfRow('series',6)}${shelfRow('books',6)}<div class="sh"><h2>Raflar</h2></div><ul class="shelf">${index}</ul><div class="sh"><h2>Yakında</h2></div><div class="placeholder">Playlistler ve konserler için ayrı veri tabloları eklendiğinde burada görünecek.</div>`;
+  main.innerHTML=`<section class="welcome"><p class="eyebrow">Kişisel arşiv</p><h1>Film, dizi ve kitaplar</h1><p class="sub">Sheets kayıtlarından üretilmiş arşiv; her kutu kendi kişisel sayfasına bağlanır.</p></section>${favRow('films')}${favRow('series')}${favRow('books')}<div class="sh"><h2>Raflar</h2></div><ul class="shelf">${index}</ul><div class="sh"><h2>Yakında</h2></div><div class="placeholder">Playlistler ve konserler için ayrı veri tabloları eklendiğinde burada görünecek.</div>`;
 }
 function sortItems(list,how){
   const a=[...list];

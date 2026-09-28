@@ -80,6 +80,18 @@ alt bilgide açıkça bildirir. Bu yüzden yerelde de bir HTTP sunucusu kullanı
 - Detay sayfalarındaki "Google Sheets'ten okunur" notu, yeni akışı anlatacak
   şekilde güncellendi.
 
+## Ana sayfa favorileri
+
+Ana sayfadaki **Favori filmler / Favori diziler / Favori kitaplar** blokları, Sheets'teki
+`anasayfa sıra` (dizilerde `anasayfa sıralama`) sütunundaki numaraya göre sıralanır.
+Bu sütunda değeri olan kayıtlar favoridir; sütunu boş olanlar listelere girmez.
+
+- Başlıklar iki yazım da tanınır (`anasayfa sıra` ve `anasayfa sıralama`).
+- Değer JSON'da `homeOrder` alanı olarak sayıya çevrilir.
+- Sıra numarası vermek için Sheets'teki hücreye `1`, `2`, `3` … yazmanız yeterli;
+  bir sonraki saatlik çalışmada site kendiliğinden güncellenir.
+- Şu an her kategoride 12 favori var (6 + 6 = iki satır).
+
 ## Yeni başlık gelirse
 
 `scripts/build-data.mjs` içindeki `SCHEMAS[type]` listesine yeni alan adını ve

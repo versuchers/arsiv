@@ -40,6 +40,7 @@ const SOURCES = JSON.parse(await readFile(SOURCES_FILE, 'utf8'));
  */
 const SCHEMAS = {
   books: {
+    homeOrder: ['anasayfa sıra', 'anasayfa sıralama'],
     title: ['kitap türkçe ismi', 'kitap (türkçe isim)'],
     author: ['yazar'],
     originalTitle: ['kitap orijinal ismi', 'kitap (orijinal isim)'],
@@ -74,6 +75,7 @@ const SCHEMAS = {
     density: ['yoğunluk']
   },
   films: {
+    homeOrder: ['anasayfa sıra', 'anasayfa sıralama'],
     title: ['film'],
     score: ['puan'],
     year: ['yapım yılı'],
@@ -99,6 +101,7 @@ const SCHEMAS = {
     downloaded: ['afişi indirdim mi']
   },
   series: {
+    homeOrder: ['anasayfa sıra', 'anasayfa sıralama'],
     title: ['dizi'],
     score: ['puan'],
     year: ['yapım yılı'],
@@ -288,6 +291,7 @@ function makeItems(type, headers, rows) {
     const item = {
       sec: type,
       rowIndex: items.length,
+      homeOrder: numberValue(get('homeOrder')),
       title,
       year: yearRaw,
       yearNumber: yearValue(yearRaw),
