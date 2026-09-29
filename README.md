@@ -161,6 +161,57 @@ altindaki yonetmen/yazar/creator 15px -> 30px.
 
 > Bilinen eksik: **filmler sayfasinda `imdb` sutunu yok**, bu yuzden film detayinda
 > Letterboxd ve TMDB gorunuyor, IMDb yok. Sutunu eklediginizde otomatik gelir.
+## v1.10 değişiklikleri
+
+### Sayfalama
+Film, dizi, kitap ve playlist listelerinde sayfa başına **30 kayıt** gösterilir;
+altta `1 2 3 …` sayfa bağlantıları vardır ve liste sonuna gelindiğinde sonraki sayfa
+kendiliğinden eklenir. Sayfa adresin parçasıdır: `/films`, `/films/2`, `/series/3`.
+Yeni liste sayfaları `gridView` kullandığı için otomatik aynı davranışı alır.
+
+### Görsel hızı
+Asıl yavaşlık 944 görselin tek seferde istenmesiydi; sayfalama bunu 30'a indirdi.
+Ayıca kartlara `content-visibility:auto` eklendi, ekran dışındaki kartlar çizilmiyor.
+
+### Detay kutularındaki sıra
+Film ve dizi bilgi kutularındaki satır sırası ve etiketler kullanıcı isteğiyle
+belirlendi. Boş satırlar hiç gösterilmez.
+
+* **Orijinal ad** yalnızca "ön ek + film" (dizilerde "dizi") ile aynı değilse çıkar.
+* Etiketlerde `||` iki satıra böler: "Nasıl keşfettim / neden izledim".
+* Kitaplarda aynı etiket "Nasıl keşfettim / neden okudum" olur.
+
+### Yeni alanlar
+Sheets sütun adları değiştiği için şema güncellendi; eski adlar da alias olarak duruyor.
+
+| Sheets | Sitede |
+|---|---|
+| `yoğunluk` (1–5) | çok düşük / düşük / orta / yüksek / çok yüksek |
+| `tekrar izler miyim`, `tekrar okur muyum` (1–5) | hayır / düşük ihtimalle / belki / muhtemelen / kesinlikle |
+| `imdb linki` (film), `imdb`, `tmdb`, `tvmaze linki` (dizi) | afiş altında dış link |
+| `başladığım yıl` (dizi) | "Başladığım yıl" satırı |
+| `ilk izlediğim şehir` (dizi) | "İlk izlediğim şehir" satırı |
+
+> Film sayfasında `tür (letterboxd)`, `tmdb id` ve `afişi indirdim mi` sütunları
+> kaldırıldığı için kaldırıldılar; tür artık `tür` sütunundan geliyor.
+
+### Favoriler sayfası
+Yazarlar, yönetmenler ve türler artık bağlantı. Yazar → `/kitap/filtre/author/<slug>`,
+yönetmen → `/film/filtre/director/<slug>`, tür → `/tur/<slug>` (film + dizi + kitap +
+playlist kayıtları birlikte). Büyük/küçük harf farkı olan aynı adlar tek kayda
+indirgenir ve adetleri toplanır (örn. "Adam Wingard" 2).
+
+### Tasarım
+Yalnızca `main label` kutulandı ve kalınlaştırıldı; diğer değerler kutusuz, altı çizili
+düz bağlantı oldu. Dış sitelere giden bağlantılar (letterboxd, tmdb, imdb, tvmaze,
+goodreads) noktalı alt çizgi + `↗` ile ayrıldı. Playlist kapakları kare, adları
+kapak altında. Başlığın altındaki yönetmen/yazar/creator 15px → 30px.
+Site adı "Arşiv" yerine "versucher"; adres `/arsiv` olarak kalıyor.
+
+### Taban adres
+`detectAppBase` artık rota adlarını `ROUTE_PREFIX`'ten türetiyor. Daha önce
+`playlist` listede olmadığı için `/arsiv/playlist/<slug>` adresi 404 sonrası yanlış
+taban adrese çözülüyordu. Yeni `tur` rotası da aynı listeye eklendi.
 ## Yeni başlık gelirse
 
 `scripts/build-data.mjs` içindeki `SCHEMAS[type]` listesine yeni alan adını ve
