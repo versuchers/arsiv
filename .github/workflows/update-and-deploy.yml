@@ -62,15 +62,50 @@ jobs:
           git add data
           git commit -m "veri: Google Sheets güncellemesi $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           # Zamanlanmış çalışmalarda araya başka commit girmiş olabilir.
-          for i in 1 2 3; do
-            if git pull --rebase --autostash origin "${GITHUB_REF_NAME}"; then
+          # Dikkat: "git pull --rebase" çakışmada yarım kalmış bir çalışma ağacı bırakır
+          # (dosyaların içine <<<<<<< HEAD yazar). O ağaç paketlenip YAYINLANIRSA
+          # site "Unexpected token '<'" hatası verir. Bu yüzden her denemeden sonra
+          # yarım kalan rebase/merge temizlenir ve yalnızca temiz ağaç push edilir.
+          pushed=0
+          for i in 1 2 3 4 5; do
+            if git pull --rebase --autostash origin "${GITHUB_REF_NAME}" \
+               && git push origin "HEAD:${GITHUB_REF_NAME}"; then
+              pushed=1
               break
             fi
-            echo "push denemesi $i başarısız, tekrar deneniyor..."
-            sleep 10
+            echo "push denemesi $i başarısız, yarım kalan işlem temizleniyor..."
+            # Yarım kalan rebase'i iptal et: bu, commit'ten ÖNCEki duruma döner,
+            # yani üretilmiş (geçerli) veri dosyaları çalışma ağacında kalır.
+            git rebase --abort 2>/dev/null || true
+            git merge --abort 2>/dev/null || true
+            git rebase --skip 2>/dev/null || true
+            sleep 15
           done
-          git push origin "HEAD:${GITHUB_REF_NAME}"
-          echo "Veri commit edildi."
+          if [ "$pushed" -ne 1 ]; then
+            echo "::warning::Veri commit'i şimdilik gönderilemedi; sonraki saatte tekrar denenecek."
+          else
+            echo "Veri commit edildi."
+          fi
+
+      # Yayın öncesi son savunma hattı: bozuk dosya asla deploy edilmez.
+      - name: Yayınlanacak ağacın sağlam olduğunu doğrula
+        run: |
+          set -e
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "::error::Çalışma ağacı temiz değil; yayınlamak yerine duruluyor."
+            git status --short
+            exit 1
+          fi
+          if git grep -qE '^(<<<<<<< |=======$|>>>>>>> )' -- '*.json' '*.html' '*.mjs'; then
+            echo "::error::Depoda çakışma işareti bulundu; yayınlanmıyor."
+            git grep -nE '^(<<<<<<< |=======$|>>>>>>> )' -- '*.json' '*.html' '*.mjs' | head -20 || true
+            exit 1
+          fi
+          for f in data/books.json data/films.json data/series.json data/playlists.json; do
+            node -e "const d=JSON.parse(require('fs').readFileSync('$f','utf8'));if(!Array.isArray(d.items)||!d.items.length)throw new Error('boş kayıt listesi');"
+            echo "  $f geçerli ($(node -e "console.log(JSON.parse(require('fs').readFileSync('$f','utf8')).items.length)") kayıt)"
+          done
+          echo "Yayınlanacak dosyalar sağlam."
 
       - name: GitHub Pages yapılandır
         id: pages

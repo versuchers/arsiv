@@ -152,6 +152,12 @@ p{margin-top:.55rem}
 .pager a:hover{border-color:var(--link)}
 .pager .pager-cur{background:var(--link);color:var(--text);border-color:var(--link);font-weight:700}
 .grid-sentinel{height:1px}
+.bar-actions{display:flex;align-items:center;gap:.4rem}
+.search-btn{display:inline-flex;align-items:center;gap:.35rem;text-decoration:none;line-height:1.1}
+.search-btn svg{display:block;flex:none}
+.search-ctl input{flex:1 1 100%;max-width:none}
+.search-ctl{margin:1.1rem 0 .4rem}
+kbd{font-family:var(--ui);font-size:.72rem;background:var(--well);border:1px solid var(--line);border-radius:3px;padding:.05rem .3rem}
 .favs ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:.4rem}
 .favs li{display:inline-flex;align-items:baseline;gap:.3rem}
 .fav-link{font-family:var(--ui);font-size:.82rem;line-height:1.6;color:var(--link);background:var(--raise);border:1px solid var(--line);border-radius:3px;padding:.22rem .5rem;text-decoration:none;overflow-wrap:anywhere;box-shadow:inset 0 1px 0 var(--hi)}
@@ -184,7 +190,10 @@ p{margin-top:.55rem}
 <header>
   <div class="bar">
     <a class="mark" href="#/" data-route="/" aria-label="Ana sayfa">versucher</a>
-    <button class="ghost" id="theme" type="button"></button>
+    <div class="bar-actions">
+      <a class="ghost search-btn" href="#/ara" data-route="/ara" aria-label="Site genelinde ara" title="Ara (/)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20.5 20.5 16.9 16.9"></path></svg><span class="search-btn-txt">Ara</span></a>
+      <button class="ghost" id="theme" type="button"></button>
+    </div>
   </div>
   <nav id="nav" aria-label="Bölümler"></nav>
 </header>
@@ -223,7 +232,7 @@ function detectAppBase(){
   const parts=location.pathname.split('/').filter(Boolean);
   /* Bu liste, depo adini (orn. /arsiv) rotanin basindan ayirmak icin gereklidir.
      ROUTE_PREFIX ve sayfa adlari tutulmali; aksi halde /arsiv/playlist/... 404 sonrasi bozulur. */
-  const known=[...Object.values(ROUTE_PREFIX),'films','series','books','concerts','favs','lists','etiket','tur']
+  const known=[...Object.values(ROUTE_PREFIX),'films','series','books','concerts','favs','lists','etiket','tur','ara']
     .map(part=>part.toLocaleLowerCase('tr-TR'));
   const routeIndex=parts.findIndex(part=>known.includes(part.toLocaleLowerCase('tr-TR')));
   if(routeIndex===0)return '/';
@@ -420,6 +429,7 @@ function parseRoute(){
   if(routeType&&parts[1])return {kind:'detail',type:routeType,slug:parts.slice(1).join('/')};
   if(first==='etiket'&&parts[1])return {kind:'tag',slug:parts.slice(1).join('/')};
   if(first==='tur'&&parts[1])return {kind:'genre',slug:parts.slice(1).join('/')};
+  if(first==='ara')return {kind:'search'};
   if(['films','series','books','concerts','favs','lists'].includes(first)){
     const page=Number(parts[1]);
     return {kind:'view',view:first,page:Number.isInteger(page)&&page>0?page:1};
@@ -442,13 +452,13 @@ function imageFrame(item,large=false){
   return `<div class="cover ${pal(displayName(item))} ${image?'has-image':''} ${large?'large':''}">${fallback}${image?`<img src="${esc(image)}" alt="${esc(displayName(item))}" loading="${large?'eager':'lazy'}" decoding="async">`:''}</div>`;
 }
 function poster(item){
-  const status=item.sec==='series'?(item.ongoing?'Sürüyor':item.unwatched?'İzlenmedi':item.partial?'Yarım':''):'';
+
   const name=displayName(item);
   const isPl=item.sec==='playlists';
   const cap=isPl
     ?`<span class="pl-name" title="${esc(name)}">${esc(name)}</span>${item.tracks?`<span class="pc">${esc(item.tracks.toLocaleString('tr-TR'))} şarkı</span>`:''}`
     :(item.score!=null?`<span class="st">${esc(stars(item.score))}</span>`:'');
-  return `<article class="poster-card${isPl?' pl-card':''}"><a class="poster" href="${esc(hrefFor(item.route))}" data-route="${esc(item.route)}" title="${esc(name)}" aria-label="${esc(name)}${item.score==null?'':', '+esc(stars(item.score))+' puan'}">${imageFrame(item)}${status?`<span class="badge">${status}</span>`:''}</a><div class="cap">${cap}</div></article>`;
+  return `<article class="poster-card${isPl?' pl-card':''}"><a class="poster" href="${esc(hrefFor(item.route))}" data-route="${esc(item.route)}" title="${esc(name)}" aria-label="${esc(name)}${item.score==null?'':', '+esc(stars(item.score))+' puan'}">${imageFrame(item)}</a><div class="cap">${cap}</div></article>`;
 }
 function unique(values){return [...new Set(values.filter(v=>!missing(v)))].sort((a,b)=>a.localeCompare(b,'tr'))}
 /* Sheets'teki "anasayfa sıra" sütunundan gelen favori kayıtlar (1-12). */
@@ -546,6 +556,45 @@ function globalGenreSlug(value){
 function findGenreValue(slug){
   for(const type of ['films','series','books','playlists'])for(const item of D[type]||[])for(const value of fieldValues(item,'genre'))if(globalGenreSlug(value)===slug)return value;
   return '';
+}
+const SEARCH_GROUPS=[['films','Filmler'],['series','Diziler'],['books','Kitaplar'],['playlists','Playlistler']];
+/** Adresten sorguyu okur: /ara?q=... (yerelde #/ara?q=...). */
+function searchQuery(){
+  let raw='';
+  if(isLocal){raw=location.hash||'';}
+  else{raw=location.search||'';}
+  const at=raw.indexOf('?');
+  if(at<0&&isLocal)return '';
+  try{return new URLSearchParams(at<0?raw:raw.slice(at+1)).get('q')||''}catch(_){return ''}
+}
+/** Tum turlerde ayni anda arar; once tam eslesen ad, sonra baslayan ad, sonra icerenler. */
+function searchSections(q){
+  const needle=String(q||'').trim().toLocaleLowerCase('tr-TR');
+  if(!needle)return {html:'',total:0};
+  const rank=name=>name===needle?0:name.startsWith(needle)?1:2;
+  let total=0;
+  const html=SEARCH_GROUPS.map(([type,label])=>{
+    const list=(D[type]||[]).filter(item=>item.searchText.includes(needle)).sort((a,b)=>{
+      const an=displayName(a).toLocaleLowerCase('tr-TR'),bn=displayName(b).toLocaleLowerCase('tr-TR');
+      return rank(an)-rank(bn)||an.localeCompare(bn,'tr');
+    });
+    if(!list.length)return '';
+    total+=list.length;
+    return `<section class="tag-result-section"><div class="sh"><h2>${label}</h2><span class="sub">${list.length.toLocaleString('tr-TR')} kayıt</span></div><div class="grid">${list.map(poster).join('')}</div></section>`;
+  }).join('');
+  return {html,total};
+}
+function searchInfo(q,total){
+  return String(q||'').trim()
+    ?`"${esc(String(q).trim())}" için ${total.toLocaleString('tr-TR')} sonuç`
+    :'Film, dizi, kitap ve playlistlerde aynı anda arar. Kısayol: <kbd>/</kbd>';
+}
+function searchPage(){
+  const found=searchSections(state.q);
+  document.title=(String(state.q).trim()||'Arama')+' - versucher';
+  main.innerHTML=`<h1>Arama</h1><div class="ctl search-ctl"><input id="sq" type="search" placeholder="Film, dizi, kitap, playlist, yazar, yönetmen, tür…" aria-label="Site genelinde ara" autocomplete="off" spellcheck="false" value="${esc(state.q)}"></div><p class="sub" id="search-info" style="margin-top:.9rem">${searchInfo(state.q,found.total)}</p><div id="search-results" style="margin-top:1.6rem">${found.html}</div>`;
+  const input=$('#sq');
+  if(input){input.focus();input.setSelectionRange(input.value.length,input.value.length)}
 }
 function genrePage(route){
   const value=findGenreValue(route.slug);
@@ -816,6 +865,7 @@ function render(){
   if(state.route.kind==='filter'){filterPage(state.route);return}
   if(state.route.kind==='tag'){tagPage(state.route);return}
   if(state.route.kind==='genre'){genrePage(state.route);return}
+  if(state.route.kind==='search'){state.q=searchQuery();searchPage();return}
   if(state.route.kind==='view')state.page=state.route.page||1;
   document.title=CFG[state.route.view]?.label?CFG[state.route.view].label+' — versucher':'versucher';
   if(state.route.view==='home')home();
@@ -835,7 +885,30 @@ document.addEventListener('click',event=>{
   const route=event.target.closest('[data-route]');
   if(route&&!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&!event.altKey){event.preventDefault();navigate(route.dataset.route);return}
 });
-document.addEventListener('input',event=>{if(event.target.id==='q'){state.q=event.target.value;state.page=1;fillGrid(state.route.view)}});
+document.addEventListener('input',event=>{
+  if(event.target.id==='q'){state.q=event.target.value;state.page=1;fillGrid(state.route.view);return}
+  if(event.target.id==='sq'){
+    state.q=event.target.value;
+    const found=searchSections(state.q);
+    const box=$('#search-results'),info=$('#search-info');
+    if(box)box.innerHTML=found.html||(String(state.q).trim()?'<p class="empty">Bu sorguyla eşleşen kayıt yok.</p>':'');
+    if(info)info.innerHTML=searchInfo(state.q,found.total);
+    /* Adresi güncelle ki arama paylaşılabilir olsun; sayfa yeniden yüklenmesin.
+       Yerelde rota hash'in içinde olduğu için korunur, yoksa rota kaybolur. */
+    const q=String(state.q).trim();
+    const base=isLocal?location.pathname+(location.hash||'').split('?')[0]:location.pathname;
+    try{history.replaceState({},'',q?`${base}?q=${encodeURIComponent(q)}`:base)}catch(_){}
+  }
+});
+/* "/" tusu aramayi acar; alan bos degilse sayfa ici arama kutusuna odaklanir. */
+document.addEventListener('keydown',event=>{
+  if(event.key!=='/'||event.metaKey||event.ctrlKey||event.altKey)return;
+  const tag=(event.target&&event.target.tagName||'').toLowerCase();
+  if(tag==='input'||tag==='textarea'||tag==='select'||(event.target&&event.target.isContentEditable))return;
+  event.preventDefault();
+  if(state.route.kind==='search'){const input=$('#sq');if(input){input.focus();input.select()}return}
+  navigate('/ara');
+});
 document.addEventListener('change',event=>{
   if(!event.target.id)return;
   if(event.target.id==='sort')state.sort=event.target.value;

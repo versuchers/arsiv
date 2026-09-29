@@ -212,6 +212,60 @@ Site adı "Arşiv" yerine "versucher"; adres `/arsiv` olarak kalıyor.
 `detectAppBase` artık rota adlarını `ROUTE_PREFIX`'ten türetiyor. Daha önce
 `playlist` listede olmadığı için `/arsiv/playlist/<slug>` adresi 404 sonrası yanlış
 taban adrese çözülüyordu. Yeni `tur` rotası da aynı listeye eklendi.
+## v1.11 değişiklikleri
+
+### Yayın güvenliği (acil düzeltme)
+
+`update-and-deploy.yml` veriyi üretip aynı `main` dalına commit ederken şu
+zinciri takip ediyordu:
+
+```
+git commit  →  git pull --rebase  →  git push  →  (paketle)  →  deploy
+```
+
+Siz arada push yaptığınızda `git pull --rebase` çakışmaya düşüyor ve **yarım
+kalmış bir çalışma ağacı** bırakıyordu: dosyaların içine `<<<<<<< HEAD`
+yazılıyordu. Döngü bunu başarısız saymıyor, sonraki `Siteyi paketle` adımı
+`path: .` ile **kirli ağacın tamamını** paketleyip GitHub Pages'e yayınlıyordu.
+Sonuç: sitede *"Veri dosyaları yüklenemedi … Unexpected token '<'"* hatası.
+
+İki savunma hattı eklendi:
+
+1. **Her push denemesinden sonra yarım kalan rebase/merge temizlenir**
+   (`git rebase --abort`). Bu, commit'ten *önceki* duruma döner; yani üretilmiş
+   geçerli veri dosyaları çalışma ağacında kalır. 5 deneme sonunda hâlâ
+   gönderilemezse iş `::warning::` ile devam eder, veri bir sonraki saatte yazılır.
+2. **Yayından hemen önce "ağaç sağlam mı" kontrolü** çalışır. Çalışma ağacı
+   kirliyse, dosyalarda `<<<<<<<` / `=======` / `>>>>>>>` işareti varsa ya da
+   `data/*.json` geçerli JSON değilse iş **hata ile durur** — bozuk site
+   yayınlanmaz.
+
+Doğrulama: geçici bir depoda gerçek bir çakışma üretildi; koruma işareti buldu ve
+yayını engelledi. v1.11 dosyalarıyla temiz ağaç kontrolü geçti.
+
+> Siz de aynı dala push ettiğiniz için **önce `git pull --ff-only`, sonra dosya
+> kopyalayın**. Böylece push fast-forward olur, merge hiç oluşmaz.
+
+### Dizi görsellerindeki rozet kaldırıldı
+
+Kartların sol üstündeki "Sürüyor" / "İzlenmedi" / "Yarım" etiketi kaldırıldı.
+`.badge` stili silinmedi; ileride geri isterseniz hazır duruyor. Dizi detay
+sayfasındaki "Durumu", "Ne kadarını izledim", "Bitirdim mi?" satırları yerinde.
+
+### Navbar araması
+
+Başlık sağ üstünde **🔍 Ara** düğmesi var. Tıklayınca `/ara` sayfası açılır.
+Herhangi bir sayfada **`/`** tuşuna basmak da aramayı açar (odak alan içindeyken
+`/` normal karakter olarak yazılır).
+
+* Film, dizi, kitap ve playlistlerde **aynı anda** arar.
+* Aranan alanlar: başlık, özgün ad, yazar, yönetmen, creator, network, tür,
+  alt tür, ülke, main label, çevirmen, yayınevi, platform, "nasıl keşfettim"…
+* Sonuçlar türlerine göre gruplanır (Filmler / Diziler / Kitaplar / Playlistler).
+* Sıralama: önce tam eşleşen ad, sonra adı sorguyla başlayanlar, sonra
+  içerenler.
+* Adres çubuğu canlı güncellenir (`/ara?q=nolan`), yani arama paylaşılabilir.
+* Listelerdeki arama kutuları değişmeden duruyor; `/ara` tüm siteyi tarar.
 ## Yeni başlık gelirse
 
 `scripts/build-data.mjs` içindeki `SCHEMAS[type]` listesine yeni alan adını ve
