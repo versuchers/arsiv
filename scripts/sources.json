@@ -1,0 +1,22 @@
+{
+  "books": {
+    "file": "data/books.json",
+    "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vSEUPPQmFFM-okUlnnxCMh1FR6TAHjBYnFv2K7jtiY4AfSFGFSAAu9qZiqUwJkUyJm8MbhxBAYpmbk8/pub?gid=0&single=true&output=csv",
+    "required": ["title", "author", "image", "bookScore", "mainLabel"]
+  },
+  "films": {
+    "file": "data/films.json",
+    "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vT1YHCZZuOjpPo3nKJlYjEAhIUuC8ydUKnfLfHTZG6FnKZnbcDaSVhbQB2YzsGlTunGu97D0VUGKGpn/pub?gid=561093981&single=true&output=csv",
+    "required": ["title", "director", "image", "year", "score"]
+  },
+  "series": {
+    "file": "data/series.json",
+    "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vTkwoU4Jgi5F45dOT3OS7LU4R7iOnp0OU3kUolFNVOz3gTXmic216-s7Ehp2dnNJ_v0EVVLr43_yj9h/pubhtml?gid=0&single=true",
+    "required": ["title", "image", "year", "score", "genre"]
+  },
+  "playlists": {
+    "file": "data/playlists.json",
+    "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vSB1c5CKsPozt6ELvMHF40tQTJxnFLH5CT3V5fIKDyb22xd95SGf6Kxj9a74wgstEgpQzad63Jdc2A2/pub?gid=853172552&single=true&output=csv",
+    "required": ["title", "image", "spotify", "tracks", "genre"]
+  }
+}
