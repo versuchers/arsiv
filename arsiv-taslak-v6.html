@@ -1,0 +1,705 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Film, dizi ve kitap arşivi">
+<title>Arşiv</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,700;1,700&family=Bitter:ital,wght@0,400;0,700;1,400&family=Manrope:wght@400;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#D5DAE2;--panel:#EAEDF2;--raise:#F5F7FA;--well:#C7CDD8;--line:#B7BFCC;
+  --text:#1B2230;--muted:#556074;--accent:#8A2334;--star:#9AA7BD;--link:#999999;
+  --sh1:rgba(24,34,54,.28);--sh2:rgba(24,34,54,.16);--hi:rgba(255,255,255,.7);
+  --ledge-a:#B9C1CF;--ledge-b:#A5AEBE;
+  --head:'Alegreya',Georgia,'Times New Roman',serif;
+  --body:'Bitter',Georgia,'Times New Roman',serif;
+  --ui:'Manrope',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --type:'Courier Prime','Courier New',Courier,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#1b2230;--panel:#283244;--raise:#303c52;--well:#19212d;--line:#38455c;
+    --text:#E6E2D8;--muted:#A3AEC0;--accent:#DE7488;--star:#9AA7BD;--link:#999999;
+    --sh1:rgba(6,10,18,.6);--sh2:rgba(6,10,18,.4);--hi:rgba(255,255,255,.06);
+    --ledge-a:#3a475e;--ledge-b:#2b3548;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1b2230;--panel:#283244;--raise:#303c52;--well:#19212d;--line:#38455c;
+  --text:#E6E2D8;--muted:#A3AEC0;--accent:#DE7488;--star:#9AA7BD;--link:#999999;
+  --sh1:rgba(6,10,18,.6);--sh2:rgba(6,10,18,.4);--hi:rgba(255,255,255,.06);
+  --ledge-a:#3a475e;--ledge-b:#2b3548;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);background:var(--bg)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--body);line-height:1.65;font-size:16px}
+button,input,select{font:inherit;color:inherit}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+header{position:relative;z-index:2;background:var(--panel);border-bottom:1px solid var(--line);box-shadow:inset 0 1px 0 var(--hi),0 6px 20px var(--sh2)}
+.bar{display:flex;justify-content:space-between;align-items:center;max-width:1100px;margin:0 auto;padding:.9rem 1.25rem .4rem}
+.mark{font-family:var(--head);font-weight:700;font-style:italic;font-size:1.9rem;background:none;border:0;cursor:pointer;padding:0;letter-spacing:.01em;text-decoration:none}
+.ghost{font-family:var(--ui);font-size:.82rem;background:var(--well);border:1px solid var(--line);color:var(--muted);padding:.35rem .75rem;cursor:pointer;border-radius:3px;box-shadow:inset 0 2px 3px var(--sh2)}
+.ghost:hover{color:var(--text)}
+nav{max-width:1100px;margin:0 auto;padding:0 1.25rem;display:flex;gap:1.5rem;overflow-x:auto}
+nav a{font-family:var(--ui);font-weight:600;font-size:.92rem;color:var(--link);padding:.55rem 0;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;text-decoration:none}
+nav a:hover,nav a[aria-current="page"]{color:var(--link)}
+nav a[aria-current="page"]{border-bottom-color:var(--accent)}
+.note{font-family:var(--ui);width:min(1100px,calc(100% - 1.5rem));margin:1.1rem auto 0;color:var(--muted);font-size:.8rem;line-height:1.5}
+.note.is-error{color:#e0a3a3}
+.site-foot{width:min(1100px,calc(100% - 1.5rem));margin:0 auto;padding:.9rem 0 2.5rem;font-family:var(--ui);font-size:.76rem;line-height:1.5;color:var(--muted);border-top:1px solid var(--line)}
+main{width:min(1100px,calc(100% - 1.5rem));margin:1rem auto 3rem;padding:1.5rem;background:var(--panel);border:1px solid var(--line);border-radius:6px;box-shadow:inset 0 1px 0 var(--hi),0 2px 4px var(--sh1),0 22px 44px -8px var(--sh1)}
+main:has(.detail-page){width:min(1100px,calc(100% - 1.5rem),calc((100vh - 185px) * 1.3334 + 75px))}
+@media (max-width:520px){main{padding:1.1rem}}
+h1,h2{font-family:var(--head);font-weight:700;margin:0}
+h1{font-size:2.1rem;line-height:1.2}
+h2{font-size:1.4rem;line-height:1.25}
+h3{font-family:var(--head);font-size:1.15rem;line-height:1.3;margin:0}
+p{margin-top:.55rem}
+.sub{font-family:var(--ui);color:var(--muted);font-size:.85rem;margin:.2rem 0 0}
+.eyebrow{font-family:var(--ui);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:700;margin:0 0 .35rem}
+.sh{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;margin:2.2rem 0 .9rem}
+.sh:first-child{margin-top:0}
+.link{font-family:var(--ui);font-weight:600;font-size:.85rem;color:var(--link);cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:0}
+.welcome{background:var(--raise);border:1px solid var(--line);border-radius:4px;padding:1.2rem 1.35rem;box-shadow:inset 0 1px 0 var(--hi)}
+.welcome p{max-width:62ch}
+.ctl{display:flex;flex-wrap:wrap;gap:.7rem;margin:1.1rem 0 1.6rem}
+.ctl input,.ctl select{font-family:var(--ui);font-size:.88rem;background:var(--well);border:1px solid var(--line);color:var(--text);padding:.5rem .7rem;border-radius:3px;box-shadow:inset 0 2px 5px var(--sh1)}
+.ctl input{flex:1 1 200px;max-width:320px}
+.grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:1.5rem 1.1rem}
+@media (max-width:1080px){.grid{grid-template-columns:repeat(5,minmax(0,1fr))}}
+@media (max-width:880px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (max-width:700px){.grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:1.2rem .7rem}}
+.niche{background:var(--well);border-radius:4px;padding:1.2rem 1.1rem;overflow:hidden;box-shadow:inset 0 10px 18px -6px var(--sh1),inset 0 -1px 0 var(--hi)}
+.niche::after{content:"";display:block;height:11px;margin:0 -1.1rem;background:linear-gradient(var(--ledge-a),var(--ledge-b));border-top:1px solid var(--hi);box-shadow:0 -8px 12px -8px var(--sh1)}
+.poster-card{min-width:0}
+.poster{position:relative;display:block;text-decoration:none;background:none;border:0;padding:0;text-align:left;cursor:pointer;transition:transform .15s}
+.poster:hover{transform:translateY(-4px)}
+.cover{position:relative;aspect-ratio:2/3;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:1.1rem .9rem;color:#E9E4D8;border-radius:2px;overflow:hidden;background:var(--well);box-shadow:0 1px 2px rgba(0,0,0,.6),0 10px 18px -4px rgba(0,0,0,.5);transition:box-shadow .15s}
+.poster:hover .cover{box-shadow:0 2px 4px rgba(0,0,0,.6),0 18px 26px -4px rgba(0,0,0,.55)}
+.cover::before{content:"";position:absolute;inset:8px;border:1px solid rgba(233,228,216,.28);pointer-events:none;z-index:2}
+.cover::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,255,255,.15),rgba(255,255,255,0) 7%,rgba(0,0,0,.2));pointer-events:none;z-index:2}
+.cover img{position:absolute;inset:0;z-index:1;display:block;width:100%;height:100%;object-fit:contain;object-position:center;background:var(--well)}
+.cover-fallback{position:relative;z-index:0;max-width:100%;overflow-wrap:anywhere}
+.cover .ct{font-family:var(--head);font-weight:700;font-size:1.1rem;line-height:1.25}
+.cover .cy{font-family:var(--ui);position:absolute;bottom:14px;left:14px;right:14px;text-align:center;font-size:.72rem;color:rgba(233,228,216,.72);z-index:3}
+.cover.has-image .cover-fallback{display:none}
+.cover.has-image::before{border-color:rgba(255,255,255,.32)}
+.pal0{background:linear-gradient(#4a1b28,#25101a)}
+.pal1{background:linear-gradient(#1f3a44,#0f1e26)}
+.pal2{background:linear-gradient(#372b4d,#191226)}
+.pal3{background:linear-gradient(#4a3a28,#241a10)}
+.pal4{background:linear-gradient(#2c4237,#122019)}
+.pal5{background:linear-gradient(#43303a,#20141b)}
+.badge{position:absolute;top:14px;left:14px;z-index:4;font-family:var(--ui);font-weight:600;font-size:.65rem;padding:.1rem .45rem;background:rgba(0,0,0,.55);border:1px solid rgba(233,228,216,.35);color:#E9E4D8;border-radius:2px}
+.cap{font-family:var(--ui);margin-top:.5rem;font-size:.82rem;color:var(--muted);text-align:center}
+.st{color:var(--star);letter-spacing:.05em;white-space:nowrap}
+.pc{color:var(--muted);white-space:nowrap;letter-spacing:.02em}
+.listen-btn{display:inline-block;font-family:var(--ui);font-size:.92rem;font-weight:600;padding:.6rem 1.15rem;border:1px solid var(--link);border-radius:3px;color:var(--link);text-decoration:none;background:var(--raise);transition:background .15s,color .15s}
+.listen-btn:hover{background:var(--link);color:var(--text)}
+@media (prefers-reduced-motion:reduce){.poster,.cover{transition:none}.poster:hover{transform:none}}
+.favs{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:1.4rem}
+.favs section{background:var(--raise);border-radius:4px;padding:1rem 1.2rem 1.1rem;box-shadow:inset 0 1px 0 var(--hi),0 1px 2px var(--sh1),0 10px 20px -6px var(--sh1)}
+.favs h2{font-size:1.2rem;border-bottom:1px solid var(--line);padding-bottom:.35rem;margin-bottom:.6rem}
+.favs ul{list-style:none;margin:0;padding:0}
+.favs li{padding:.2rem 0}
+.shelf{list-style:none;margin:0;padding:0;columns:2 240px;column-gap:2.5rem}
+.shelf li{break-inside:avoid}
+.shelf a{font-family:var(--ui);font-weight:600;display:flex;justify-content:space-between;width:100%;color:var(--link);border-bottom:1px solid var(--line);padding:.6rem 0;text-decoration:none}
+.shelf a:hover{color:var(--link)}
+.shelf span:last-child{color:var(--muted);font-weight:400}
+.empty{font-family:var(--ui);color:var(--muted);padding:2rem 0}
+.loading{font-family:var(--ui);color:var(--muted);padding:2rem 0}
+.back{font-family:var(--ui);font-size:.85rem;color:var(--link);text-decoration:underline;text-underline-offset:3px}
+.detail-page{--gap:25px;font-size:15px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;row-gap:1.25rem}
+.detail-heading{grid-column:1/-1;margin:0;padding:0;min-width:0}
+.detail-heading h1{font-size:clamp(2rem,5vw,3.25rem);line-height:1.15;overflow-wrap:anywhere}
+.detail-subline{display:flex;flex-wrap:wrap;align-items:center;gap:.45rem;margin-top:.45rem;color:var(--muted);font-family:var(--ui);font-size:15px}
+.detail-subline .tag-chip{background:transparent;border:0;padding:0;box-shadow:none;text-decoration:underline;text-underline-offset:3px;font-size:15px}
+.detail-split{display:contents}
+.detail-art-column{grid-column:1;position:sticky;top:1rem;align-self:start;min-width:0;padding:0 calc(var(--gap) / 2) 25px 0}
+.detail-content{grid-column:2;position:relative;min-width:0;padding:0 0 0 calc(var(--gap) / 2)}
+.detail-content::before{content:"";position:absolute;left:0;top:0;bottom:0;width:1px;background:var(--line)}
+.detail-top-info{min-width:0;margin-top:1rem}
+.detail-art-column .cover{width:100%;max-width:none;box-shadow:0 2px 5px rgba(0,0,0,.55),0 20px 34px -10px rgba(0,0,0,.55)}
+.detail-art-column .detail-top-info{text-align:center}
+.detail-art-column .detail-top-info .main-label-row,.detail-art-column .detail-top-info .compact-links{justify-content:center}
+.detail-series{font-family:var(--ui);font-size:.7em;font-weight:400;color:var(--muted);white-space:nowrap;margin-left:.35rem;vertical-align:middle}
+.detail-content .detail-sections{margin-top:0}
+.detail-score{font-family:var(--ui);font-size:.95rem;margin-top:1rem}
+.detail-score .stars{font-size:1.35rem;color:var(--star);letter-spacing:.08em}
+.main-label-row,.compact-links,.detail-value-chips{display:flex;flex-wrap:wrap;align-items:flex-start;gap:.4rem;margin-top:.9rem}
+.compact-links{margin-top:.75rem}
+.tag-chip,.compact-link{display:inline-flex;align-items:center;align-self:flex-start;width:fit-content;max-width:100%;font-family:var(--ui);font-size:.76rem;line-height:1.3;color:var(--link);background:var(--raise);border:1px solid var(--line);border-radius:3px;padding:.22rem .5rem;text-decoration:none;overflow-wrap:anywhere;box-shadow:inset 0 1px 0 var(--hi)}
+.tag-chip:hover,.compact-link:hover{border-color:var(--link);text-decoration:underline;text-underline-offset:2px}
+.detail-value-chips{margin-top:0;gap:.3rem}
+.detail-value-chips .tag-chip{font-size:.72rem;padding:.16rem .4rem}
+.film-details .detail-value-chips{gap:.7rem}
+.film-details .detail-value-chips .tag-chip{background:transparent;border:0;padding:0;box-shadow:none;text-decoration:underline;text-underline-offset:3px}
+.tag-result-section{margin-top:1.6rem}
+.detail-sections{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.4rem;margin-top:2rem}
+.detail-section{background:var(--raise);border:1px solid var(--line);border-radius:4px;padding:1rem 1.15rem 1.1rem;box-shadow:inset 0 1px 0 var(--hi)}
+.detail-section h2{font-size:1.25rem;border-bottom:1px solid var(--line);padding-bottom:.45rem;margin-bottom:.45rem}
+.detail-list{margin:0}
+.detail-row{display:grid;grid-template-columns:minmax(115px,38%) 1fr;gap:.75rem;padding:.42rem 0;border-bottom:1px solid var(--line);font-size:.88rem;line-height:1.5}
+.detail-row:last-child{border-bottom:0}
+.detail-row dt{color:var(--muted);font-family:var(--ui);font-size:.78rem}
+.detail-row dd{margin:0;overflow-wrap:anywhere}
+.detail-row .stars{color:var(--star);letter-spacing:.05em}
+.detail-note{font-family:var(--ui);font-size:.8rem;color:var(--muted);margin-top:1rem}
+.detail-page .detail-subline,.detail-page .detail-score,.detail-page .detail-section,.detail-page .detail-row,.detail-page .detail-row dt,.detail-page .detail-row dd,.detail-page .detail-note,.detail-page .back,.detail-page .tag-chip,.detail-page .compact-link{font-size:15px}
+.placeholder{background:var(--raise);border:1px dashed var(--line);border-radius:4px;padding:2rem 1.2rem;text-align:center;color:var(--muted);font-family:var(--ui)}
+@media (max-width:700px){.detail-page{grid-template-columns:minmax(0,1fr);row-gap:0}.detail-heading{grid-column:1;padding:0 0 1.25rem}.detail-art-column{grid-column:1;position:relative;top:auto;max-width:none;padding:0 0 1.2rem}.detail-content{grid-column:1;border-top:1px solid var(--line);padding:1.2rem 0 0}.detail-content::before{display:none}.detail-heading h1{font-size:2rem}}
+@media (max-width:650px){.detail-row{grid-template-columns:1fr;gap:.1rem}.detail-row dt{font-size:15px}.shelf{columns:1}}
+@media (max-width:430px){.detail-sections{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <a class="mark" href="#/" data-route="/" aria-label="Ana sayfa">Arşiv</a>
+    <button class="ghost" id="theme" type="button"></button>
+  </div>
+  <nav id="nav" aria-label="Bölümler"></nav>
+</header>
+<p class="note" id="data-status" role="status" aria-live="polite">Veri yükleniyor…</p>
+<main id="main"><p class="loading">Arşiv hazırlanıyor…</p></main>
+<footer class="site-foot" id="data-footer"></footer>
+
+<script>
+'use strict';
+
+/* Veri dosyaları GitHub Actions tarafından üretilir (scripts/build-data.mjs).
+   Tarayıcı Google Sheets'e hiç bağlanmaz; yalnızca data/*.json okunur.
+   no-store ile istenir: önbellekten eski veri gelmesin. */
+const DATA_FILES={books:'data/books.json',films:'data/films.json',series:'data/series.json',playlists:'data/playlists.json'};
+
+const CFG={
+  films:{label:'Filmler',unit:'film',fav:'Favori filmler',dateLabel:'İzlenme tarihi'},
+  series:{label:'Diziler',unit:'dizi',fav:'Favori diziler',dateLabel:'İzlenme tarihi'},
+  books:{label:'Kitaplar',unit:'kitap',fav:'Favori kitaplar',dateLabel:'İlk okunma tarihi'},
+  concerts:{label:'Konserler',unit:'konser',recent:'Konserler',dateLabel:'Tarih'},
+  lists:{label:'Playlistler',unit:'playlist',fav:'Favori playlistler',dateLabel:''}
+};
+const ROUTE_PREFIX={books:'kitap',films:'film',series:'dizi',playlists:'playlist'};
+const FILTER_TITLES={author:'Yazar',genre:'Tür',subgenre:'Alt tür',authorOrigin:'Yazar köken',fiction:'Kurgu mu?',city:'İlk okunan şehir',acquisition:'İlk erişim / edinim şekli',formats:'Okunan tüm formatlar',translator:'Çevirmen',publisher:'Yayınevi',platform:'İlk kez hangi platformda',director:'Yönetmen',firstCity:'İlk kez izlenen şehir',country:'Yapım ülkesi',directorOrigin:'Yönetmen nereli',reason:'Nasıl keşfettim / neden izledim',done:'Bitirildi mi?',category:'Kategori',feeling:'His'};
+const NAV=[['home','Ana sayfa'],['films','Filmler'],['series','Diziler'],['books','Kitaplar'],['concerts','Konserler'],['favs','Favoriler'],['lists','Playlistler']];
+
+const $=(s,e=document)=>e.querySelector(s);
+const $$=(s,e=document)=>[...e.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const clean=s=>String(s??'').replace(/\r/g,'').replace(/\n/g,' ').replace(/\s+/g,' ').trim();
+const missing=s=>{const v=clean(s);return !v||/^[-–—]+$/.test(v)};
+const trFormat=n=>Number.isFinite(n)?String(n).replace('.',','):'';
+const isLocal=location.protocol==='file:';
+function detectAppBase(){
+  if(isLocal)return '';
+  const parts=location.pathname.split('/').filter(Boolean);
+  const known=['kitap','film','dizi','films','series','books','concerts','favs','lists','etiket'];
+  const routeIndex=parts.findIndex(part=>known.includes(part.toLocaleLowerCase('tr-TR')));
+  if(routeIndex===0)return '/';
+  if(routeIndex>0)return '/'+parts.slice(0,routeIndex).join('/')+'/';
+  const last=parts[parts.length-1]||'';
+  if(last.includes('.'))return '/'+parts.slice(0,-1).join('/')+(parts.length>1?'/':'');
+  return '/';
+}
+const APP_BASE=detectAppBase();
+const main=$('#main');
+
+function numberValue(value){
+  const m=clean(value).match(/[+-]?\d+(?:[.,]\d+)?/);
+  return m?Number(m[0].replace(',','.')):null;
+}
+function integerValue(value){const n=numberValue(value);return n==null?null:Math.round(n)}
+function yearValue(value){const m=clean(value).match(/(?:18|19|20|21)\d{2}/);return m?Number(m[0]):null}
+function stars(value){
+  const n=numberValue(value);if(n==null)return '';
+  const half=Math.round(n)/2,full=Math.floor(half),rest=half-full;
+  return '★'.repeat(full)+(rest>=.4?'½':'');
+}
+function scoreHtml(item){
+  return item.score==null?'—':`<span class="stars">${esc(stars(item.score))}</span>`;
+}
+function splitList(value){
+  return clean(value).split(/\s*(?:\/\/|,|;)\s*/).map(clean).filter(v=>!missing(v));
+}
+function safeUrl(value){
+  const v=clean(value);
+  if(/^https?:\/\//i.test(v))return v;
+  if(/^\/\//.test(v))return 'https:'+v;
+  if(/^(?:www\.|themoviedb\.org\/)/i.test(v))return 'https://'+v;
+  if(/^(?:\.{0,2}\/)/.test(v))return v;
+  return '';
+}
+function slugPart(value){
+  let s=clean(value).toLocaleLowerCase('tr-TR');
+  const map={'ğ':'g','Ğ':'g','ı':'i','İ':'i','ö':'o','Ö':'o','ç':'c','Ç':'c','ş':'s','Ş':'s','ü':'u','Ü':'u','ø':'o','æ':'ae','œ':'oe','ß':'ss','ð':'d','þ':'th','ł':'l','đ':'d','³':'3','²':'2'};
+  s=s.replace(/[ğĞıİöÖçÇşŞüÜøæœßðþłđ³²]/g,c=>map[c]).normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  s=s.replace(/[’'`´]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+  return s;
+}
+function filmName(item){
+  const pre=clean(item.pre),title=clean(item.title);
+  if(pre&&!title.toLocaleLowerCase('tr-TR').startsWith((pre+' ').toLocaleLowerCase('tr-TR')))return pre+' '+title;
+  return title||pre;
+}
+function displayName(item){return item.sec==='films'?filmName(item):clean(item.title)}
+function dateSort(value){
+  const s=clean(value).toLocaleLowerCase('tr-TR');
+  const months={ocak:0,şubat:1,subat:1,mart:2,nisan:3,mayıs:4,mayis:4,haziran:5,temmuz:6,ağustos:7,agustos:7,eylül:8,eylul:8,ekim:9,kasım:10,kasim:10,aralık:11,aralik:11};
+  let m=s.match(/(\d{1,2})\s+([a-zçğıöşü]+)\s+(\d{4})/i);
+  if(m&&months[m[2]]!=null)return Date.UTC(Number(m[3]),months[m[2]],Number(m[1]));
+  m=s.match(/(\d{4})[-/.](\d{1,2})(?:[-/.](\d{1,2}))?/);
+  if(m)return Date.UTC(Number(m[1]),Number(m[2])-1,Number(m[3]||1));
+  const y=yearValue(s);return y?Date.UTC(y,0,1):-Infinity;
+}
+/* ------------------------------------------------------------------ *
+ * Veri katmanı
+ * Veri, GitHub Actions tarafından üretilen data/*.json dosyalarından
+ * okunur. Tarayıcı Google Sheets'e bağlanmaz. İstekler no-cache'dir.
+ * ------------------------------------------------------------------ */
+
+const D={films:[],series:[],books:[],playlists:[]};
+let REG=new Map();
+const state={route:parseRoute(),q:'',sort:'date',min:0,genre:'',status:'',cat:''};
+let dataMeta={generatedAt:'',error:''};
+
+/* JSON'dan gelen kayıtta türetilmiş alanları hesaplar. */
+function hydrate(item){
+  item.genres=Array.isArray(item.genres)?item.genres:[];
+  item.subgenres=Array.isArray(item.subgenres)?item.subgenres:[];
+  item.directors=Array.isArray(item.directors)?item.directors:[];
+  item.countries=Array.isArray(item.countries)?item.countries:[];
+  item.displayTitle=displayName(item);
+  item.searchText=[
+    item.displayTitle,item.author,item.originalTitle,item.seriesName,item.mainLabel,item.reason,item.platform,
+    item.directorRaw,item.category,item.character,item.translator,item.publisher,item.formats,item.acquisition,
+    item.authorOrigin,item.city,item.readLanguage,item.writtenLanguage,item.firstCity,item.directorOrigin,
+    item.watched,item.seriesOrder,item.creator,item.network,item.format,item.statusRaw,item.category,item.feeling,
+    item.countries.join(' '),item.genres.join(' '),item.subgenres.join(' ')
+  ].filter(Boolean).join(' ').toLocaleLowerCase('tr-TR');
+  return item;
+}
+function applyData(next,meta){
+  const all=[];
+  Object.keys(D).forEach(type=>{D[type]=next[type]||[]});
+  Object.values(D).flat().forEach(item=>{hydrate(item);all.push(item)});
+  REG=new Map(all.map(item=>[item.id,item]));
+  dataMeta=meta||{generatedAt:'',error:''};
+  render();
+}
+function totalCount(){return Object.values(D).reduce((sum,list)=>sum+list.length,0)}
+function formatStamp(value){
+  if(!value)return '';
+  const date=new Date(value);
+  if(Number.isNaN(date.getTime()))return '';
+  try{return date.toLocaleString('tr-TR',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'})+' (TSİ)'}
+  catch(_){return date.toISOString()}
+}
+function updateStatus(){
+  const total=totalCount();
+  const el=$('#data-status');
+  if(el){
+    el.textContent=dataMeta.error||(total?`${total.toLocaleString('tr-TR')} kayıt`:'Veri yükleniyor…');
+    el.classList.toggle('is-error',!!dataMeta.error);
+  }
+  const foot=$('#data-footer');
+  if(!foot)return;
+  const files=Object.values(DATA_FILES).map(file=>file.split('/').pop()).join(' · ');
+  if(dataMeta.error){foot.textContent=dataMeta.error;return}
+  if(!total){foot.textContent=files;return}
+  const stamp=formatStamp(dataMeta.generatedAt);
+  foot.textContent=`${files} · ${total.toLocaleString('tr-TR')} kayıt${stamp?` · son üretim ${stamp}`:''}`;
+}
+async function loadData(){
+  const types=Object.keys(DATA_FILES);
+  const results=await Promise.all(types.map(async type=>{
+    const controller=typeof AbortController==='function'?new AbortController():null;
+    const timer=controller?setTimeout(()=>controller.abort(),20000):null;
+    try{
+      const options={cache:'no-store'};if(controller)options.signal=controller.signal;
+      const response=await fetch(DATA_FILES[type],options);
+      if(!response.ok)throw new Error('HTTP '+response.status);
+      const payload=await response.json();
+      if(!payload||!Array.isArray(payload.items))throw new Error('beklenen biçimde değil');
+      return {type,items:payload.items,generatedAt:clean(payload.generatedAt),ok:true};
+    }catch(error){return {type,message:error&&error.message?error.message:String(error),ok:false}}
+    finally{if(timer)clearTimeout(timer)}
+  }));
+  const next={films:[],series:[],books:[],playlists:[]};
+  const failed=[];
+  let newest='';
+  results.forEach(result=>{
+    if(!result.ok){failed.push(`${result.type} (${result.message})`);return}
+    next[result.type]=result.items;
+    if(result.generatedAt&&(!newest||result.generatedAt>newest))newest=result.generatedAt;
+  });
+  if(failed.length===types.length){
+    dataMeta={generatedAt:'',error:isLocal
+      ?'Veri okunamadı: siteyi dosya olarak (file://) açmayın — data/ klasöründen okumak için bir HTTP sunucusu gerekir.'
+      :'Veri dosyaları yüklenemedi — '+failed.join('; ')};
+    render();
+    return;
+  }
+  applyData(next,{generatedAt:newest,error:failed.length?`Bazı veri dosyaları okunamadı — ${failed.join('; ')}`:''});
+}
+
+/* SPA yönlendirme: yayınlanmış sitede adres /kitap/... olur; file: altında hash kullanılır. */
+function hrefFor(path){
+  if(isLocal)return '#'+path;
+  return APP_BASE+String(path).replace(/^\//,'');
+}
+function parseRoute(){
+  let pathname=location.pathname;
+  if(!isLocal&&APP_BASE&&pathname.toLocaleLowerCase('tr-TR').startsWith(APP_BASE.toLocaleLowerCase('tr-TR'))){
+    pathname='/'+pathname.slice(APP_BASE.length);
+  }
+  let raw=isLocal&&location.hash?location.hash.slice(1):pathname;
+  raw=raw.split('?')[0].split('#')[0];
+  let parts;
+  try{parts=raw.split('/').filter(Boolean).map(part=>decodeURIComponent(part))}catch(_){parts=raw.split('/').filter(Boolean)}
+  const first=parts[0]?.toLocaleLowerCase('tr-TR');
+  const routeType=Object.keys(ROUTE_PREFIX).find(key=>ROUTE_PREFIX[key]===first);
+  if(routeType&&parts[1]?.toLocaleLowerCase('tr-TR')==='filtre'&&parts[2]&&parts[3])return {kind:'filter',type:routeType,field:parts[2],valueSlug:parts.slice(3).join('/')};
+  if(routeType&&parts[1])return {kind:'detail',type:routeType,slug:parts.slice(1).join('/')};
+  if(first==='etiket'&&parts[1])return {kind:'tag',slug:parts.slice(1).join('/')};
+  if(['films','series','books','concerts','favs','lists'].includes(first))return {kind:'view',view:first};
+  return {kind:'view',view:'home'};
+}
+function resetFilters(){state.q='';state.sort='date';state.min=0;state.genre='';state.status='';state.cat=''}
+function navigate(path,replace=false){
+  const target=isLocal?'#'+path:hrefFor(path);
+  try{history[replace?'replaceState':'pushState']({},'',target)}catch(_){if(isLocal)location.hash=path;else location.href=target}
+  state.route=parseRoute();resetFilters();render();window.scrollTo(0,0);
+}
+function go(view){navigate(view==='home'?'/' :`/${view}`)}
+function hrefForView(view){return hrefFor(view==='home'?'/' :`/${view}`)}
+
+function pal(value){let h=0;for(const c of clean(value))h+=c.charCodeAt(0);return `pal${h%6}`}
+function imageFrame(item,large=false){
+  const image=item.image;
+  const fallback=`<span class="cover-fallback"><span class="ct">${esc(displayName(item))}</span><span class="cy">${esc(item.sec==='books'?(item.author||item.year||''):(item.year||''))}</span></span>`;
+  return `<div class="cover ${pal(displayName(item))} ${image?'has-image':''} ${large?'large':''}">${fallback}${image?`<img src="${esc(image)}" alt="${esc(displayName(item))}" loading="${large?'eager':'lazy'}" decoding="async">`:''}</div>`;
+}
+function poster(item){
+  const status=item.sec==='series'?(item.ongoing?'Sürüyor':item.unwatched?'İzlenmedi':item.partial?'Yarım':''):'';
+  const name=displayName(item);
+  const cap=item.score!=null
+    ?`<span class="st">${esc(stars(item.score))}</span>`
+    :(item.sec==='playlists'&&item.tracks?`<span class="pc">${esc(item.tracks.toLocaleString('tr-TR'))} şarkı</span>`:'');
+  return `<article class="poster-card"><a class="poster" href="${esc(hrefFor(item.route))}" data-route="${esc(item.route)}" title="${esc(name)}" aria-label="${esc(name)}${item.score==null?'':', '+esc(stars(item.score))+' puan'}">${imageFrame(item)}${status?`<span class="badge">${status}</span>`:''}</a><div class="cap">${cap}</div></article>`;
+}
+function unique(values){return [...new Set(values.filter(v=>!missing(v)))].sort((a,b)=>a.localeCompare(b,'tr'))}
+/* Sheets'teki "anasayfa sıra" sütunundan gelen favori kayıtlar (1-12). */
+function favoriteItems(kind){
+  return (D[kind]||[]).filter(item=>item.homeOrder!=null).sort((x,y)=>x.homeOrder-y.homeOrder||y.rowIndex-x.rowIndex);
+}
+function favRow(kind){
+  const list=favoriteItems(kind);
+  return `<div class="sh"><h2>${CFG[kind].fav}</h2><a class="link" href="${esc(hrefFor('/'+kind))}" data-route="/${kind}">Tümünü gör</a></div><div class="niche"><div class="grid">${list.length?list.map(poster).join(''):'<p class="empty">Henüz favori işaretlenmedi.</p>'}</div></div>`;
+}
+function home(){
+  const index=['films','series','books'].map(kind=>`<li><a href="${esc(hrefFor('/'+kind))}" data-route="/${kind}"><span>${CFG[kind].label}</span><span>${D[kind].length}</span></a></li>`).join('');
+  main.innerHTML=`<section class="welcome"><p class="eyebrow">Kişisel arşiv</p><h1>Film, dizi ve kitaplar</h1><p class="sub">Sheets kayıtlarından üretilmiş arşiv; her kutu kendi kişisel sayfasına bağlanır.</p></section>${favRow('films')}${favRow('series')}${favRow('books')}<div class="sh"><h2>Raflar</h2></div><ul class="shelf">${index}</ul><div class="sh"><h2>Yakında</h2></div><div class="placeholder">Playlistler ve konserler için ayrı veri tabloları eklendiğinde burada görünecek.</div>`;
+}
+function sortItems(list,how){
+  const a=[...list];
+  const score=x=>x.score==null?-1:x.score;
+  const year=x=>x.yearNumber==null?-1:x.yearNumber;
+  const dateOf=x=>dateSort(x.sec==='books'?x.firstReadDate:x.watchDate);
+  const recent=(x,y)=>{
+    const dx=dateOf(x),dy=dateOf(y);
+    if(dx===dy)return y.rowIndex-x.rowIndex;
+    if(dx===-Infinity)return 1;
+    if(dy===-Infinity)return -1;
+    return dy-dx;
+  };
+  const yearCompare=(x,y,ascending=false)=>{
+    const dx=year(x),dy=year(y);
+    if(dx===dy)return y.rowIndex-x.rowIndex;
+    if(dx<0)return 1;
+    if(dy<0)return -1;
+    return ascending?dx-dy:dy-dx;
+  };
+  if(how==='date')a.sort(recent);
+  else if(how==='r')a.sort((x,y)=>score(y)-score(x)||recent(x,y));
+  else if(how==='year')a.sort((x,y)=>yearCompare(x,y));
+  else if(how==='yearasc')a.sort((x,y)=>yearCompare(x,y,true));
+  else if(how==='title')a.sort((x,y)=>displayName(x).localeCompare(displayName(y),'tr'));
+  else if(how==='author')a.sort((x,y)=>clean(x.author).localeCompare(clean(y.author),'tr')||year(x)-year(y));
+  else if(how==='tracks')a.sort((x,y)=>(y.tracks||0)-(x.tracks||0)||displayName(x).localeCompare(displayName(y),'tr'));
+  return a;
+}
+const VIEW_TYPE={lists:'playlists'};
+function dataType(view){return VIEW_TYPE[view]||view}
+function genresFor(kind){return unique((D[kind]||[]).flatMap(item=>item.genres))}
+function gridView(kind){
+  const cfg=CFG[kind],type=dataType(kind),genres=genresFor(type);
+  const options=type==='playlists'
+    ?[['tracks','Şarkı sayısına göre'],['title','Ada göre']]
+    :[['date',type==='books'?'İlk okunma tarihine göre':'Tarihe göre'],['r','Puana göre'],['year','Yıla göre (yeniden eskiye)'],['yearasc','Yıla göre (eskiden yeniye)'],['title','Ada göre']];
+  if(type==='books')options.push(['author','Yazara göre']);
+  const cats=type==='playlists'?unique((D.playlists||[]).map(item=>item.category)):[];
+  main.innerHTML=`<h1>${cfg.label}</h1><p class="sub" id="count"></p><div class="ctl"><input id="q" type="search" placeholder="${cfg.label} içinde ara" aria-label="Ara" value="${esc(state.q)}"><select id="sort" aria-label="Sırala">${options.map(([value,label])=>`<option value="${value}">${label}</option>`).join('')}</select>${genres.length?`<select id="genre" aria-label="Tür"><option value="">Tüm türler</option>${genres.map(value=>`<option value="${esc(value)}">${esc(value)}</option>`).join('')}</select>`:''}${kind==='series'?`<select id="status" aria-label="Durum"><option value="">Tüm durumlar</option><option value="done">Bitirdiklerim</option><option value="part">Bitirmadiklerim</option><option value="ongoing">Sürüyor</option></select>`:''}${type==='playlists'?`<select id="cat" aria-label="Kategori"><option value="">Tüm kategoriler</option>${cats.map(value=>`<option value="${esc(value)}">${esc(value)}</option>`).join('')}</select>`:''}<select id="min" aria-label="En düşük puan"><option value="0">Tüm puanlar</option><option value="8">8 ve üstü</option><option value="9">9 ve üstü</option><option value="10">10</option></select></div><div id="grid" class="grid"></div>`;
+  if(!options.some(pair=>pair[0]===state.sort))state.sort=options[0][0];
+  $('#sort').value=state.sort;if($('#min'))$('#min').value=String(state.min);if($('#genre'))$('#genre').value=state.genre;if($('#status'))$('#status').value=state.status;if($('#cat'))$('#cat').value=state.cat;
+  if(type==='playlists'){const ctl=$('#min');if(ctl)ctl.remove()}
+  fillGrid(kind);
+}
+function fillGrid(kind){
+  const q=clean(state.q).toLocaleLowerCase('tr-TR');
+  const type=dataType(kind);
+  let list=(D[type]||[]).filter(item=>(!q||item.searchText.includes(q))&&(!state.genre||item.genres.includes(state.genre))&&(!state.cat||item.category===state.cat)&&(!state.min||item.score>=state.min)&&(!state.status||(state.status==='done'?item.done:state.status==='ongoing'?item.ongoing:!item.done)));
+  list=sortItems(list,state.sort);
+  $('#count').textContent=`${list.length.toLocaleString('tr-TR')} ${CFG[kind].unit}`;
+  $('#grid').innerHTML=list.length?list.map(poster).join(''):'<p class="empty">Bu filtreyle eşleşen kayıt yok.</p>';
+}
+function filterPage(route){
+  const type=route.type,value=findFilterValue(type,route.field,route.valueSlug);
+  if(!value){notFound(route.valueSlug);return}
+  const list=sortItems(D[type].filter(item=>fieldMatches(item,route.field,value)),state.sort);
+  const title=route.field==='reason'&&type==='books'?'Nasıl keşfettim / neden okudum':route.field==='genre'&&type==='films'?'Tür (Letterboxd)':(FILTER_TITLES[route.field]||route.field);
+  document.title=`${title}: ${value} — Arşiv`;
+  const cfg=cfgOf(type),view=viewKey(type);
+  main.innerHTML=`<a class="back" href="${esc(hrefFor('/'+view))}" data-route="/${view}">← ${cfg.label} listesine dön</a><h1 style="margin-top:1rem">${esc(title)}: ${esc(value)}</h1><p class="sub">${list.length.toLocaleString('tr-TR')} ${cfg.unit}</p><div class="grid" style="margin-top:1.4rem">${list.length?list.map(poster).join(''):'<p class="empty">Bu değerle eşleşen kayıt yok.</p>'}</div>`;
+}
+function findTagValue(slug){
+  for(const type of ['books','films','series'])for(const item of D[type])for(const value of fieldValues(item,'mainLabel'))if(globalTagSlug(value)===slug)return value;
+  return '';
+}
+function tagPage(route){
+  const value=findTagValue(route.slug);
+  if(!value){notFound(route.slug);return}
+  const groups=[['films','Filmler'],['series','Diziler'],['books','Kitaplar']];
+  const sections=groups.map(([type,label])=>{
+    const list=sortItems(D[type].filter(item=>fieldMatches(item,'mainLabel',value)),state.sort);
+    if(!list.length)return '';
+    return `<section class="tag-result-section"><div class="sh"><h2>${label}</h2><span class="sub">${list.length.toLocaleString('tr-TR')} kayıt</span></div><div class="grid">${list.map(poster).join('')}</div></section>`;
+  }).join('');
+  document.title=`Etiket: ${value} — Arşiv`;
+  main.innerHTML=`<a class="back" href="${esc(hrefFor('/'))}" data-route="/">← Ana sayfa</a><h1 style="margin-top:1rem">Etiket: ${esc(value)}</h1><p class="sub">Bu etikete sahip tüm kayıtlar</p>${sections||'<p class="empty">Bu etiketle eşleşen kayıt yok.</p>'}`;
+}
+function row(label,value){
+  if(missing(value))return null;
+  return [label,esc(clean(value))];
+}
+function splitMulti(value){
+  return splitList(value).flatMap(part=>clean(part).split(/\s+-\s+/).map(clean)).filter(v=>!missing(v));
+}
+function fictionBucket(value){
+  const s=slugPart(value);
+  if(!s)return '';
+  return ['kurgu','evet','yes','true','fiction'].includes(s)?'kurgu':'kurgu-disi';
+}
+function fieldValues(item,field){
+  if(field==='mainLabel')return splitList(item.mainLabel);
+  if(item.sec==='books'){
+    if(field==='author')return splitList(item.author);
+    if(field==='publisher')return splitList(item.publisher);
+    if(field==='translator')return splitList(item.translator);
+    if(field==='formats')return splitList(item.formats);
+    if(field==='acquisition')return splitList(item.acquisition);
+    if(field==='genre')return item.genres;
+    if(field==='subgenre')return item.subgenres;
+    if(field==='authorOrigin')return splitList(item.authorOrigin);
+    if(field==='fiction')return missing(item.fiction)?[]:[clean(item.fiction)];
+    if(field==='city')return missing(item.city)?[]:[clean(item.city)];
+    if(field==='reason')return splitList(item.reason);
+  }else if(item.sec==='films'){
+    if(field==='genre')return item.genres;
+    if(field==='platform')return splitList(item.platform);
+    if(field==='director')return splitMulti(item.directorRaw);
+    if(field==='firstCity')return splitList(item.firstCity);
+    if(field==='country')return item.countries;
+    if(field==='directorOrigin')return splitList(item.directorOrigin);
+    if(field==='reason')return splitList(item.reason);
+  }else if(item.sec==='series'){
+    if(field==='genre')return item.genres;
+    if(field==='platform')return splitList(item.platform);
+    if(field==='done')return missing(item.doneRaw)?[]:[clean(item.doneRaw)];
+    if(field==='country')return item.countries;
+  }else if(item.sec==='playlists'){
+    if(field==='genre')return item.genres;
+    if(field==='category')return missing(item.category)?[]:[clean(item.category)];
+  }
+  return [];
+}
+function valueKey(value){return clean(value).toLocaleLowerCase('tr-TR')}
+function valueHash(value){let hash=0;for(const c of valueKey(value))hash=(Math.imul(hash,31)+c.charCodeAt(0))|0;return (hash>>>0).toString(36)}
+function siblingValues(type,field){
+  if(field==='mainLabel')return ['books','films','series'].flatMap(kind=>(D[kind]||[]).flatMap(item=>fieldValues(item,field)));
+  return (D[type]||[]).flatMap(item=>fieldValues(item,field));
+}
+function routeValueSlug(type,field,value){
+  const base=slugPart(value);if(!base)return '';
+  const collision=siblingValues(type,field).some(other=>slugPart(other)===base&&valueKey(other)!==valueKey(value));
+  return collision?`${base}-${valueHash(value)}`:base;
+}
+function globalTagSlug(value){return routeValueSlug('books','mainLabel',value)}
+function fieldMatches(item,field,value){
+  if(field==='fiction')return !!fictionBucket(value)&&fictionBucket(item.fiction)===fictionBucket(value);
+  const target=valueKey(value);if(!target)return false;
+  return fieldValues(item,field).some(candidate=>valueKey(candidate)===target);
+}
+function filterPath(type,field,value){
+  const slug=routeValueSlug(type,field,value);
+  return slug?`/${ROUTE_PREFIX[type]}/filtre/${field}/${slug}`:'';
+}
+function fieldChips(item,field){
+  return unique(fieldValues(item,field)).map(value=>{
+    const path=filterPath(item.sec,field,value);
+    return path?`<a class="tag-chip" href="${esc(hrefFor(path))}" data-route="${esc(path)}">${esc(value)}</a>`:'';
+  }).join('');
+}
+function mainLabelChips(item){
+  return unique(fieldValues(item,'mainLabel')).map(value=>{
+    const slug=globalTagSlug(value),path=slug?`/etiket/${slug}`:'';
+    return path?`<a class="tag-chip" href="${esc(hrefFor(path))}" data-route="${esc(path)}">${esc(value)}</a>`:'';
+  }).join('');
+}
+function compactLink(value,label){
+  const url=safeUrl(value);if(!url)return '';
+  return `<a class="compact-link" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(label)}</a>`;
+}
+function chipRow(label,item,field){
+  const chips=fieldChips(item,field);
+  return chips?[label,`<div class="detail-value-chips">${chips}</div>`]:null;
+}
+function findFilterValue(type,field,slug){
+  for(const item of D[type]||[])for(const value of fieldValues(item,field))if(routeValueSlug(type,field,value)===slug)return value;
+  return '';
+}
+function detailSection(title,rows,className=''){
+  const filtered=rows.filter(Boolean);if(!filtered.length)return '';
+  return `<section class="detail-section ${className}"><h2>${esc(title)}</h2><dl class="detail-list">${filtered.map(([label,value])=>`<div class="detail-row"><dt>${esc(label)}</dt><dd>${value}</dd></div>`).join('')}</dl></section>`;
+}
+function detailHeading(item){
+  const subline=item.sec==='books'?fieldChips(item,'author'):item.sec==='films'?fieldChips(item,'director'):(item.yearNumber||item.year?`<span>${esc(item.yearNumber||item.year)}</span>`:'');
+  const series=item.sec==='books'?item.seriesName:item.sec==='films'?item.seriesOrder:'';
+  const title=missing(series)?esc(displayName(item)):`${esc(displayName(item))} <span class="detail-series">(${esc(series)})</span>`;
+  return `<div class="detail-heading"><h1>${title}</h1>${subline?`<div class="detail-subline">${subline}</div>`:''}</div>`;
+}
+function detailArt(item){return `<div class="detail-art">${imageFrame(item,true)}</div>`}
+function detailTop(item){
+  const main=mainLabelChips(item);
+  const links=[
+    item.sec==='books'?compactLink(item.goodreads,'goodreads'):'',
+    item.sec==='films'?compactLink(item.letterboxd,'letterboxd'):'',
+    item.sec==='films'?compactLink(item.tmdb,'tmdb'):''
+  ].filter(Boolean);
+  return `<div class="detail-top-info"><div class="detail-score">${scoreHtml(item)}</div>${main?`<div class="main-label-row">${main}</div>`:''}${links.length?`<div class="compact-links">${links.join('')}</div>`:''}</div>`;
+}
+function detailPage(item){
+  let sections=[];let extra='';
+  if(item.sec==='books'){
+    sections=[
+      detailSection('Kitap',[
+        row('Orijinal adı',item.originalTitle),row('Orijinal yayın tarihi',item.year),row('Türkiye yayın tarihi',item.turkishPublishDate),chipRow('Yayınevi',item,'publisher'),chipRow('Tür',item,'genre'),chipRow('Kurgu mu?',item,'fiction'),row('Yazıldığı dil',item.writtenLanguage),row('Sayfa sayısı',item.pages),
+        chipRow('Yazar',item,'author'),chipRow('Alt tür',item,'subgenre'),chipRow('Yazar köken',item,'authorOrigin'),chipRow('Çevirmen',item,'translator'),row('Baş karakter',item.character),row('Yazar doğum tarihi',item.authorBirth)
+      ]),
+      detailSection('Okuma bilgileri',[
+        chipRow('Nasıl keşfettim / neden okudum',item,'reason'),chipRow('İlk erişim / edinim şekli',item,'acquisition'),row('Kitap bende var mı?',item.owned),chipRow('İlk okunan şehir',item,'city'),row('Kaç kez okudum?',item.readCountRaw),row('Tekrar okur muyum?',item.reread),chipRow('Okunan tüm formatlar',item,'formats'),
+        row('İlk kez okunan tarih',item.firstReadDate),row('Okunduğu dil',item.readLanguage)
+      ])
+    ];
+  }else if(item.sec==='films'){
+    sections=[
+      detailSection('Film',[
+        row('Orijinal film adı',item.originalTitle),chipRow('Yönetmen',item,'director'),row('Yapım yılı',item.year),chipRow('Yapım ülkesi',item,'country'),chipRow('Nasıl keşfettim / neden izledim',item,'reason'),chipRow('İlk kez hangi platformda',item,'platform'),chipRow('İlk kez izlenen şehir',item,'firstCity'),chipRow('Tür (Letterboxd)',item,'genre'),row('İzlenme tarihi',item.watchDate),
+        row('Kaç kez izlendi',item.watchCountRaw),row('Ön ek',item.pre),chipRow('Yönetmen nereli',item,'directorOrigin')
+      ],'film-details')
+    ];
+  }else if(item.sec==='series'){
+    sections=[
+      detailSection('Dizi',[
+        row('Yapım yılı',item.year),chipRow('Tür',item,'genre'),row('Nasıl keşfettim / neden izledim',item.reason),row('İzlenme tarihi',item.watchDate),chipRow('İlk kez hangi platformda',item,'platform'),chipRow('Bitirildi mi?',item,'done'),row('Kaç kez bitirildi',item.completionCountRaw),row('Ne kadarı izlendi',item.watched),chipRow('Yapım ülkesi',item,'country')
+      ])
+    ];
+  }else{
+    sections=[
+      detailSection('Playlist',[
+        row('Kategori',item.category),row('Şarkı sayısı',item.tracksRaw),chipRow('Tür',item,'genre'),row('His',item.feeling)
+      ])
+    ];
+    if(item.spotify)extra=`<p style="margin-top:1.2rem"><a class="listen-btn" href="${esc(item.spotify)}" target="_blank" rel="noopener noreferrer">Playlisti dinle</a></p>`;
+  }
+  main.innerHTML=`<div class="detail-page">${detailHeading(item)}<div class="detail-split"><div class="detail-art-column">${detailArt(item)}${detailTop(item)}</div><div class="detail-content"><div class="detail-sections">${sections.join('')}</div>${extra}<p class="detail-note">Bu kayıt <code>data/</code> klasöründeki veriden gelir; veri GitHub Actions tarafından saatte bir yeniden üretilir.</p></div></div></div>`;
+}
+function notFound(slug){
+  document.title='Kayıt bulunamadı — Arşiv';
+  main.innerHTML=`<a class="back" href="${esc(hrefFor('/'))}" data-route="/">← Ana sayfa</a><div class="placeholder" style="margin-top:1rem"><h2>Kayıt bulunamadı</h2><p>Bu adrese ait bir kayıt yok: <code>${esc(slug)}</code></p></div>`;
+}
+function favoritesView(){
+  const authors=unique(D.books.map(x=>x.author)),directors=unique(D.films.flatMap(x=>x.directors)),genres=unique([...D.films,...D.series,...D.books].flatMap(x=>x.genres));
+  const group=(title,list)=>list.length?`<section><h2>${esc(title)}</h2><ul>${list.map(value=>`<li>${esc(value)}</li>`).join('')}</ul></section>`:'';
+  main.innerHTML=`<h1>Favoriler</h1><p class="sub">Veri kayıtlarından otomatik oluşturulan özetler.</p><div class="favs" style="margin-top:1.5rem">${group('Yazarlar',authors)}${group('Yönetmenler',directors)}${group('Türler',genres)}</div>`;
+}
+function placeholderView(kind){
+  const isConcerts=kind==='concerts';
+  main.innerHTML=`<h1>${CFG[kind].label}</h1><div class="placeholder" style="margin-top:1.5rem"><h2>${isConcerts?'Konserler yakında':'Playlistler yakında'}</h2><p>${isConcerts?'Konser veri tablosu eklenince afişler ve kişisel konser sayfaları burada açılacak.':'Playlist veri tablosu eklenince liste sayfaları burada açılacak.'}</p></div>`;
+}
+function viewKey(type){return type==='playlists'?'lists':type}
+function cfgOf(type){return CFG[viewKey(type)]||CFG[type]||{label:type,unit:type}}
+function nav(){
+  const current=(state.route.kind==='detail'||state.route.kind==='filter')?viewKey(state.route.type):(state.route.view||'');
+  $('#nav').innerHTML=NAV.map(([key,label])=>`<a href="${esc(hrefForView(key))}" data-route="${key==='home'?'/':`/${key}`}" ${current===key?'aria-current="page"':''}>${label}</a>`).join('');
+}
+function render(){
+  updateStatus();nav();
+  if(state.route.kind==='detail'){
+    const item=REG.get(`${state.route.type}:${state.route.slug}`);
+    if(item){document.title=displayName(item)+' — Arşiv';detailPage(item)}else{document.title='Kayıt bulunamadı — Arşiv';notFound(state.route.slug)}
+    return;
+  }
+  if(state.route.kind==='filter'){filterPage(state.route);return}
+  if(state.route.kind==='tag'){tagPage(state.route);return}
+  document.title=CFG[state.route.view]?.label?CFG[state.route.view].label+' — Arşiv':'Arşiv';
+  if(state.route.view==='home')home();
+  else if(['films','series','books','lists'].includes(state.route.view))gridView(state.route.view);
+  else if(state.route.view==='favs')favoritesView();
+  else placeholderView(state.route.view);
+}
+
+const root=document.documentElement;
+function currentTheme(){return root.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')}
+function themeLabel(){$('#theme').textContent=currentTheme()==='dark'?'Açık tema':'Koyu tema'}
+try{const saved=localStorage.getItem('theme');if(saved)root.dataset.theme=saved}catch(_){}
+$('#theme').addEventListener('click',()=>{const next=currentTheme()==='dark'?'light':'dark';root.dataset.theme=next;try{localStorage.setItem('theme',next)}catch(_){}themeLabel()});
+themeLabel();
+
+document.addEventListener('click',event=>{
+  const route=event.target.closest('[data-route]');
+  if(route&&!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&!event.altKey){event.preventDefault();navigate(route.dataset.route);return}
+});
+document.addEventListener('input',event=>{if(event.target.id==='q'){state.q=event.target.value;fillGrid(state.route.view)}});
+document.addEventListener('change',event=>{
+  if(event.target.id==='sort'){state.sort=event.target.value;fillGrid(state.route.view)}
+  if(event.target.id==='min'){state.min=Number(event.target.value);fillGrid(state.route.view)}
+  if(event.target.id==='genre'){state.genre=event.target.value;fillGrid(state.route.view)}
+  if(event.target.id==='status'){state.status=event.target.value;fillGrid(state.route.view)}
+  if(event.target.id==='cat'){state.cat=event.target.value;fillGrid(state.route.view)}
+});
+document.addEventListener('error',event=>{
+  const image=event.target;
+  if(image instanceof HTMLImageElement&&image.closest('.cover')){image.remove();image.closest('.cover')?.classList.remove('has-image')}
+},true);
+function routeSignature(route){return [route.kind,route.type||'',route.view||'',route.slug||'',route.field||'',route.valueSlug||''].join('|')}
+function syncFromLocation(){
+  const next=parseRoute();
+  if(routeSignature(next)===routeSignature(state.route))return;
+  state.route=next;resetFilters();render();
+}
+window.addEventListener('popstate',syncFromLocation);
+window.addEventListener('hashchange',syncFromLocation);
+
+updateStatus();
+loadData();
+</script>
+</body>
+</html>
