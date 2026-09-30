@@ -454,6 +454,7 @@ function hydrate(item){
     item.displayTitle,item.author,item.originalTitle,item.seriesName,item.mainLabel,item.reason,item.platform,
     item.directorRaw,item.category,item.character,item.translator,item.publisher,item.formats,item.acquisition,
     item.authorOrigin,item.city,item.readLanguage,item.writtenLanguage,item.firstCity,item.directorOrigin,
+    item.reasonFound,item.reasonWhy,
     item.watched,item.seriesOrder,item.creator,item.network,item.format,item.statusRaw,item.category,item.feeling,
     item.countries.join(' '),item.genres.join(' '),item.subgenres.join(' ')
   ].filter(Boolean).join(' ');
@@ -1051,7 +1052,6 @@ function detailPage(item){
       detailSection('Kitap',[
         /* Orijinal ad, sitede gosterilen adla ayni degilse gosterilir. */
         originalTitleDiffers(item)?row('Orijinal adı',item.originalTitle):null,
-        ...publishDateRows(item),
         chipRow('Yazar',item,'author'),
         chipRow('Yazar köken',item,'authorOrigin'),
         chipRow('Çevirmen',item,'translator'),
@@ -1061,12 +1061,16 @@ function detailPage(item){
         chipRow('Alt tür',item,'subgenre'),
         row('Yazıldığı dil',item.writtenLanguage),
         row('Baş karakter',item.character),
+        ...publishDateRows(item),
         row('Sayfa sayısı',item.pages)
       ]),
       detailSection('Okuma bilgileri',[
         chipRow('İlk erişim / edinim şekli',item,'acquisition'),
         chipRow('İlk kez okuduğum şehir',item,'city'),
         chipRow('Okuduğum medium',item,'formats'),
+        /* row() bos degerde null doner; doluysa gosterilir. */
+        row('Nasıl keşfettim',item.reasonFound),
+        row('Neden okudum',item.reasonWhy),
         row('Yoğunluk',item.density),
         row('İlk okuduğum dönem',item.firstReadLabel||item.firstReadDate),
         row('Kaç kez okudum?',item.readCountRaw),

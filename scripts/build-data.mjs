@@ -50,6 +50,8 @@ const SCHEMAS = {
     seriesName: ['seri sıralaması', 'seri adı'],
     mainLabel: ['main label'],
     reason: ['=nasıl keşfettim / neden okudum'],
+    reasonFound: ['nasıl keşfettim'],
+    reasonWhy: ['neden okudum'],
     goodreads: ['goodreads linki'],
     publisher: ['yayınevi'],
     translator: ['çevirmen'],

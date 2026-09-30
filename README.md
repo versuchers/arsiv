@@ -734,17 +734,39 @@ kayıt olduğu için olduğu gibi bırakıldı.
 Liste sayfaları (`/film`, `/kitap`, ...) 6 sütunda kaldı — orada kart
 sayısı 30 ve bilinçli olarak sıkıştırılmış.
 
+### Kitaplarda "nasıl keşfettim" / "neden okudum" eşleşmiyordu (bulunan hata)
+
+Sheet'teki kitap tablosunda bu iki sütun **ayrı**:
+`neden okudum` ve `nasıl keşfettim` (sonuncunun başında boşluk var).
+Kodda ise tek bir sütun adı aranıyordu: `reason: ['=nasıl keşfettim /
+neden okudum']`. Böyle bir sütun yok, üstelik `=` ile "tam eşleşme" zorunlu
+olduğu için bulanık eşleşme de devreye girmiyordu. Film ve dizilerde
+`reasonFound` + `reasonWhy` olarak ayrı ayrı tanımlı olduğu için kitaplara da
+ikisi eklendi.
+
+Sonuç: 199 kitaptan **19'unda "Nasıl keşfettim"** dolu (ör. Dune →
+"Önerildi", Şelik Mağaraları → "Orkun Uçar önerisi", Taht Oyunları → "Dizi
+Uyarlaması"). **"Neden okudum" sütunu şu an hiç dolu değil** (0/199); doldurulduğu
+gerek satır kendiliğinden çıkacak.
+
+Satırlar "Okuma bilgileri"nde **Yoğunluk'un hemen üstünde**, ayrı ayrı iki
+satır olarak duruyor. `row()` boş değerde `null` döndüğü için dolu olmayanlar
+hiç görünmüyor.
+
+Bu alanlar `hydrate()` arama dizinine de eklendi — böylece kitaplar kadar
+film ve dizilerde de "Nasıl keşfettim" / "Neden izledim" metinleri aranabilir
+hale geldi (daha önce `item.reason` vardı, bu ikisi yoktu).
+
 ### Kitap detay sayfası yeniden sıralandı
 
 **Kitap** kutusu, istenen sırada:
 
 1. Orijinal adı — **sadece sitede gösterilen addan farklıysa**
-2. Orijinal yayın tarihi
-3. Türkiye yayın tarihi
-4. Yazar · 5. Yazar köken · 6. Çevirmen · 7. Yayınevi · 8. Kurgu mu?
-9. Tür · 10. Alt tür · 11. Yazıldığı dil · 12. Baş karakter · 13. Sayfa sayısı
+2. Yazar · 3. Yazar köken · 4. Çevirmen · 5. Yayınevi · 6. Kurgu mu?
+7. Tür · 8. Alt tür · 9. Yazıldığı dil · 10. Baş karakter
+11. Orijinal yayın tarihi · 12. Türkiye yayın tarihi · 13. Sayfa sayısı
 
-*Yazar doğum tarihi çıkarıldı.*
+*Yazar doğum tarihi çıkarıldı; tarih satırları "Sayfa sayısı"n üstüne alındı.*
 
 `originalTitleDiffers()` artık `displayName()` ile karşılaştırıyor (önceden
 `filmName()` idi, yalnızca filmlerde doğruydu). 199 kitaptan **127'sinde**
@@ -760,10 +782,8 @@ Etiket değişiklikleri: "İlk okunan şehir" → **İlk kez okuduğum şehir**,
 "İlk kez okunan tarih" → **İlk okuduğum dönem**. Filtre sayfası başlığı da
 (`FILTER_TITLES.city`) güncellendi.
 
-Bu sıralamada **"Nasıl keşfettim / neden okudum"** satırı yok; listede
-geçmediği için çıkarıldı. Zaten hiç görünmüyordu: kitaplarda `reason`
-sütununa karşılık gelen bir sütun yok (`check-data.mjs` bunu "eşleşmeyen
-alan" olarak raporluyor). Sheet'e bu sütunu eklersen söyle, geri koyarım.
+Bu sıralamada **"Nasıl keşfettim / neden okudum"** satırları aşağıdaki
+düzeltmeyle geri geldi ve "Yoğunluk"un üstüne yerleştirildi.
 
 ### Detay sayfalarında önceki/sonraki okları
 
