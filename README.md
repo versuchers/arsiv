@@ -734,6 +734,31 @@ kayıt olduğu için olduğu gibi bırakıldı.
 Liste sayfaları (`/film`, `/kitap`, ...) 6 sütunda kaldı — orada kart
 sayısı 30 ve bilinçli olarak sıkıştırılmış.
 
+### "Yazıldığı dil" artık tıklanabilir
+
+Detay sayfasında "Yazıldığı dil" artık bir bağlantı; tıklanınca o dilde
+yazılmış tüm kitaplar listeleniyor
+(`/kitap/filtre/writtenLanguage/<slug>`).
+
+Bunun için iki şey gerekiyordu ve ikisi de eksikti:
+
+- `fieldValues()` kitaplar bölümünde `writtenLanguage` alanı **hiç tanımlı
+  değildi** — filtre çalışması için eklendi (`splitList` ile, "İngilizce,
+  Fransızca" gibi çoklu değerleri böyle ayırıyor).
+- `FILTER_TITLES` içinde karşılığı olmadığı için filtre sayfasının başlığı
+  ham alan adını (`writtenLanguage`) gösterecekti; **"Yazıldığı dil"** eklendi.
+
+Doğrulama: İngilizce → **88 kitap**, Türkçe → **68 kitap**, hatasız.
+
+Aynı şekilde tıklanabilir olabilir: "Okuduğum dil" (`readLanguage`) — söyle,
+yaparım.
+
+### "Yoğunluk" satırı kaldırıldı
+
+Kitap, film ve dizi detay sayfalarından üçünden de kaldırıldı; sayfalar
+tarayıcıda tek tek kontrol edildi. `build-data.mjs` hâlâ `density` alanını
+üretiyor (JSON'da dursun, geri istersen tek satır); sadece gösterilmiyor.
+
 ### Kitaplarda "nasıl keşfettim" / "neden okudum" eşleşmiyordu (bulunan hata)
 
 Sheet'teki kitap tablosunda bu iki sütun **ayrı**:
