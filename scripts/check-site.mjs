@@ -18,7 +18,7 @@
  * Bagimlilik yok.   node scripts/check-site.mjs
  */
 import { createServer } from 'node:http';
-import { readFileSync, existsSync, statSync, readdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { readFileSync, existsSync, statSync, readdirSync, mkdtempSync, rmSync, openSync, closeSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { join, dirname, extname } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -199,16 +199,32 @@ const failures = [];
 
 async function check(route) {
   const url = `http://127.0.0.1:${port}${PREFIX}/${route.path}`;
-  let dom = '';
+  /* DOM dogrudan okunmaz; bir dosyaya yazdirilir.
+     Bunun nedeni somut bir hata: stdout bir PIPE oldugunda, tarayici ana
+     sureci bitse bile alt surecler (crashpad vb.) taniticida acik tuttugu icin
+     Node pipe'in kapanmasini bekler ve sure dolunca ETIMEDOUT verir. Dosya
+     taniticisi kullanilirsa beklenecek sey yalnizca surec sonudur.
+     (Ayrica 60 MB DOM'un bellekten gecmesi de gerekmiyor.) */
+  const domFile = join(profile, 'dom.html');
+  let fd = null;
   try {
-    dom = execFileSync(browser, [
+    fd = openSync(domFile, 'w');
+    execFileSync(browser, [
       '--headless=new', '--disable-gpu', '--no-sandbox', '--hide-scrollbars',
       `--user-data-dir=${profile}`, '--virtual-time-budget=25000', '--dump-dom', url
-    ], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 90000, maxBuffer: 64 * 1024 * 1024 });
+    /* 180 sn: sayfa Google Fonts'u bekliyor. Ag yavas olan bir makinede
+       90 sn dar kalir ve "tarayici calistirilamadi" gibi YANLIIS bir hata
+       uretir; asil sayfa hatasi bu kadar surede gorunmez. */
+    ], { stdio: ['ignore', fd, 'ignore'], timeout: 180000 });
   } catch (error) {
+    if (fd !== null) { try { closeSync(fd); } catch { /* yoksay */ } fd = null; }
     failures.push(`${route.path}: tarayici calistirilamadi (${error.message.split('\n')[0]})`);
     return;
   }
+  closeSync(fd);
+  let dom = '';
+  try { dom = readFileSync(domFile, 'utf8'); }
+  catch { failures.push(`${route.path}: tarayici ciktisi okunamadi`); return; }
   const match = dom.match(/<div id="__probe"[^>]*>([\s\S]*?)<\/div>/);
   if (!match) { failures.push(`${route.path}: sayfa yuklenmedi (probe yok)`); return; }
   const decode = (s) => s.replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'");
@@ -249,6 +265,9 @@ log('');
 if (failures.length) {
   log(`== BASARISIZ: ${failures.length} sorun ==`);
   for (const message of failures) log(`   x ${message}`);
+  /* Workflow'ta continue-on-error: true; yine de not birak ki akis
+     sayfasinda ne oldugu gorunsun (logu acmak zorunda kalmasin). */
+  log(`::error title=Rota denemesi basarisiz (${failures.length} sorun)::${failures.slice(0, 8).join(' | ')}`);
   process.exit(1);
 }
 log(`== TAMAM: ${ROUTES.length} rota sorunsuz ==`);

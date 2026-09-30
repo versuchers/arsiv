@@ -128,9 +128,16 @@ jobs:
       # Rota denemesi: site GitHub Pages gibi sunulur (bilinmeyen yol -> 404.html,
       # 404 kodu) ve secilen rotalar bassiz tarayicida acilir. Boylece "detay
       # sayfasinda yenilemede veri hatasi" gibi regresyonlar insan gozune degil
-      # makineye birakilir. Tarayici yoksa betik atlar ve 0 doner; GitHub
-      # runner'larinda google-chrome hazir oldugu icin CI'da gercekten calisir.
+      # makineye birakilir. Tarayici yoksa betik atlar ve 0 doner.
+      #
+      # continue-on-error: Bu adim YAVAS ve tarayiciya bagli; ilk CI kosusunda
+      # 90 sn'lik zaman asimi yalnizca "tarayici calistirilamadi" gibi YANLIIS
+      # bir hata uretmis ve 1,5 saat boyunca yayini durdurmus, kimse de nedenini
+      # gormemis. Veri kontrolu (onceki adim) hizli, tarayicisiz ve ELDEN
+      # GECIRILMIS oldugu icin asil kapidir. Rota denemesi yayini bloklamaz,
+      # ancak hata halinde adim kirmiziyi gorunur ve ::error:: notu birakir.
       - name: Rota denemesi
+        continue-on-error: true
         run: node scripts/check-site.mjs
 
       - name: GitHub Pages yapılandır

@@ -21,6 +21,8 @@ const fail = (message) => problems.push(message);
 const warn = (message) => warnings.push(message);
 const log = (message) => console.log(message);
 
+const clean = (value) => String(value ?? '').replace(/\s+/g, ' ').trim();
+
 const read = (rel) => {
   const full = join(ROOT, rel);
   if (!existsSync(full)) { fail(`${rel} yok`); return null; }
@@ -59,7 +61,12 @@ for (const type of TYPES) {
     if (!item.slug) fail(`${where}: slug yok`);
     if (!item.id) fail(`${where}: id yok`);
     if (item.sec !== type) fail(`${where}: sec="${item.sec}" olmali "${type}"`);
-    if (typeof item.searchText !== 'string') fail(`${where}: searchText yok (arama bozulur)`);
+    /* searchText JSON'da BILEREK YOK: tarayicida hydrate() uretiyor, boylece
+       her kayit ~20 alanin kopyasini tasimiyor. Dolayisiyla JSON'da
+       aranip bulunamaz; aramanin saglamligi, dizinin kurulacagi kaynak
+       alanlarin (once title) dolu olmasina bagli. Gercek arama denemesi
+       check-site.mjs'te, sayfa gercekten acilip yapilir. */
+    if (typeof clean(item.title) !== 'string' || !clean(item.title)) fail(`${where}: title yok (arama dizini kurulamaz)`);
     if (item.slug) {
       if (seenSlug.has(item.slug)) fail(`${where}: slug "${item.slug}" ayni tip icinde tekrarlaniyor`);
       seenSlug.add(item.slug);
@@ -175,11 +182,18 @@ log('');
 if (warnings.length) {
   log(`-- ${warnings.length} uyari --`);
   for (const message of warnings) log(`   ! ${message}`);
+  // Uyarilar akis listesinde gorunsun ama islemi durdurmasin.
+  for (const message of warnings.slice(0, 10)) log(`::warning title=Tutarlilik uyarisi::${message}`);
 }
 log('');
 if (problems.length) {
   log(`== BASARISIZ: ${problems.length} sorun ==`);
   for (const message of problems) log(`   x ${message}`);
+  /* Ozet GitHub akis sayfasinda ANNOTATION olarak gorunur; yoksa kullanici
+     yalnizca kirmizi X gorup nedenini ogrenmek icin logu acmak zorunda kalir.
+     944 sorunu tek tek yazmak gürültü olurdu: ilk 10'u tek not, kalanı sayı. */
+  const head = problems.slice(0, 10).map((m) => `- ${m}`).join('\n');
+  log(`::error title=Tutarlilik kontrolu basarisiz (${problems.length} sorun)::Yayinlama durduruldu.\n${head}${problems.length > 10 ? `\n- ... ve ${problems.length - 10} sorun daha (logu acin).` : ''}`);
   process.exit(1);
 }
 log(`== TAMAM: tum kontroller gecti (${total} kayit) ==`);
