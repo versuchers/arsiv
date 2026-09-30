@@ -91,7 +91,11 @@ const SCHEMAS = {
     platform: ['ilk izlediğim platform', 'ilk kez hangi platformda'],
     director: ['yönetmen'],
     image: ['film afişi linki'],
-    originalTitle: ['film orjinal adı', 'film orijinal adı'],
+    originalTitle: ['film orjinal adı', 'film orijinal adı'],    /* Sheet'teki 'alternatif isim / arama terimleri' sutunu: yalnizca arama icin.
+       Hem baska adlar hem arama anahtar kelimeleri iceriyor ("alien",
+       "kara sovalye, batman", "cin"); bu yuzden titleCase UYGULANMAZ, metin
+       aynen korunur. Arama zaten foldText ile kucuk harfe indiriyor. */
+    altTitle: ['alternatif isim / arama terimleri', 'alternatif isim', 'arama terimleri'],
     firstCity: ['ilk izlediğim şehir', 'ilk kez izlenen şehir'],
     watchDate: ['izleme tarihi', 'izlenme tarihi'],
     watchCount: ['kaç kez izledim', 'kaç kez izlendi'],
@@ -463,6 +467,7 @@ function makeItems(type, headers, rows) {
         seriesName: titleCase(get('seriesName')),
         author: titleCase(get('author')),
         originalTitle: titleCase(get('originalTitle')),
+        altTitle: get('altTitle'),
         mainLabel: titleCase(get('mainLabel')),
         reason: titleCase(get('reason')),
         reasonFound: titleCase(get('reasonFound')),
@@ -502,6 +507,7 @@ function makeItems(type, headers, rows) {
         directorRaw: titleCase(get('director')),
         directors: splitList(get('director')).map(titleCase),
         originalTitle: titleCase(get('originalTitle')),
+        altTitle: get('altTitle'),
         firstCity: titleCase(get('firstCity')),
         watchDate: get('watchDate'),
         seriesOrder: titleCase(get('seriesOrder')),
@@ -544,6 +550,7 @@ function makeItems(type, headers, rows) {
         countries: splitList(get('country')).map(trCountry),
         statusRaw: titleCase(get('status')),
         originalTitle: titleCase(get('originalTitle')),
+        altTitle: get('altTitle'),
         creator: titleCase(get('creator')),
         favoriteSeason: titleCase(get('favoriteSeason')),
         network: titleCase(get('network')),

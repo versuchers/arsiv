@@ -734,6 +734,39 @@ kayıt olduğu için olduğu gibi bırakıldı.
 Liste sayfaları (`/film`, `/kitap`, ...) 6 sütunda kaldı — orada kart
 sayısı 30 ve bilinçli olarak sıkıştırılmış.
 
+### Film araması "alternatif isim / arama terimleri" sütununu da kapsıyor
+
+İstediğin altı sütunun **beşi zaten** arama dizinindeydi (`hydrate()`):
+film (başlık), film orjinal adı, main label, seri sıralaması, yönetmen.
+Eksik olan tek biriydi: sheet'teki **"alternatif isim / arama terimleri"**
+sütunu — ne şemada ne de arama dizininde vardı.
+
+Eklenenler:
+
+- `SCHEMAS.films.altTitle: ['alternatif isim / arama terimleri', ...]`
+- film kayıtlarına `altTitle: get('altTitle')` — **`titleCase` uygulanmadı**,
+  çünkü sütun hem ad hem arama kelimesi taşıyor ("alien", "cin",
+  "kara şövalye, batman"); arama zaten `foldText` ile küçük harfe indiriyor
+- `hydrate()` arama dizinine `item.altTitle`
+
+**494 filmin 101'inde** bu sütun dolu. Altı alanın hepsi tarayıcıda
+denendi, hepsi sonuç döndürdü (hata yok):
+
+| Alan | Sorgu | Sonuç |
+|---|---|---|
+| film (başlık) | `Dabbe` | 6 |
+| alternatif isim | `alien` | 7 |
+| film orjinal adı | `300` | 2 |
+| main label | `Epik` | 1 |
+| seri sıralaması | `300 #1` | 1 |
+| yönetmen | `Nolan` | 9 |
+
+**Yerel test notu:** `run-build.ps1` CSV'leri indirmez, diskteki kopyaları
+kullanır. Yeni sütun çıktığında CSV'yi önce `scripts/sources.json`daki
+adreslerden tazelemek gerekiyor (build betigindeki `csvUrl()` dönüşümüyle:
+`/pubhtml` → `/pub` + `output=csv`). Yoksa eski CSV'den üretir ve yeni
+sütun sessizce boş gelir.
+
 ### "Yazar köken" satırı kaldırıldı
 
 Kitap detay sayfasından çıkarıldı. Alan **veride ve arama dizininde
