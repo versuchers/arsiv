@@ -534,6 +534,59 @@ Apostrof kuralı uygulanmadığı için `Calla'Nın Kurtları` gibi hatalar vard
   (`titleCase` yalnızca gösterim metnini değiştiriyor, slug zaten küçük harfe iniyor.)
 
 
+## Yeni renk paleti
+
+Koyu tema tamamen yeniden boyandi:
+
+| Rol | Renk |
+|---|---|
+| Ana arka plan | `#0F0F10` (grafit siyahı) |
+| Kartlar / panel | `#18181A` |
+| Kenarlıklar | `#26262A` |
+| Ana metin | `#E3DEC3` (soluk kemik / parşömen) |
+| İkincil metin | `#8A8778` |
+| Vurgu (accent) | `#C5A880` (eski pirinç / antik altın) |
+
+Bu altı renk birebir kullanıldı. Kalan yüzeyler onlardan türetildi:
+
+* `--raise` (iç kartlar) `#1E1E22` - panelden bir tık açık.
+  `#212125` denendi ama oradaki ikincil metin 4.44:1 düşüyordu; bu değer 4.6:1.
+* `--well` (içe gömülü alanlar) `#0A0A0B`.
+* `--star` (puan yıldızları) `#B29572` - accent biraz sönük, böylece bağlantılarla yarışmıyor.
+* `--link` `#D4B98C` - accentin biraz açığı, bağlantı olarak 8.5:1.
+* Gölgeler saf siyah (`rgba(0,0,0,.72)`), vurgu çizgisi sıcak (`rgba(227,222,195,.07)`).
+* Afiş yer tutucusu için ayrı `--cover` (`#1B1B1F`) ve çerçeve `--cover-frame`
+  (`rgba(227,222,195,.24)`) eklendi. Yer tutucu `--well` ile doluydu ve koyu temada
+  panelden koyu olduğu için "delik" gibi görünüyordu.
+
+### Form kontrolleri için ayrı kenar tonu
+Tarayıcı, arama kutusu ve `kbd` gibi kontroller `--line` (#26262A) ile çiziliyordu.
+Bu renk `#0F0F10` üzerinde 1.27:1 - yani kontroller **görünmez** oluyordu.
+Bu yüzden `--line-ctl` eklendi (`#5E5E66`, dolgu üzerinde 3.08:1) ve yalnızca bu
+üç kontrol kuralı ona geçirildi. Dekoratif kenarlıklar sizin `#26262A` değerinizde kaldı.
+
+### Açık tema
+Sitenin açık/koyu tema anahtarı var ve verdiğiniz palet koyu olduğu için açık tema
+**aynı renk ailesinden türetildi** (soğuk mavi-gri + bordo gitti):
+
+| Rol | Renk |
+|---|---|
+| Arka plan | `#E9E4D3` (parşömen) |
+| Panel / kart | `#F2EEE0` / `#FBF8EE` |
+| Kenarlık | `#CFC7AE` |
+| Ana metin | `#1F1D18` (mürekkep) |
+| İkincil metin | `#625E4A` |
+| Vurgu | `#7E5F2F` (koyu pirinç) |
+
+Tema anahtarını kaldırıp siteyi her koşulda koyu yapmak isterseniz tek yapılacak şey:
+`:root` bloğundaki değerlerin aynısını `:root[data-theme="dark"]` bloğuna kopyalamak.
+
+### Kontrast ölçümü (WCAG)
+`#E3DEC3` / `#0F0F10` = **14.1:1**, `#8A8778` / `#0F0F10` = 5.3:1,
+`#C5A880` / `#0F0F10` = 8.5:1, `#D4B98C` / `#18181A` = 9.4:1.
+Hedeflerin hepsi 4.5:1 üstünde. Açık temada en düşük değer 4.7:1 (ikincil metin).
+
+
 ## Yeni başlık gelirse
 
 `scripts/build-data.mjs` içindeki `SCHEMAS[type]` listesine yeni alan adını ve
