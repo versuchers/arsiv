@@ -90,6 +90,20 @@ p{margin-top:.55rem}
 @media (max-width:880px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media (max-width:700px){.grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:1.2rem .7rem}}
 .niche{background:var(--well);border-radius:4px;padding:1.2rem 1.1rem;overflow:hidden;box-shadow:inset 0 10px 18px -6px var(--sh1),inset 0 -1px 0 var(--hi)}
+/* Anasayfa raflari liste sayfalarindan ayridir: orada 6 sutun vardir ve kartlar
+   kucuk kalir. Anasayfada film/kitap/dizi 4, playlist 3 sutunda durur; kart
+   genisligi 1fr oldugu icin otomatik buyur. */
+.grid-home{grid-template-columns:repeat(4,minmax(0,1fr));gap:1.8rem 1.4rem}
+.grid-home-pl{grid-template-columns:repeat(3,minmax(0,1fr));gap:1.8rem 1.4rem}
+@media (max-width:1080px){.grid-home{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:820px){.grid-home,.grid-home-pl{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.grid-home,.grid-home-pl{gap:1.1rem .7rem}}
+/* Buyuk kartin yazilari da buyusun; afis yokken gosterilen baslik dahil. */
+.niche .cap{font-size:.95rem}
+.niche .pl-name{font-size:1rem}
+.niche .pc{font-size:.86rem}
+.niche .cover .ct{font-size:1.3rem}
+.niche .cover .cy{font-size:.8rem}
 .niche::after{content:"";display:block;height:11px;margin:0 -1.1rem;background:linear-gradient(var(--ledge-a),var(--ledge-b));border-top:1px solid var(--hi);box-shadow:0 -8px 12px -8px var(--sh1)}
 .poster-card{min-width:0;content-visibility:auto;contain-intrinsic-size:auto 300px}
 .poster{position:relative;display:block;text-decoration:none;background:none;border:0;padding:0;text-align:left;cursor:pointer;transition:transform .15s}
@@ -584,13 +598,18 @@ function poster(item){
   return `<article class="poster-card${isPl?' pl-card':''}"><a class="poster" href="${esc(hrefFor(item.route))}" data-route="${esc(item.route)}" title="${esc(name)}" aria-label="${esc(name)}${item.score==null?'':', '+esc(stars(item.score))+' puan'}">${imageFrame(item)}</a><div class="cap">${cap}</div></article>`;
 }
 function unique(values){return [...new Set(values.filter(v=>!missing(v)))].sort((a,b)=>a.localeCompare(b,'tr'))}
-/* Sheets'teki "anasayfa sıra" sütunundan gelen favori kayıtlar (1-12). */
+/* Sheets'teki "anasayfa sıra" sütunundan gelen favori kayıtlar. Anasayfada
+   sıradaki ilk HOME_FAV_LIMIT kayıt gösterilir; hepsi /kitap, /film, /dizi
+   listelerinde "anasayfa sıra" sütunu dolu olarak durur. */
+const HOME_FAV_LIMIT=8;
 function favoriteItems(kind){
-  return (D[kind]||[]).filter(item=>item.homeOrder!=null).sort((x,y)=>x.homeOrder-y.homeOrder||y.rowIndex-x.rowIndex);
+  return (D[kind]||[]).filter(item=>item.homeOrder!=null)
+    .sort((x,y)=>x.homeOrder-y.homeOrder||y.rowIndex-x.rowIndex)
+    .slice(0,HOME_FAV_LIMIT);
 }
 function favRow(kind){
   const list=favoriteItems(kind);
-  return `<div class="sh"><h2>${CFG[kind].fav}</h2><a class="link" href="${esc(hrefFor('/'+kind))}" data-route="/${kind}">Tümünü gör</a></div><div class="niche"><div class="grid">${list.length?list.map(poster).join(''):'<p class="empty">Henüz favori işaretlenmedi.</p>'}</div></div>`;
+  return `<div class="sh"><h2>${CFG[kind].fav}</h2><a class="link" href="${esc(hrefFor('/'+kind))}" data-route="/${kind}">Tümünü gör</a></div><div class="niche"><div class="grid grid-home">${list.length?list.map(poster).join(''):'<p class="empty">Henüz favori işaretlenmedi.</p>'}</div></div>`;
 }
 /** Anasayfa playlist satiri: "main" kategorisinden elle secilen 12 kayit, sirayla. */
 function homePlaylistItems(){
@@ -604,7 +623,7 @@ function homePlaylistItems(){
 }
 function playlistFavRow(){
   const list=homePlaylistItems();
-  return `<div class="sh"><h2>${CFG.lists.fav}</h2><a class="link" href="${esc(hrefFor('/lists'))}" data-route="/lists">Tümünü gör</a></div><div class="niche"><div class="grid">${list.length?list.map(poster).join(''):'<p class="empty">Henüz seçilmedi.</p>'}</div></div>`;
+  return `<div class="sh"><h2>${CFG.lists.fav}</h2><a class="link" href="${esc(hrefFor('/lists'))}" data-route="/lists">Tümünü gör</a></div><div class="niche"><div class="grid grid-home-pl">${list.length?list.map(poster).join(''):'<p class="empty">Henüz seçilmedi.</p>'}</div></div>`;
 }
 function home(){
   /* Görünüm anahtarı ile veri anahtarı aynı değil ('lists' -> 'playlists'), dataType() gerekir. */

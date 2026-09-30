@@ -711,6 +711,29 @@ kullanıyor; artık `Isaac`, `isaac` ve `İsaac` aynı kayda gidiyor.
 `/ara?q=isaac` rotası `check-site.mjs` eşiklerine eklendi (sonuç ≥ 1)
 ve bulunmayan bir sorgu için `maxCards: 0` eklendi.
 
+### Anasayfa rafları büyütüldü
+
+Satırlar liste sayfalarıyla aynı 6 sütunu paylaşıyordu, bu yüzden
+kartlar küçüktü. Anasayfa için ayrı ızgara sınıfları:
+
+| Bölüm | Önce | Sonra |
+|---|---|---|
+| Favori kitaplar / filmler / diziler | 6 sütun, ~12 kayıt | **4 sütun, ilk 8 kayıt** |
+| Favori playlistler | 6 sütun, 12 kayıt | **3 sütun, 12 kayıt (4 satır)** |
+
+Kart genişliği `1fr` olduğu için sütun azalınca kartlar kendiliğinden
+büyüyor (ölçüldü: 200×300 px → **319×479 px**, playlist 433×433 px). Buna
+uyumlu olarak afiş olmayan kartların başlığı, puan yazısı ve playlist
+adı da büyütüldü (`.niche` kapsayıcısı yalnızca anasayfada kullanılıyor).
+
+Sınır kodda: `HOME_FAV_LIMIT=8`. Sheets'teki "anasayfa sıra" sütunu
+dokunulmadı; 8'den sonraki kayıtlar `/kitap`, `/film`, `/dizi`
+listelerinde kendi sırasıyla duruyor. Playlist sırası elle seçilmiş 12
+kayıt olduğu için olduğu gibi bırakıldı.
+
+Liste sayfaları (`/film`, `/kitap`, ...) 6 sütunda kaldı — orada kart
+sayısı 30 ve bilinçli olarak sıkıştırılmış.
+
 ### Favoriler sayfası
 
 - **Yazarlar**: istenen 10 kişi, istenen sırayla. Yazım veriden alınır, kod
