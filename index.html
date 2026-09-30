@@ -85,19 +85,15 @@ p{margin-top:.55rem}
 .ctl{display:flex;flex-wrap:wrap;gap:.7rem;margin:1.1rem 0 1.6rem}
 .ctl input,.ctl select{font-family:var(--ui);font-size:.88rem;background:var(--well);border:1px solid var(--line-ctl);color:var(--text);padding:.5rem .7rem;border-radius:3px;box-shadow:inset 0 2px 5px var(--sh1)}
 .ctl input{flex:1 1 200px;max-width:320px}
-.grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:1.5rem 1.1rem}
-@media (max-width:1080px){.grid{grid-template-columns:repeat(5,minmax(0,1fr))}}
-@media (max-width:880px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
-@media (max-width:700px){.grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:1.2rem .7rem}}
+/* Tek izgara sistemi. Once 6 sutundu; kartlar kucuk kaldigi icin 4'e
+   indirildi. Playlist kartlari kare (aspect-ratio:1/1) ve daha genis
+   durmasi daha iyi gorundugu icin 3 sutunda. */
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1.7rem 1.3rem}
+.grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:900px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:700px){.grid,.grid-3{grid-template-columns:repeat(2,minmax(0,1fr));gap:1.2rem .7rem}}
 .niche{background:var(--well);border-radius:4px;padding:1.2rem 1.1rem;overflow:hidden;box-shadow:inset 0 10px 18px -6px var(--sh1),inset 0 -1px 0 var(--hi)}
-/* Anasayfa raflari liste sayfalarindan ayridir: orada 6 sutun vardir ve kartlar
-   kucuk kalir. Anasayfada film/kitap/dizi 4, playlist 3 sutunda durur; kart
-   genisligi 1fr oldugu icin otomatik buyur. */
-.grid-home{grid-template-columns:repeat(4,minmax(0,1fr));gap:1.8rem 1.4rem}
-.grid-home-pl{grid-template-columns:repeat(3,minmax(0,1fr));gap:1.8rem 1.4rem}
-@media (max-width:1080px){.grid-home{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media (max-width:820px){.grid-home,.grid-home-pl{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:560px){.grid-home,.grid-home-pl{gap:1.1rem .7rem}}
+
 /* Buyuk kartin yazilari da buyusun; afis yokken gosterilen baslik dahil. */
 .niche .cap{font-size:.95rem}
 .niche .pl-name{font-size:1rem}
@@ -130,9 +126,9 @@ p{margin-top:.55rem}
 .pal4{background:linear-gradient(#2c4237,#122019)}
 .pal5{background:linear-gradient(#43303a,#20141b)}
 .badge{position:absolute;top:14px;left:14px;z-index:4;font-family:var(--ui);font-weight:600;font-size:.65rem;padding:.1rem .45rem;background:rgba(0,0,0,.55);border:1px solid rgba(233,228,216,.35);color:#E9E4D8;border-radius:2px}
-.cap{font-family:var(--ui);margin-top:.5rem;font-size:.82rem;color:var(--muted);text-align:center}
+.cap{font-family:var(--ui);margin-top:.55rem;font-size:.9rem;color:var(--muted);text-align:center}
 .st{color:var(--star);letter-spacing:.05em;white-space:nowrap}
-.pc{display:block;color:var(--muted);white-space:nowrap;letter-spacing:.02em;font-size:.76rem;margin-top:.15rem}
+.pc{display:block;color:var(--muted);white-space:nowrap;letter-spacing:.02em;font-size:.85rem;margin-top:.2rem}
 .listen-btn{display:inline-block;font-family:var(--ui);font-size:.92rem;font-weight:600;padding:.6rem 1.15rem;border:1px solid var(--link);border-radius:3px;color:var(--link);text-decoration:none;background:var(--raise);transition:background .15s,color .15s}
 .listen-btn:hover{background:var(--link);color:var(--text)}
 @media (prefers-reduced-motion:reduce){.poster,.cover{transition:none}.poster:hover{transform:none}}
@@ -186,7 +182,7 @@ p{margin-top:.55rem}
 .ext-link{font-family:var(--ui);font-size:.78rem;line-height:1.4;color:var(--link);text-decoration:none;border-bottom:1px dotted var(--link);padding-bottom:1px;white-space:nowrap}
 .ext-link:hover{border-bottom-style:solid}
 .ext-link::after{content:" ↗";font-size:.8em;opacity:.65}
-.pl-name{display:block;font-family:var(--ui);font-size:.8rem;font-weight:600;line-height:1.3;color:var(--text);text-align:center;margin-top:.5rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pl-name{display:block;font-family:var(--ui);font-size:.95rem;font-weight:600;line-height:1.3;color:var(--text);text-align:center;margin-top:.55rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pl-card .cover{aspect-ratio:1/1}
 .pager{display:flex;flex-wrap:wrap;gap:.3rem;justify-content:center;margin-top:2.2rem;font-family:var(--ui)}
 .pager a,.pager span{display:inline-flex;align-items:center;justify-content:center;min-width:2.1rem;height:2.1rem;padding:0 .5rem;border:1px solid var(--line);border-radius:3px;color:var(--link);text-decoration:none;font-size:.82rem;background:var(--raise)}
@@ -609,7 +605,7 @@ function favoriteItems(kind){
 }
 function favRow(kind){
   const list=favoriteItems(kind);
-  return `<div class="sh"><h2>${CFG[kind].fav}</h2><a class="link" href="${esc(hrefFor('/'+kind))}" data-route="/${kind}">Tümünü gör</a></div><div class="niche"><div class="grid grid-home">${list.length?list.map(poster).join(''):'<p class="empty">Henüz favori işaretlenmedi.</p>'}</div></div>`;
+  return `<div class="sh"><h2>${CFG[kind].fav}</h2><a class="link" href="${esc(hrefFor('/'+kind))}" data-route="/${kind}">Tümünü gör</a></div><div class="niche"><div class="grid">${list.length?list.map(poster).join(''):'<p class="empty">Henüz favori işaretlenmedi.</p>'}</div></div>`;
 }
 /** Anasayfa playlist satiri: "main" kategorisinden elle secilen 12 kayit, sirayla. */
 function homePlaylistItems(){
@@ -623,7 +619,7 @@ function homePlaylistItems(){
 }
 function playlistFavRow(){
   const list=homePlaylistItems();
-  return `<div class="sh"><h2>${CFG.lists.fav}</h2><a class="link" href="${esc(hrefFor('/lists'))}" data-route="/lists">Tümünü gör</a></div><div class="niche"><div class="grid grid-home-pl">${list.length?list.map(poster).join(''):'<p class="empty">Henüz seçilmedi.</p>'}</div></div>`;
+  return `<div class="sh"><h2>${CFG.lists.fav}</h2><a class="link" href="${esc(hrefFor('/lists'))}" data-route="/lists">Tümünü gör</a></div><div class="niche"><div class="grid grid-3">${list.length?list.map(poster).join(''):'<p class="empty">Henüz seçilmedi.</p>'}</div></div>`;
 }
 function home(){
   /* Görünüm anahtarı ile veri anahtarı aynı değil ('lists' -> 'playlists'), dataType() gerekir. */
@@ -680,7 +676,7 @@ function gridView(kind){
     :[['date',type==='films'?'Son izlemeye göre':'Tarihe göre'],['r','Puana göre'],['year','Yıla göre (yeniden eskiye)'],['yearasc','Yıla göre (eskiden yeniye)'],['title','Ada göre']];
   if(type==='books'&&!options.some(pair=>pair[0]==='author'))options.push(['author','Yazara göre']);
   const cats=type==='playlists'?unique((D.playlists||[]).map(item=>item.category)):[];
-  main.innerHTML=`<h1>${cfg.label}</h1><p class="sub" id="count"></p><div class="ctl"><input id="q" type="search" placeholder="${cfg.label} içinde ara" aria-label="Ara" value="${esc(state.q)}"><select id="sort" aria-label="Sırala">${options.map(([value,label])=>`<option value="${value}">${label}</option>`).join('')}</select>${genres.length?`<select id="genre" aria-label="Tür"><option value="">Tüm türler</option>${genres.map(value=>`<option value="${esc(value)}">${esc(value)}</option>`).join('')}</select>`:''}${kind==='series'?`<select id="status" aria-label="Durum"><option value="">Tüm durumlar</option><option value="done">Bitirdiklerim</option><option value="part">Bitirmadiklerim</option><option value="ongoing">Sürüyor</option></select>`:''}${type==='playlists'?`<select id="cat" aria-label="Kategori"><option value="">Tüm kategoriler</option>${cats.map(value=>`<option value="${esc(value)}">${esc(value)}</option>`).join('')}</select>`:''}<select id="min" aria-label="En düşük puan"><option value="0">Tüm puanlar</option><option value="8">8 ve üstü</option><option value="9">9 ve üstü</option><option value="10">10</option></select></div><div id="grid" class="grid"></div><div id="pager"></div><div id="grid-sentinel" class="grid-sentinel" aria-hidden="true"></div>`;
+  main.innerHTML=`<h1>${cfg.label}</h1><p class="sub" id="count"></p><div class="ctl"><input id="q" type="search" placeholder="${cfg.label} içinde ara" aria-label="Ara" value="${esc(state.q)}"><select id="sort" aria-label="Sırala">${options.map(([value,label])=>`<option value="${value}">${label}</option>`).join('')}</select>${genres.length?`<select id="genre" aria-label="Tür"><option value="">Tüm türler</option>${genres.map(value=>`<option value="${esc(value)}">${esc(value)}</option>`).join('')}</select>`:''}${kind==='series'?`<select id="status" aria-label="Durum"><option value="">Tüm durumlar</option><option value="done">Bitirdiklerim</option><option value="part">Bitirmadiklerim</option><option value="ongoing">Sürüyor</option></select>`:''}${type==='playlists'?`<select id="cat" aria-label="Kategori"><option value="">Tüm kategoriler</option>${cats.map(value=>`<option value="${esc(value)}">${esc(value)}</option>`).join('')}</select>`:''}<select id="min" aria-label="En düşük puan"><option value="0">Tüm puanlar</option><option value="8">8 ve üstü</option><option value="9">9 ve üstü</option><option value="10">10</option></select></div><div id="grid" class="grid${type==='playlists'?' grid-3':''}"></div><div id="pager"></div><div id="grid-sentinel" class="grid-sentinel" aria-hidden="true"></div>`;
   if(!options.some(pair=>pair[0]===state.sort))state.sort=options[0][0];
   $('#sort').value=state.sort;if($('#min'))$('#min').value=String(state.min);if($('#genre'))$('#genre').value=state.genre;if($('#status'))$('#status').value=state.status;if($('#cat'))$('#cat').value=state.cat;
   if(type==='playlists'){const ctl=$('#min');if(ctl)ctl.remove()}
