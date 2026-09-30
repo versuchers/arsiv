@@ -163,6 +163,52 @@ function scaleLabel(value, table) {
  * ------------------------------------------------------------------ */
 
 const clean = (s) => String(s ?? '').replace(/\r/g, '').replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+
+/**
+ * Sheet'te her sey kucuk harfle baslatildigi icin bas harfler otomatik buyutulur:
+ * "ali smith" -> "Ali Smith", "bilim kurgu" -> "Bilim Kurgu", "post-punk" -> "Post-Punk".
+ * Slug uretimi (slugPart) zaten kucuk harfe cevirdigi iciv adresler degismez.
+ */
+function titleCase(value) {
+  const s = clean(value);
+  if (!s) return '';
+  return s.replace(/(^|[\s(\[\]\/"-])(\p{L})/gu, (_, pre, ch) => pre + ch.toLocaleUpperCase('tr-TR'));
+}
+
+/** Yapim ulkeleri Sheet'te karisik (Ingilizce/Turkce, bazi yazim hatali) yaziliyor; hepsi Turkceye gecirilir. */
+const COUNTRY_TR = {
+  // Ana listingeler (Ingilizce)
+  'united states': 'Amerika Birleşik Devletleri',
+  'united kingdom': 'Birleşik Krallık', 'uk': 'Birleşik Krallık',
+  'south korea': 'Güney Kore', 'south korean': 'Güney Kore', 'north korea': 'Kuzey Kore',
+  'france': 'Fransa', 'germany': 'Almanya', 'canada': 'Kanada', 'spain': 'İspanya',
+  'australia': 'Avustralya', 'japan': 'Japonya', 'new zealand': 'Yeni Zelanda',
+  'belgium': 'Belçika', 'italy': 'İtalya', 'ireland': 'İrlanda', 'austria': 'Avusturya',
+  'mexico': 'Meksika', 'brazil': 'Brezilya', 'czechia': 'Çekya', 'czech republic': 'Çekya',
+  'china': 'Çin', 'poland': 'Polonya', 'denmark': 'Danimarka', 'iceland': 'İzlanda',
+  'sweden': 'İsveç', 'switzerland': 'İsviçre', 'luxembourg': 'Lüksemburg',
+  'latvia': 'Letonya', 'russia': 'Rusya', 'serbia': 'Sırbistan', 'thailand': 'Tayland',
+  'norway': 'Norveç', 'argentina': 'Arjantin', 'south africa': 'Güney Afrika',
+  'netherlands': 'Hollanda', 'holland': 'Hollanda', 'bulgaria': 'Bulgaristan',
+  'chile': 'Şili', 'romania': 'Romanya', 'greece': 'Yunanistan', 'india': 'Hindistan',
+  'finland': 'Finlandiya', 'hungary': 'Macaristan', 'colombia': 'Kolombiya',
+  'turkey': 'Türkiye', 'türkiye': 'Türkiye', 'turkiye': 'Türkiye',
+  'hong kong': 'Hong Kong', 'malta': 'Malta',
+  'bosnia hersek': 'Bosna-Hersek', 'north macedonia': 'Kuzey Makedonya',
+  'south macedonia': 'Kuzey Makedonya', 'guadeleope': 'Guadelup', 'guadeloupe': 'Guadelup',
+  'costa rica': 'Kosta Rika', 'el salvador': 'El Salvador', 'sri lanka': 'Sri Lanka',
+  'ivory coast': 'Fildişi Sahili', 'saudi arabia': 'Suudi Arabistan',
+  'united arab emirates': 'Birleşik Arap Emirlikleri',
+  // Sheet'te Turkce yazilmis olanlar (bas harf duzeltmesi icin haritalanir)
+  'hollanda': 'Hollanda', 'avusturalya': 'Avustralya', 'avusturya': 'Avusturya',
+  'bosna hersek': 'Bosna-Hersek', 'isvicre': 'İsviçre',
+  'bulgarisyan': 'Bulgaristan', 'kuzey makedonya': 'Kuzey Makedonya', 'katar': 'Katar'
+};
+function trCountry(value) {
+  const v = clean(value);
+  if (!v) return '';
+  return COUNTRY_TR[v.toLocaleLowerCase('tr-TR')] || titleCase(v);
+}
 const missing = (s) => { const v = clean(s); return !v || /^[-–—]+$/.test(v); };
 
 function numberValue(value) {
@@ -312,7 +358,7 @@ function makeItems(type, headers, rows) {
   const items = [];
   for (const row of rows) {
     const get = (field) => (columns[field] == null ? '' : clean(row[columns[field]]));
-    const title = get('title');
+    const title = titleCase(get('title'));
     if (missing(title)) continue;
     const yearRaw = type === 'books' ? get('originalDate') : get('year');
     const item = {
@@ -327,7 +373,7 @@ function makeItems(type, headers, rows) {
       score: type === 'books' ? numberValue(get('bookScore')) : numberValue(get('score')),
       image: safeUrl(get('image')),
       rawImage: get('image'),
-      genres: splitList(get('genre')),
+      genres: splitList(get('genre')).map(titleCase),
       subgenres: splitList(get('subgenre'))
     };
     if (type === 'books') {
@@ -336,13 +382,13 @@ function makeItems(type, headers, rows) {
         seriesScoreRaw: get('seriesScore'),
         seriesScore: numberValue(get('seriesScore')),
         seriesName: get('seriesName'),
-        author: get('author'),
-        originalTitle: get('originalTitle'),
+        author: titleCase(get('author')),
+        originalTitle: titleCase(get('originalTitle')),
         mainLabel: get('mainLabel'),
         reason: get('reason'),
         goodreads: get('goodreads'),
         publisher: get('publisher'),
-        translator: get('translator'),
+        translator: titleCase(get('translator')),
         character: get('character'),
         formats: get('formats'),
         acquisition: get('acquisition'),
@@ -366,18 +412,18 @@ function makeItems(type, headers, rows) {
       Object.assign(item, {
         watchCountRaw: get('watchCount'),
         watchCount: numberValue(get('watchCount')),
-        pre: get('pre'),
+        pre: titleCase(get('pre')),
         mainLabel: get('mainLabel'),
         reason: get('reason'),
         platform: get('platform'),
-        directorRaw: get('director'),
-        directors: splitList(get('director')),
-        originalTitle: get('originalTitle'),
+        directorRaw: titleCase(get('director')),
+        directors: splitList(get('director')).map(titleCase),
+        originalTitle: titleCase(get('originalTitle')),
         firstCity: get('firstCity'),
         watchDate: get('watchDate'),
         seriesOrder: get('seriesOrder'),
-        countryRaw: get('country'),
-        countries: splitList(get('country')),
+        countryRaw: trCountry(get('country')),
+        countries: splitList(get('country')).map(trCountry),
         directorOrigin: get('directorOrigin'),
         letterboxd: get('letterboxd'),
         tmdb: get('tmdb'),
@@ -409,11 +455,11 @@ function makeItems(type, headers, rows) {
         completionCountRaw: get('completionCount'),
         completionCount: numberValue(get('completionCount')),
         watched: get('watched'),
-        countryRaw: get('country'),
-        countries: splitList(get('country')),
+        countryRaw: trCountry(get('country')),
+        countries: splitList(get('country')).map(trCountry),
         statusRaw: get('status'),
-        originalTitle: get('originalTitle'),
-        creator: get('creator'),
+        originalTitle: titleCase(get('originalTitle')),
+        creator: titleCase(get('creator')),
         network: get('network'),
         language: get('language'),
         format: get('format'),

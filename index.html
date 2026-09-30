@@ -14,7 +14,7 @@
   padding-top:env(safe-area-inset-top,0px);
   padding-bottom:env(safe-area-inset-bottom,0px);
   --bg:#D5DAE2;--panel:#EAEDF2;--raise:#F5F7FA;--well:#C7CDD8;--line:#B7BFCC;
-  --text:#1B2230;--muted:#556074;--accent:#8A2334;--star:#9AA7BD;--link:#fff2cc;
+  --text:#1B2230;--muted:#556074;--accent:#8A2334;--star:#9AA7BD;--link:#6b5a1f;
   --sh1:rgba(24,34,54,.28);--sh2:rgba(24,34,54,.16);--hi:rgba(255,255,255,.7);
   --ledge-a:#B9C1CF;--ledge-b:#A5AEBE;
   --head:'Alegreya',Georgia,'Times New Roman',serif;
@@ -25,14 +25,14 @@
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
     --bg:#1b2230;--panel:#283244;--raise:#303c52;--well:#19212d;--line:#38455c;
-    --text:#E6E2D8;--muted:#A3AEC0;--accent:#DE7488;--star:#9AA7BD;--link:#fff2cc;
+    --text:#B9BFC9;--muted:#8A94A6;--accent:#DE7488;--star:#9AA7BD;--link:#fff2cc;
     --sh1:rgba(6,10,18,.6);--sh2:rgba(6,10,18,.4);--hi:rgba(255,255,255,.06);
     --ledge-a:#3a475e;--ledge-b:#2b3548;
   }
 }
 :root[data-theme="dark"]{
   --bg:#1b2230;--panel:#283244;--raise:#303c52;--well:#19212d;--line:#38455c;
-  --text:#E6E2D8;--muted:#A3AEC0;--accent:#DE7488;--star:#9AA7BD;--link:#fff2cc;
+  --text:#B9BFC9;--muted:#8A94A6;--accent:#DE7488;--star:#9AA7BD;--link:#fff2cc;
   --sh1:rgba(6,10,18,.6);--sh2:rgba(6,10,18,.4);--hi:rgba(255,255,255,.06);
   --ledge-a:#3a475e;--ledge-b:#2b3548;
 }
@@ -55,7 +55,10 @@ nav a[aria-current="page"]{border-bottom-color:var(--accent)}
 .note.is-error{color:#e0a3a3}
 .site-foot{width:min(1100px,calc(100% - 1.5rem));margin:0 auto;padding:.9rem 0 2.5rem;font-family:var(--ui);font-size:.76rem;line-height:1.5;color:var(--muted);border-top:1px solid var(--line)}
 main{width:min(1100px,calc(100% - 1.5rem));margin:1rem auto 3rem;padding:1.5rem;background:var(--panel);border:1px solid var(--line);border-radius:6px;box-shadow:inset 0 1px 0 var(--hi),0 2px 4px var(--sh1),0 22px 44px -8px var(--sh1)}
-main:has(.detail-page){width:min(1100px,calc(100% - 1.5rem),calc((100vh - 185px) * 1.3334 + 75px))}
+main:has(.detail-page){width:min(1100px,calc(100% - 1.5rem))}
+/* Yukseklikten hesaplanan daraltma yalnizca genis ekranda: kisa/kucuk ekranda
+   sayfayi sikistirip kenarlarda buyuk bosluk birakiyordu. */
+@media (min-width:701px){main:has(.detail-page){width:min(1100px,calc(100% - 1.5rem),calc((100vh - 185px) * 1.3334 + 75px))}}
 @media (max-width:520px){main{padding:1.1rem}}
 h1,h2{font-family:var(--head);font-weight:700;margin:0}
 h1{font-size:2.1rem;line-height:1.2}
@@ -121,8 +124,8 @@ p{margin-top:.55rem}
 .detail-heading{grid-column:1/-1;margin:0;padding:0;min-width:0}
 .detail-heading h1{font-size:clamp(2rem,5vw,3.25rem);line-height:1.15;overflow-wrap:anywhere}
 .detail-subline{display:flex;flex-wrap:wrap;align-items:center;gap:.45rem;margin-top:.5rem;color:var(--muted);font-family:var(--ui);font-size:30px;line-height:1.3}
-.detail-subline .link-chip{font-size:1em;text-decoration:none;color:var(--muted)}
-.detail-subline .link-chip:hover{color:var(--text)}
+.detail-subline .link-chip{font-size:1em;text-decoration:none;color:var(--muted);cursor:pointer;border-bottom:1px solid transparent}
+.detail-subline .link-chip:hover{color:var(--text);border-bottom-color:var(--line)}
 .detail-split{display:contents}
 .detail-art-column{grid-column:1;position:sticky;top:1rem;align-self:start;min-width:0;padding:0 calc(var(--gap) / 2) 25px 0}
 .detail-content{grid-column:2;position:relative;min-width:0;padding:0 0 0 calc(var(--gap) / 2)}
@@ -221,10 +224,16 @@ const CFG={
   lists:{label:'Playlistler',unit:'playlist',fav:'Favori playlistler',dateLabel:''}
 };
 const ROUTE_PREFIX={books:'kitap',films:'film',series:'dizi',playlists:'playlist'};
-const FILTER_TITLES={author:'Yazar',genre:'Tür',subgenre:'Alt tür',authorOrigin:'Yazar köken',fiction:'Kurgu mu?',city:'İlk okunan şehir',acquisition:'İlk erişim / edinim şekli',formats:'Okunan tüm formatlar',translator:'Çevirmen',publisher:'Yayınevi',platform:'İlk kez hangi platformda',director:'Yönetmen',firstCity:'İlk kez izlenen şehir',country:'Yapım ülkesi',directorOrigin:'Yönetmen nereli',reason:'Nasıl keşfettim / neden izledim',done:'Bitirildi mi?',category:'Kategori',feeling:'His'};
+const FILTER_TITLES={author:'Yazar',genre:'Tür',subgenre:'Alt tür',authorOrigin:'Yazar köken',fiction:'Kurgu mu?',city:'İlk okunan şehir',acquisition:'İlk erişim / edinim şekli',formats:'Okunan tüm formatlar',translator:'Çevirmen',publisher:'Yayınevi',platform:'İlk kez hangi platformda',director:'Yönetmen',firstCity:'İlk kez izlenen şehir',country:'Yapım ülkesi',directorOrigin:'Yönetmen nereli',reason:'Nasıl keşfettim / neden izledim',done:'Bitirildi mi?',category:'Kategori',feeling:'His',creator:'Creator / showrunner'};
 const NAV=[['home','Ana sayfa'],['films','Filmler'],['series','Diziler'],['books','Kitaplar'],['concerts','Konserler'],['favs','Favoriler'],['lists','Playlistler']];
 /* Playlist siralama sirası: ana liste once, sonra versucher II, artist, genre. */
 const PLAYLIST_CATEGORY_ORDER=['main','versucher II','artist','genre'];
+/* Favoriler sayfasinda gosterilmeyecek yonetmenler (kullanici istegi). */
+const FAV_EXCLUDE_DIRECTORS=['hasan karacadağ'];
+/* Favoriler sayfasinda gosterilecek minimum film sayisi (yonetmen icin). */
+const FAV_MIN_DIRECTOR_FILMS=2;
+/* Coklu yazarli kitaplarda tek tek gosterilecek yazarlar; grubun digerleri gosterilmez. */
+const FAV_MULTI_AUTHORS=['demokan atasoy','galip dursun','ışın beril tetik'];
 /* Anasayfadaki playlist sirasi elle secildi; "main" kategorisinden bu sirayla. */
 const HOME_PLAYLISTS=[
   'loşş salınım',"victoria's spell",'alice in angerland',"sade'ın kırbacı",
@@ -373,7 +382,7 @@ function formatStamp(value){
   if(!value)return '';
   const date=new Date(value);
   if(Number.isNaN(date.getTime()))return '';
-  try{return date.toLocaleString('tr-TR',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'})+' (TSİ)'}
+  try{return date.toLocaleString('tr-TR',{day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}).toLocaleLowerCase('tr-TR')+' (tsi)'}
   catch(_){return date.toISOString()}
 }
 function updateStatus(){
@@ -387,9 +396,9 @@ function updateStatus(){
   if(!foot)return;
   const files=Object.values(DATA_FILES).map(file=>file.split('/').pop()).join(' · ');
   if(dataMeta.error){foot.textContent=dataMeta.error;return}
-  if(!total){foot.textContent=files;return}
   const stamp=formatStamp(dataMeta.generatedAt);
-  foot.textContent=`${files} · ${total.toLocaleString('tr-TR')} kayıt${stamp?` · son üretim ${stamp}`:''}`;
+  if(!total){foot.textContent=files;return}
+  foot.textContent=`Son güncelleme tarihi: ${stamp||'—'}`;
 }
 async function loadData(){
   const types=Object.keys(DATA_FILES);
@@ -638,7 +647,7 @@ function genrePage(route){
   const value=findGenreValue(route.slug);
   if(!value){notFound(route.slug);return}
   document.title='Tür: '+value+' - versucher';
-  const groups=[['films','Filmler'],['series','Diziler'],['books','Kitaplar'],['playlists','Playlistler']];
+  const groups=[['films','Filmler'],['series','Diziler'],['books','Kitaplar']];
   const sections=groups.map(([type,label])=>{
     const list=sortItems((D[type]||[]).filter(item=>fieldMatches(item,'genre',value)),state.sort);
     if(!list.length)return '';
@@ -689,6 +698,7 @@ function fieldValues(item,field){
     if(field==='platform')return splitList(item.platform);
     if(field==='director')return splitMulti(item.directorRaw);
     if(field==='firstCity')return splitList(item.firstCity);
+    if(field==='creator')return splitList(item.creator);
     if(field==='country')return item.countries;
     if(field==='directorOrigin')return splitList(item.directorOrigin);
     if(field==='reason')return splitList(item.reason);
@@ -697,6 +707,7 @@ function fieldValues(item,field){
     if(field==='platform')return splitList(item.platform);
     if(field==='done')return missing(item.doneRaw)?[]:[clean(item.doneRaw)];
     if(field==='firstCity')return splitList(item.firstCity);
+    if(field==='creator')return splitList(item.creator);
     if(field==='country')return item.countries;
   }else if(item.sec==='playlists'){
     if(field==='genre')return item.genres;
@@ -769,7 +780,7 @@ function detailHeading(item){
   const fallback=item.yearNumber||item.year?`<span>${esc(item.yearNumber||item.year)}</span>`:'';
   const subline=item.sec==='books'?fieldChips(item,'author')
     :item.sec==='films'?fieldChips(item,'director')
-    :item.sec==='series'?(item.creator?`<span>${esc(item.creator)}</span>`:fallback)
+    :item.sec==='series'?(item.creator?fieldChips(item,'creator'):fallback)
     :fallback;
   const series=item.sec==='books'?item.seriesName:item.sec==='films'?item.seriesOrder:'';
   const title=missing(series)?esc(displayName(item)):`${esc(displayName(item))} <span class="detail-series">(${esc(series)})</span>`;
@@ -851,7 +862,9 @@ function detailPage(item){
     ];
     if(item.spotify)extra=`<p style="margin-top:1.2rem"><a class="listen-btn" href="${esc(item.spotify)}" target="_blank" rel="noopener noreferrer">Playlisti dinle</a></p>`;
   }
-  main.innerHTML=`<div class="detail-page">${detailHeading(item)}<div class="detail-split"><div class="detail-art-column">${detailArt(item)}${detailTop(item)}</div><div class="detail-content"><div class="detail-sections">${sections.join('')}</div>${extra}<p class="detail-note">Bu kayıt <code>data/</code> klasöründeki veriden gelir; veri GitHub Actions tarafından saatte bir yeniden üretilir.</p></div></div></div>`;
+  const backLabel={films:'Filmlere',series:'Dizilere',books:'Kitaplara',playlists:'Playlistlere'}[item.sec];
+  const back=backLabel?`<a class="back" href="${esc(hrefFor('/'+viewKey(item.sec)))}" data-route="/${viewKey(item.sec)}">&larr; ${backLabel} dön</a>`:'';
+  main.innerHTML=`<div class="detail-page">${back}${detailHeading(item)}<div class="detail-split"><div class="detail-art-column">${detailArt(item)}${detailTop(item)}</div><div class="detail-content"><div class="detail-sections">${sections.join('')}</div>${extra}<p class="detail-note">Bu kayıt <code>data/</code> klasöründeki veriden gelir; veri GitHub Actions tarafından saatte bir yeniden üretilir.</p></div></div></div>`;
 }
 function notFound(slug){
   document.title='Kayıt bulunamadı — versucher';
@@ -880,8 +893,24 @@ function collectValues(values){
   return [...map.values()].sort((a,b)=>b.count-a.count||a.value.localeCompare(b.value,'tr'));
 }
 function favoritesView(){
-  const authors=collectValues((D.books||[]).map(item=>item.author));
-  const directors=collectValues((D.films||[]).flatMap(item=>item.directors||[]));
+  /* Yazarlar: coklu yazarli kitaplar haric; onlardan yalnizca istenen uc kisi. */
+  const authorValues=[];
+  for(const item of D.books||[]){
+    const names=fieldValues(item,'author');
+    if(names.length<=1)authorValues.push(...names);
+  }
+  for(const item of D.books||[]){
+    const names=fieldValues(item,'author');
+    if(names.length<=1)continue;
+    for(const wanted of FAV_MULTI_AUTHORS){
+      if(names.some(name=>valueKey(name)===valueKey(wanted)))authorValues.push(wanted);
+    }
+  }
+  const authors=collectValues(authorValues);
+  /* Yonetmenler: tek filmi olanlar gosterilmez, ayrica liste disi birkac isim var. */
+  const directors=collectValues((D.films||[]).flatMap(item=>item.directors||[]))
+    .filter(entry=>entry.count>=FAV_MIN_DIRECTOR_FILMS
+      &&!FAV_EXCLUDE_DIRECTORS.some(name=>valueKey(name)===valueKey(entry.value)));
   /* Türler tür tür ayrılır. DİKKAT: genreValues() tekilleştirdiği için burada KULLANILMAZ;
      aksi halde her türün sayısı hep 1 çıkardı. */
   const genresOf=kind=>collectValues((D[kind]||[]).flatMap(item=>fieldValues(item,'genre')));
@@ -901,7 +930,13 @@ function favoritesView(){
     .filter(pair=>byKind[pair[0]].length)
     .map(pair=>subGroup(pair[1],byKind[pair[0]],value=>filterPath(pair[0],'genre',value)))
     .join('');
-  const turler=typeRows?`<section><h2>Türler</h2>${typeRows}</section>`:'';
+  /* "Türler tümü": bir türdeki film + dizi + kitaplar birlikte (/tur/<slug>). */
+  const allGenres=collectValues(['books','series','films'].flatMap(kind=>(D[kind]||[]).flatMap(item=>fieldValues(item,'genre'))));
+  const allRow=subGroup('Türler tümü',allGenres,value=>{const slug=globalGenreSlug(value);return slug?'/tur/'+slug:''});
+  /* Main label olarak işaretlenenler (/etiket/<slug>). */
+  const labelValues=['books','series','films'].flatMap(kind=>(D[kind]||[]).flatMap(item=>fieldValues(item,'mainLabel')));
+  const labelRow=subGroup('Main label',collectValues(labelValues),value=>{const slug=globalTagSlug(value);return slug?'/etiket/'+slug:''});
+  const turler=(typeRows+allRow+labelRow)?`<section><h2>Türler</h2>${typeRows}${allRow}${labelRow}</section>`:'';
   const muzik=group('Müzik türleri',byKind.playlists,value=>filterPath('playlists','genre',value));
   main.innerHTML=`<h1>Favoriler</h1><p class="sub">Veri kayıtlarından otomatik oluşturulan özetler. Sayılar en çok olandan en aza sıralıdır ve o türdeki gerçek kayıt adedini gösterir; bağlantıya tıklayınca o kişinin ya da türün kayıtları listelenir.</p><div class="favs" style="margin-top:1.5rem">${group('Yazarlar',authors,value=>filterPath('books','author',value))}${group('Yönetmenler',directors,value=>filterPath('films','director',value))}${turler}${muzik}</div>`;
 }

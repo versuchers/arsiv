@@ -350,6 +350,92 @@ bağlanıyor, yani yazan sayı ile tıklayınca çıkan sonuç birebir aynı:
 > ```
 >
 > Koyu temalar `#fff2cc` olarak kalır. İsterseniz bunu doğrudan uygularım.
+## v1.12 — ikinci tur (10 madde)
+
+### Favoriler: yönetmenler
+Tek filmi olan yönetmenler gizlenir (>= 2 film şart) ve `hasan karacadağ`
+listeden çıkarıldı. **355 → 90 yönetmen.** Listede adet sırasında:
+
+```
+Christopher Nolan 8 · Quentin Tarantino 7 · Steven Spielberg 7 · …
+```
+
+### Favoriler: yazarlar
+Çoklu yazarlı kitaplar artık virgüllü tek kayıt olarak listelenmiyor.
+`anadolu korku öyküleri 1` kitabından yalnızca **demokan atasoy, galip dursun,
+ışın beril tetik** tekil yazar olarak gösterilir; aynı gruptaki diğer yazarlar
+(koray günyaşar, ayşegül nergis, kayra keri küpçü) ve diğer çoklu yazarlı grubun
+(kaynak: `gio ödülleri 2013`) 16 yazar hiç gösterilmez. Tek yazarlı kitapların
+yazarları normal şekilde listelenir. **85 yazar.** (85 = 82 tek yazarlı + 3).
+
+### Favoriler: türler
+`Türler` bölümü beş alt başlıktan oluşur:
+
+| Alt başlık | İçerik |
+|---|---|
+| Kitap / Dizi / Film | tür tür ayrılmış hâli (20 / 34 / 23 tür) |
+| **Türler tümü** | 62 tür — bir türdeki film + dizi + kitaplar (`/tur/<slug>`) |
+| **Main label** | 291 tür — `main label` olarak işaretlenenler (`/etiket/<slug>`) |
+
+`/tur/<slug>` sayfası artık yalnızca film, dizi ve kitap gösterir; playlistler
+kendi bölümünde ("Müzik türleri"). Böylece yazan sayı ile tıklayınca çıkan sonuç
+birebir aynı (bilim kurgu 133, drama 240, korku 172, komedi 106, roman 118 —
+hepsi doğrulandı).
+
+### Detay sayfalarında geri bağlantı
+Her detay sayfasının en üstünde: `← Filmlere dön` · `← Dizilere dön` ·
+`← Kitaplara dön` · `← Playlistlere dön`.
+
+### Creator / showrunner tıklanabilir
+Dizi detayında başlığın altındaki creator artık bağlantı; tıklanınca o kişinin
+`creator / showrunner` olduğu yapımlar listelenir
+(`/dizi/filtre/creator/<slug>`, başlık "Creator / showrunner: …").
+
+### Temalar
+* Açık temada link rengi `#6b5a1f` (kontrast 4.81:1, AA geçer). Önceki
+  `#fff2cc` açık zeminde 1.26:1 idi ve görünmüyordu.
+* Koyu temada linkler `#fff2cc` (14.28:1) kaldı; link olmayan metin
+  `#E6E2D8` yerine `#B9BFC9`, ikincil metin `#8A94A6` yapıldı. Böylece
+  bağlantılar düz değerlerden belirgin.
+
+### Küçük ekranda detay sayfası genişliği
+`main:has(.detail-page)` genişliği ekran **yüksekliğinden** hesaplıyordu:
+`(100vh - 185px) * 1.3334 + 75px`. 860×480 bir pencerede bu 469px'e
+düşüyor, ekranın yarısı boş kalıyordu. Yükseklikle hesaplanan daraltma artık
+yalnızca 701px üzeri ekranlarda uygulanıyor.
+
+### Footer
+Eski biçim: `books.json · films.json · … · 944 kayıt · son üretim …`
+Yeni biçim:
+
+```
+Son güncelleme tarihi: 30 eylül 2026 05:39 (tsi)
+```
+
+Zaman damgası küçük harfli, ay adı uzun ve parantez içinde `(tsi)`.
+
+### Baş harfler otomatik büyük
+Sheet'te her şey küçük harfle başlıyor. `titleCase()` şu alanlara uygulanıyor:
+film/dizi/kitap/playlist adı, ön ek, özgün ad, yazar, yönetmen, creator,
+çevirmen ve tüm tür değerleri. Sonuç: **944 / 944** kayıt büyük harfle başlıyor.
+
+Tireli adlar korunur (`post-black metal` → `Post-Black Metal`), iyelik
+apostrofları bozulmaz (`agatha'nın anahtarı` → `Agatha'nın Anahtarı`,
+`victoria's spell` → `Victoria's Spell`).
+
+> Slug üretimi (`slugPart`) zaten küçük harfe çevirdiği için **adresler
+> değişmedi**.
+
+### Yapım ülkesi Türkçeleştirildi
+Sheet'te karışık (İngilizce/Türkçe) yazıyordu. 48 farklı ülkenin tamamı
+Türkçeye geçirildi: `united states` → `Amerika Birleşik Devletleri`,
+`south korea` → `Güney Kore`, `czechia` → `Çekya`…
+
+Üç yazım hatası da düzeltildi: `guadeleope` → `Guadelup`,
+`avusturalya` → `Avustralya`, `bulgarisyan` → `Bulgaristan`.
+
+Film ülke filtresi artık Türkçe adlarla çalışır
+(`/film/filtre/country/amerika-birlesik-devletleri`).
 ## Yeni başlık gelirse
 
 `scripts/build-data.mjs` içindeki `SCHEMAS[type]` listesine yeni alan adını ve
