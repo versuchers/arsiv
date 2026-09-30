@@ -436,6 +436,45 @@ Türkçeye geçirildi: `united states` → `Amerika Birleşik Devletleri`,
 
 Film ülke filtresi artık Türkçe adlarla çalışır
 (`/film/filtre/country/amerika-birlesik-devletleri`).
+## v1.12 — üçüncü tur (4 madde)
+
+### "Nasıl keşfettim" ve "Neden izledim" ayrıldı
+Sheet'te birleşik `nasıl keşfettim / neden izledim` sütunu ikiye bölündü.
+Artık film ve dizi detayında **iki ayrı satır** var, alt alta, ve her biri
+yalnızca doluysa gösteriliyor:
+
+| | film | dizi |
+|---|---|---|
+| `nasıl keşfettim` | 64 / 494 dolu | 20 / 142 dolu |
+| `neden izledim` | 136 / 494 dolu | 31 / 142 dolu |
+
+> Bu arada bir şey düzeldi: eski birleşik sütun kaldırıldığı için o turun
+> sonrasında bu bilgi film/dizi detayında **hiç görünmüyordu**. Artık ikisi de
+> geri geldi. Hiçbir kayıtta iki satır birden dolu değil ama ikisi de doğru
+> çalışıyor (filmde `ghost in the shell` yalnızca "Nasıl keşfettim",
+> `titane` yalnızca "Neden izledim" satırını gösteriyor).
+
+### Diziye özgü "Favori sezon"
+Yeni sütun dizi detayında **"Ne kadarını izledim"in hemen altında** görünüyor.
+31 / 142 dizide dolu. Örnekler: `Son Sezon Hariç Tümü`, `Tümü`, `İlk 2 Sezon`.
+
+### Main label kutusu
+Afişin altındaki main label artık sitenin en belirgin vurgusu: accent renkli
+1px çerçeve, büyük harf + harf aralığı, daha büyük iç boşluk ve gölge.
+Üzerine gelince zemin accent olur.
+
+### Kitap detay sayfası
+* `Okunan tüm formatlar` → **`Okuduğum formatlar`**
+* Baş harfler büyütüldü. `titleCase()` kapsamı 22 metin alanına genişletildi:
+  `seriesName`, `mainLabel`, `reason`, `publisher`, `character`, `formats`,
+  `acquisition`, `authorOrigin`, `fiction`, `city`, `platform`,
+  `directorOrigin`, `seriesOrder`, `statusRaw`, `watched`, `network`,
+  `language`, `format`, `adaptation`, `firstCity`, `category`, `feeling`
+  + `subgenres`, `readLanguage`, `writtenLanguage`, `owned`, `doneRaw`.
+* Tutarlılık için `yoğunluk` ve `tekrar` etiketleri de büyütüldü:
+  `orta` → `Orta`, `hayır` → `Hayır`, `düşük ihtimalle` → `Düşük İhtimalle`.
+
+Doğrulama: 30 metin alanı tarandı, **küçük harfle başlayan 0 kayıt** kaldı.
 ## Yeni başlık gelirse
 
 `scripts/build-data.mjs` içindeki `SCHEMAS[type]` listesine yeni alan adını ve

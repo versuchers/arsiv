@@ -141,7 +141,16 @@ p{margin-top:.55rem}
 .main-label-row,.compact-links,.detail-value-chips{display:flex;flex-wrap:wrap;align-items:flex-start;gap:.4rem;margin-top:.9rem}
 .compact-links{margin-top:.75rem}
 .tag-chip,.compact-link{display:inline-flex;align-items:center;align-self:flex-start;width:fit-content;max-width:100%;font-family:var(--ui);font-size:.76rem;line-height:1.3;color:var(--link);background:var(--raise);border:1px solid var(--line);border-radius:3px;padding:.22rem .5rem;text-decoration:none;overflow-wrap:anywhere;box-shadow:inset 0 1px 0 var(--hi)}
-.tag-chip.ml{font-weight:700;border-color:var(--hi)}
+/* Afişin altındaki main label kutusu: sitenin en belirgin vurgusu olmalı. */
+.main-label-row{gap:.45rem;margin-top:.9rem}
+.tag-chip.ml{
+  font-size:.8rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--accent);background:var(--raise);
+  border:1px solid var(--accent);border-radius:4px;
+  padding:.45rem .85rem;
+  box-shadow:0 1px 0 var(--hi),0 6px 18px -8px rgba(0,0,0,.65);
+}
+.tag-chip.ml:hover{background:var(--accent);color:var(--text);text-decoration:none}
 .link-chip{display:inline;font-family:var(--ui);font-size:.92rem;line-height:1.6;color:var(--link);text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px;text-decoration-color:var(--line);overflow-wrap:anywhere}
 .link-chip:hover{text-decoration-color:currentColor}
 .ext-links{display:flex;flex-wrap:wrap;gap:.55rem;margin-top:.8rem;justify-content:center}
@@ -224,7 +233,7 @@ const CFG={
   lists:{label:'Playlistler',unit:'playlist',fav:'Favori playlistler',dateLabel:''}
 };
 const ROUTE_PREFIX={books:'kitap',films:'film',series:'dizi',playlists:'playlist'};
-const FILTER_TITLES={author:'Yazar',genre:'Tür',subgenre:'Alt tür',authorOrigin:'Yazar köken',fiction:'Kurgu mu?',city:'İlk okunan şehir',acquisition:'İlk erişim / edinim şekli',formats:'Okunan tüm formatlar',translator:'Çevirmen',publisher:'Yayınevi',platform:'İlk kez hangi platformda',director:'Yönetmen',firstCity:'İlk kez izlenen şehir',country:'Yapım ülkesi',directorOrigin:'Yönetmen nereli',reason:'Nasıl keşfettim / neden izledim',done:'Bitirildi mi?',category:'Kategori',feeling:'His',creator:'Creator / showrunner'};
+const FILTER_TITLES={author:'Yazar',genre:'Tür',subgenre:'Alt tür',authorOrigin:'Yazar köken',fiction:'Kurgu mu?',city:'İlk okunan şehir',acquisition:'İlk erişim / edinim şekli',formats:'Okuduğum formatlar',translator:'Çevirmen',publisher:'Yayınevi',platform:'İlk kez hangi platformda',director:'Yönetmen',firstCity:'İlk kez izlenen şehir',country:'Yapım ülkesi',directorOrigin:'Yönetmen nereli',reason:'Nasıl keşfettim / neden izledim',done:'Bitirildi mi?',category:'Kategori',feeling:'His',creator:'Creator / showrunner'};
 const NAV=[['home','Ana sayfa'],['films','Filmler'],['series','Diziler'],['books','Kitaplar'],['concerts','Konserler'],['favs','Favoriler'],['lists','Playlistler']];
 /* Playlist siralama sirası: ana liste once, sonra versucher II, artist, genre. */
 const PLAYLIST_CATEGORY_ORDER=['main','versucher II','artist','genre'];
@@ -804,7 +813,7 @@ function detailPage(item){
         chipRow('Yazar',item,'author'),chipRow('Alt tür',item,'subgenre'),chipRow('Yazar köken',item,'authorOrigin'),chipRow('Çevirmen',item,'translator'),row('Baş karakter',item.character),row('Yazar doğum tarihi',item.authorBirth)
       ]),
       detailSection('Okuma bilgileri',[
-        chipRow('Nasıl keşfettim||neden okudum',item,'reason'),chipRow('İlk erişim / edinim şekli',item,'acquisition'),row('Kitap bende var mı?',item.owned),chipRow('İlk okunan şehir',item,'city'),row('Kaç kez okudum?',item.readCountRaw),row('Tekrar okur muyum?',item.reread),row('Yoğunluk',item.density),chipRow('Okunan tüm formatlar',item,'formats'),
+        chipRow('Nasıl keşfettim||neden okudum',item,'reason'),chipRow('İlk erişim / edinim şekli',item,'acquisition'),row('Kitap bende var mı?',item.owned),chipRow('İlk okunan şehir',item,'city'),row('Kaç kez okudum?',item.readCountRaw),row('Tekrar okur muyum?',item.reread),row('Yoğunluk',item.density),chipRow('Okuduğum formatlar',item,'formats'),
         row('İlk kez okunan tarih',item.firstReadDate),row('Okunduğu dil',item.readLanguage)
       ])
     ];
@@ -820,7 +829,8 @@ function detailPage(item){
         chipRow('Yönetmen',item,'director'),
         chipRow('Yönetmen köken',item,'directorOrigin'),
         row('Yoğunluk',item.density),
-        chipRow('Nasıl keşfettim||neden izledim',item,'reason'),
+        row('Nasıl keşfettim',item.reasonFound),
+        row('Neden izledim',item.reasonWhy),
         row('İzleme tarihi',item.watchDate),
         chipRow('İlk izlediğim platform',item,'platform'),
         chipRow('İlk izlediğim şehir',item,'firstCity'),
@@ -844,11 +854,13 @@ function detailPage(item){
         row('Dili',item.language),
         row('Network',item.network),
         row('Medium',item.category),
-        chipRow('Nasıl keşfettim||neden izledim',item,'reason'),
+        row('Nasıl keşfettim',item.reasonFound),
+        row('Neden izledim',item.reasonWhy),
         row('Başladığım yıl',item.watchDate),
         chipRow('İlk izlediğim platform',item,'platform'),
         chipRow('İlk izlediğim şehir',item,'firstCity'),
         row('Ne kadarını izledim',item.watched),
+        row('Favori sezon',item.favoriteSeason),
         chipRow('Bitirdim mi?',item,'done'),
         row('Kaç kez bitirdim',item.completionCountRaw),
         row('Tekrar izler miyim',item.rewatch)
