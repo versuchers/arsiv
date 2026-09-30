@@ -1289,6 +1289,22 @@ document.addEventListener('keydown',event=>{
   if(state.route.kind==='search'){const input=$('#sq');if(input){input.focus();input.select()}return}
   navigate('/ara');
 });
+/* Sol/sag ok tuslari, detay sayfasindaki kenardaki oklarla ayni is yapar.
+   Butona basilmis gibi davranmanin en saglam yolu ayni adresi gezmek: oka
+   basilca ne oluyorsa o. Ok yoksa (listenin basi/sonu, ya da detay sayfasi
+   disinda bir sayfa) hicbir sey olmaz. */
+document.addEventListener('keydown',event=>{
+  if(event.key!=='ArrowLeft'&&event.key!=='ArrowRight')return;
+  /* Shift+Ok metin secimi, Ctrl/Cmd+Ok tarayici gezinmesi; karistirma. */
+  if(event.metaKey||event.ctrlKey||event.altKey||event.shiftKey)return;
+  /* Alan/ liste icindeyken ok tusu o denetimi ait; hic dokunma. */
+  const tag=(event.target&&event.target.tagName||'').toLowerCase();
+  if(tag==='input'||tag==='textarea'||tag==='select'||(event.target&&event.target.isContentEditable))return;
+  const arrow=document.querySelector(event.key==='ArrowLeft'?'.nav-arrow.prev':'.nav-arrow.next');
+  if(!arrow)return;
+  event.preventDefault();
+  navigate(arrow.dataset.route);
+});
 document.addEventListener('change',event=>{
   if(!event.target.id)return;
   if(event.target.id==='sort')state.sort=event.target.value;

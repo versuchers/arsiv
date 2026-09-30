@@ -749,6 +749,15 @@ playlist.
 - Listenin başında sol ok, sonunda sağ ok **hiç basılmaz** — olmayan bir
   sayfaya giden buton gösterilmez.
 - 700 px altında oklar küçülür (34×50 px) ve kenara yapışır.
+- **Klavyeyle de aynı iş:** `←` ve `→` tuşları oka basılmış gibi davranır.
+  Tuş işleyicisi sayfadaki `.nav-arrow.prev` / `.nav-arrow.next` öğesini
+  bulup **o okun gittiği adrese** gider — yani iki yol tek kaynaktan çıkar,
+  ileride biri değişirse diğeri de değişir. Doğrulandı: Tengri → (→) Dorian
+  Gray → (→) Frankenstein → (←) Dorian Gray → (←) Tengri.
+- Karşılanmayan durumlar: ok yoksa (liste başı/sonu, detay dışı sayfalar) hiç
+  bir şey olmaz; `Shift`/`Ctrl`/`Cmd`/`Alt` ile ok tuşu kendi işini yapar
+  (metin seçimi, tarayıcı gezinmesi); arama kutusu, açılır liste veya
+  düzenlenebilir alan odaktayken dokunulmaz.
 
 ### Kitap detayında aynı yıl olan tarihler birleşiyor
 
