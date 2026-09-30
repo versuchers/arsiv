@@ -146,6 +146,14 @@ p{margin-top:.55rem}
 .loading:not(:has(.spinner)){font-family:var(--ui);color:var(--muted);padding:2rem 0}
 .back{font-family:var(--ui);font-size:.85rem;color:var(--link);text-decoration:underline;text-underline-offset:3px}
 .detail-page{--gap:25px;font-size:15px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;row-gap:1.25rem}
+/* Detay sayfasinda onceki/sonraki oklari: ekranin sol ve sag kenarinda,
+   dikeyde ortada. Sag ok sonraki kayda, sol ok onceki kayda gider. */
+.nav-arrow{position:fixed;top:50%;transform:translateY(-50%);z-index:3;width:44px;height:66px;display:flex;align-items:center;justify-content:center;font-size:2.3rem;line-height:1;text-decoration:none;color:var(--muted);background:var(--raise);border:1px solid var(--line);border-radius:4px;box-shadow:0 2px 4px var(--sh1),0 10px 20px -8px var(--sh1);transition:border-color .15s,color .15s}
+.nav-arrow.prev{left:10px}
+.nav-arrow.next{right:10px}
+.nav-arrow:hover{border-color:var(--link);color:var(--link)}
+@media (max-width:700px){.nav-arrow{width:34px;height:50px;font-size:1.7rem}.nav-arrow.prev{left:4px}.nav-arrow.next{right:4px}}
+@media (prefers-reduced-motion:reduce){.nav-arrow{transition:none}}
 .detail-heading{grid-column:1/-1;margin:0;padding:0;min-width:0}
 .detail-heading h1{font-size:clamp(2rem,5vw,3.25rem);line-height:1.15;overflow-wrap:anywhere}
 .detail-subline{display:flex;flex-wrap:wrap;align-items:center;gap:.45rem;margin-top:.5rem;color:var(--muted);font-family:var(--ui);font-size:30px;line-height:1.3}
@@ -266,7 +274,7 @@ const CFG={
   lists:{label:'Playlistler',unit:'playlist',fav:'Favori playlistler',dateLabel:''}
 };
 const ROUTE_PREFIX={books:'kitap',films:'film',series:'dizi',playlists:'playlist'};
-const FILTER_TITLES={author:'Yazar',genre:'Tür',subgenre:'Alt tür',authorOrigin:'Yazar köken',fiction:'Kurgu mu?',city:'İlk okunan şehir',acquisition:'İlk erişim / edinim şekli',formats:'Okuduğum formatlar',translator:'Çevirmen',publisher:'Yayınevi',platform:'İlk kez hangi platformda',director:'Yönetmen',firstCity:'İlk kez izlenen şehir',country:'Yapım ülkesi',directorOrigin:'Yönetmen nereli',reason:'Nasıl keşfettim / neden izledim',done:'Bitirildi mi?',category:'Kategori',feeling:'His',creator:'Creator / showrunner'};
+const FILTER_TITLES={author:'Yazar',genre:'Tür',subgenre:'Alt tür',authorOrigin:'Yazar köken',fiction:'Kurgu mu?',city:'İlk okunan şehir',acquisition:'İlk erişim / edinim şekli',formats:'Okuduğum medium',translator:'Çevirmen',publisher:'Yayınevi',platform:'İlk kez hangi platformda',director:'Yönetmen',firstCity:'İlk kez izlenen şehir',country:'Yapım ülkesi',directorOrigin:'Yönetmen nereli',reason:'Nasıl keşfettim / neden izledim',done:'Bitirildi mi?',category:'Kategori',feeling:'His',creator:'Creator / showrunner'};
 const NAV=[['home','Ana sayfa'],['films','Filmler'],['series','Diziler'],['books','Kitaplar'],['concerts','Konserler'],['favs','Favoriler'],['lists','Playlistler']];
 /* Playlist siralama sirası: ana liste once, sonra versucher II, artist, genre. */
 const PLAYLIST_CATEGORY_ORDER=['main','versucher II','artist','genre'];
@@ -1005,17 +1013,46 @@ function detailTop(item){
   else if(item.sec==='series')links=extLinks([[item.tmdb,'tmdb'],[item.tvmaze,'tvmaze'],[item.imdb,'imdb']]);
   return `<div class="detail-top-info"><div class="detail-score">${scoreHtml(item)}</div>${main?`<div class="main-label-row">${main}</div>`:''}${links}</div>`;
 }
+/** Detay sayfasindaki oklar icin komsu kayitlar. Sira, o turun grid sayfasindaki
+ *  siranin aynisidir (varsayilan 'date' siralamasi); boylece sagdaki kayit oku,
+ *  soldaki kayit sola gider. Liste basinda onceki, sonunda sonraki yoktur ve
+ *  o zaman o ok hic basilmaz. */
+function neighbours(item){
+  const list=sortItems(D[item.sec]||[],state.sort);
+  const at=list.findIndex(other=>other.slug===item.slug);
+  if(at<0)return {prev:null,next:null};
+  return {prev:at>0?list[at-1]:null,next:at<list.length-1?list[at+1]:null};
+}
+function detailNavArrows(item){
+  const {prev,next}=neighbours(item);
+  const arrow=(entry,side,word)=>{
+    if(!entry)return '';
+    const name=displayName(entry);
+    const label=word+': '+name;
+    return `<a class="nav-arrow ${side}" href="${esc(hrefFor(entry.route))}" data-route="${esc(entry.route)}" title="${esc(label)}" aria-label="${esc(label)}">${side==='prev'?'&#8249;':'&#8250;'}</a>`;
+  };
+  return arrow(prev,'prev','Önceki')+arrow(next,'next','Sonraki');
+}
+/** Orijinal ve Türkiye yayın yılı aynıysa tek satırda "Yayın tarihi" gösterilir.
+ *  199 kitaptan 77'sinde aynı; geri kalanında iki ayrı satır durur. Yılı
+ *  okunamayanlar ("basılmadı", "bilinmiyor") aynı sayılmaz. */
+function publishDateRows(item){
+  const yearOf=value=>((String(value??'').match(/\d{4}/)||[])[0]||'');
+  const original=yearOf(item.year),turkish=yearOf(item.turkishPublishDate);
+  if(original&&original===turkish)return [row('Yayın tarihi',item.year)];
+  return [row('Orijinal yayın tarihi',item.year),row('Türkiye yayın tarihi',item.turkishPublishDate)];
+}
 function detailPage(item){
   let sections=[];let extra='';
   if(item.sec==='books'){
     sections=[
       detailSection('Kitap',[
-        row('Orijinal adı',item.originalTitle),row('Orijinal yayın tarihi',item.year),row('Türkiye yayın tarihi',item.turkishPublishDate),chipRow('Yayınevi',item,'publisher'),chipRow('Tür',item,'genre'),chipRow('Kurgu mu?',item,'fiction'),row('Yazıldığı dil',item.writtenLanguage),row('Sayfa sayısı',item.pages),
+        row('Orijinal adı',item.originalTitle),...publishDateRows(item),chipRow('Yayınevi',item,'publisher'),chipRow('Tür',item,'genre'),chipRow('Kurgu mu?',item,'fiction'),row('Yazıldığı dil',item.writtenLanguage),row('Sayfa sayısı',item.pages),
         chipRow('Yazar',item,'author'),chipRow('Alt tür',item,'subgenre'),chipRow('Yazar köken',item,'authorOrigin'),chipRow('Çevirmen',item,'translator'),row('Baş karakter',item.character),row('Yazar doğum tarihi',item.authorBirth)
       ]),
       detailSection('Okuma bilgileri',[
-        chipRow('Nasıl keşfettim||neden okudum',item,'reason'),chipRow('İlk erişim / edinim şekli',item,'acquisition'),row('Kitap bende var mı?',item.owned),chipRow('İlk okunan şehir',item,'city'),row('Kaç kez okudum?',item.readCountRaw),row('Tekrar okur muyum?',item.reread),row('Yoğunluk',item.density),chipRow('Okuduğum formatlar',item,'formats'),
-        row('İlk kez okunan tarih',item.firstReadLabel||item.firstReadDate),row('Okunduğu dil',item.readLanguage)
+        chipRow('Nasıl keşfettim||neden okudum',item,'reason'),chipRow('İlk erişim / edinim şekli',item,'acquisition'),row('Kitap bende var mı?',item.owned),chipRow('İlk okunan şehir',item,'city'),row('Kaç kez okudum?',item.readCountRaw),row('Tekrar okur muyum?',item.reread),row('Yoğunluk',item.density),chipRow('Okuduğum medium',item,'formats'),
+        row('İlk kez okunan tarih',item.firstReadLabel||item.firstReadDate),row('Okuduğum dil',item.readLanguage)
       ])
     ];
   }else if(item.sec==='films'){
@@ -1077,7 +1114,7 @@ function detailPage(item){
   }
   const backLabel={films:'Filmlere',series:'Dizilere',books:'Kitaplara',playlists:'Playlistlere'}[item.sec];
   const back=backLabel?`<a class="back" href="${esc(hrefFor('/'+viewKey(item.sec)))}" data-route="/${viewKey(item.sec)}">&larr; ${backLabel} dön</a>`:'';
-  main.innerHTML=`<div class="detail-page">${back}${detailHeading(item)}<div class="detail-split"><div class="detail-art-column">${detailArt(item)}${detailTop(item)}</div><div class="detail-content"><div class="detail-sections">${sections.join('')}</div>${extra}<p class="detail-note">Bu kayıt <code>data/</code> klasöründeki veriden gelir; veri GitHub Actions tarafından saatte bir yeniden üretilir.</p></div></div></div>`;
+  main.innerHTML=`<div class="detail-page">${detailNavArrows(item)}${back}${detailHeading(item)}<div class="detail-split"><div class="detail-art-column">${detailArt(item)}${detailTop(item)}</div><div class="detail-content"><div class="detail-sections">${sections.join('')}</div>${extra}<p class="detail-note">Bu kayıt <code>data/</code> klasöründeki veriden gelir; veri GitHub Actions tarafından saatte bir yeniden üretilir.</p></div></div></div>`;
 }
 function notFound(slug){
   document.title='Kayıt bulunamadı — versucher';

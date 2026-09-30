@@ -734,6 +734,39 @@ kayıt olduğu için olduğu gibi bırakıldı.
 Liste sayfaları (`/film`, `/kitap`, ...) 6 sütunda kaldı — orada kart
 sayısı 30 ve bilinçli olarak sıkıştırılmış.
 
+### Detay sayfalarında önceki/sonraki okları
+
+Ekranın sol ve sağ kenarında, dikeyde ortada iki ok. Sağ ok **sonraki**,
+sol ok **önceki** kayda gider. Dört türde de çalışır: kitap, film, dizi,
+playlist.
+
+- Sıra, o türün grid sayfasındaki sıranın aynısıdır (`sortItems(D[type],
+  state.sort)`), yani "listedeki komşu" demektir. Detay sayfasına geçerken
+  `resetFilters()` çalıştığı için sıra her zaman varsayılan `date`
+  sıralamasıdır.
+- Okların üzerinde ve `aria-label`'ında komşunun adı yazar
+  (`Sonraki: Dune Tanrı İmparatoru`); fareyle gelince de görünür.
+- Listenin başında sol ok, sonunda sağ ok **hiç basılmaz** — olmayan bir
+  sayfaya giden buton gösterilmez.
+- 700 px altında oklar küçülür (34×50 px) ve kenara yapışır.
+
+### Kitap detayında aynı yıl olan tarihler birleşiyor
+
+`publishDateRows(item)`: orijinal ve Türkiye yayın yılı aynıysa tek satırda
+**"Yayın tarihi"** gösteriyor, değilse iki ayrı satır duruyor.
+
+199 kitaptan **77'sinde** yıl aynı, 119'unda farklı. Yılı okunamayanlar
+(`basılmadı`, `bilinmiyor`) aynı sayılmıyor — "Zofloya Or The Moor"
+(1806 / basılmadı) iki satır olarak kalıyor.
+
+### İki etiket düzeltmesi
+
+- `Okuduğum formatlar` → **Okuduğum medium**
+- `Okunduğu dil` → **Okuduğum dil**
+
+Aynı `formats` alanının filtre sayfası başlığı da (`FILTER_TITLES`) tutarlı
+olsun diye güncellendi.
+
 ### Favoriler sayfası
 
 - **Yazarlar**: istenen 10 kişi, istenen sırayla. Yazım veriden alınır, kod
