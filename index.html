@@ -274,7 +274,7 @@ const CFG={
   lists:{label:'Playlistler',unit:'playlist',fav:'Favori playlistler',dateLabel:''}
 };
 const ROUTE_PREFIX={books:'kitap',films:'film',series:'dizi',playlists:'playlist'};
-const FILTER_TITLES={author:'Yazar',genre:'Tür',subgenre:'Alt tür',authorOrigin:'Yazar köken',fiction:'Kurgu mu?',city:'İlk okunan şehir',acquisition:'İlk erişim / edinim şekli',formats:'Okuduğum medium',translator:'Çevirmen',publisher:'Yayınevi',platform:'İlk kez hangi platformda',director:'Yönetmen',firstCity:'İlk kez izlenen şehir',country:'Yapım ülkesi',directorOrigin:'Yönetmen nereli',reason:'Nasıl keşfettim / neden izledim',done:'Bitirildi mi?',category:'Kategori',feeling:'His',creator:'Creator / showrunner'};
+const FILTER_TITLES={author:'Yazar',genre:'Tür',subgenre:'Alt tür',authorOrigin:'Yazar köken',fiction:'Kurgu mu?',city:'İlk kez okuduğum şehir',acquisition:'İlk erişim / edinim şekli',formats:'Okuduğum medium',translator:'Çevirmen',publisher:'Yayınevi',platform:'İlk kez hangi platformda',director:'Yönetmen',firstCity:'İlk kez izlenen şehir',country:'Yapım ülkesi',directorOrigin:'Yönetmen nereli',reason:'Nasıl keşfettim / neden izledim',done:'Bitirildi mi?',category:'Kategori',feeling:'His',creator:'Creator / showrunner'};
 const NAV=[['home','Ana sayfa'],['films','Filmler'],['series','Diziler'],['books','Kitaplar'],['concerts','Konserler'],['favs','Favoriler'],['lists','Playlistler']];
 /* Playlist siralama sirası: ana liste once, sonra versucher II, artist, genre. */
 const PLAYLIST_CATEGORY_ORDER=['main','versucher II','artist','genre'];
@@ -983,11 +983,13 @@ function findFilterValue(type,field,slug){
   for(const item of D[type]||[])for(const value of fieldValues(item,field))if(routeValueSlug(type,field,value)===slug)return value;
   return '';
 }
-/** Orijinal ad, "on ek + film" (ya da dizi basligi) ile ayni degilse gosterilmeli. */
+/** Orijinal ad, sitede goruntulenen adla ayni degilse gosterilmeli. displayName()
+ *  filmlerde "on ek + film", diger turlerde sadece basligi dondurdugu icin
+ *  her turde dogru karsilastirma yapar. */
 function originalTitleDiffers(item){
   const original=valueKey(item.originalTitle);
   if(!original)return false;
-  return original!==valueKey(filmName(item));
+  return original!==valueKey(displayName(item));
 }
 function detailSection(title,rows,className=''){
   const filtered=rows.filter(Boolean);if(!filtered.length)return '';
@@ -1047,12 +1049,30 @@ function detailPage(item){
   if(item.sec==='books'){
     sections=[
       detailSection('Kitap',[
-        row('Orijinal adı',item.originalTitle),...publishDateRows(item),chipRow('Yayınevi',item,'publisher'),chipRow('Tür',item,'genre'),chipRow('Kurgu mu?',item,'fiction'),row('Yazıldığı dil',item.writtenLanguage),row('Sayfa sayısı',item.pages),
-        chipRow('Yazar',item,'author'),chipRow('Alt tür',item,'subgenre'),chipRow('Yazar köken',item,'authorOrigin'),chipRow('Çevirmen',item,'translator'),row('Baş karakter',item.character),row('Yazar doğum tarihi',item.authorBirth)
+        /* Orijinal ad, sitede gosterilen adla ayni degilse gosterilir. */
+        originalTitleDiffers(item)?row('Orijinal adı',item.originalTitle):null,
+        ...publishDateRows(item),
+        chipRow('Yazar',item,'author'),
+        chipRow('Yazar köken',item,'authorOrigin'),
+        chipRow('Çevirmen',item,'translator'),
+        chipRow('Yayınevi',item,'publisher'),
+        chipRow('Kurgu mu?',item,'fiction'),
+        chipRow('Tür',item,'genre'),
+        chipRow('Alt tür',item,'subgenre'),
+        row('Yazıldığı dil',item.writtenLanguage),
+        row('Baş karakter',item.character),
+        row('Sayfa sayısı',item.pages)
       ]),
       detailSection('Okuma bilgileri',[
-        chipRow('Nasıl keşfettim||neden okudum',item,'reason'),chipRow('İlk erişim / edinim şekli',item,'acquisition'),row('Kitap bende var mı?',item.owned),chipRow('İlk okunan şehir',item,'city'),row('Kaç kez okudum?',item.readCountRaw),row('Tekrar okur muyum?',item.reread),row('Yoğunluk',item.density),chipRow('Okuduğum medium',item,'formats'),
-        row('İlk kez okunan tarih',item.firstReadLabel||item.firstReadDate),row('Okuduğum dil',item.readLanguage)
+        chipRow('İlk erişim / edinim şekli',item,'acquisition'),
+        chipRow('İlk kez okuduğum şehir',item,'city'),
+        chipRow('Okuduğum medium',item,'formats'),
+        row('Yoğunluk',item.density),
+        row('İlk okuduğum dönem',item.firstReadLabel||item.firstReadDate),
+        row('Kaç kez okudum?',item.readCountRaw),
+        row('Tekrar okur muyum',item.reread),
+        row('Kitap bende var mı?',item.owned),
+        row('Okuduğum dil',item.readLanguage)
       ])
     ];
   }else if(item.sec==='films'){

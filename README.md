@@ -734,6 +734,37 @@ kayıt olduğu için olduğu gibi bırakıldı.
 Liste sayfaları (`/film`, `/kitap`, ...) 6 sütunda kaldı — orada kart
 sayısı 30 ve bilinçli olarak sıkıştırılmış.
 
+### Kitap detay sayfası yeniden sıralandı
+
+**Kitap** kutusu, istenen sırada:
+
+1. Orijinal adı — **sadece sitede gösterilen addan farklıysa**
+2. Orijinal yayın tarihi
+3. Türkiye yayın tarihi
+4. Yazar · 5. Yazar köken · 6. Çevirmen · 7. Yayınevi · 8. Kurgu mu?
+9. Tür · 10. Alt tür · 11. Yazıldığı dil · 12. Baş karakter · 13. Sayfa sayısı
+
+*Yazar doğum tarihi çıkarıldı.*
+
+`originalTitleDiffers()` artık `displayName()` ile karşılaştırıyor (önceden
+`filmName()` idi, yalnızca filmlerde doğruydu). 199 kitaptan **127'sinde**
+orijinal ad farklı, 72'sinde aynı — yani satır artık her kitapta görünmüyor.
+
+**Okuma bilgileri** kutusu:
+
+İlk erişim / edinim şekli · İlk kez okuduğum şehir · Okuduğum medium ·
+Yoğunluk · İlk okuduğum dönem · Kaç kez okudum? · Tekrar okur muyum ·
+Kitap bende var mı? · Okuduğum dil
+
+Etiket değişiklikleri: "İlk okunan şehir" → **İlk kez okuduğum şehir**,
+"İlk kez okunan tarih" → **İlk okuduğum dönem**. Filtre sayfası başlığı da
+(`FILTER_TITLES.city`) güncellendi.
+
+Bu sıralamada **"Nasıl keşfettim / neden okudum"** satırı yok; listede
+geçmediği için çıkarıldı. Zaten hiç görünmüyordu: kitaplarda `reason`
+sütununa karşılık gelen bir sütun yok (`check-data.mjs` bunu "eşleşmeyen
+alan" olarak raporluyor). Sheet'e bu sütunu eklersen söyle, geri koyarım.
+
 ### Detay sayfalarında önceki/sonraki okları
 
 Ekranın sol ve sağ kenarında, dikeyde ortada iki ok. Sağ ok **sonraki**,
