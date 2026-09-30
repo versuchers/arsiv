@@ -734,6 +734,17 @@ kayıt olduğu için olduğu gibi bırakıldı.
 Liste sayfaları (`/film`, `/kitap`, ...) 6 sütunda kaldı — orada kart
 sayısı 30 ve bilinçli olarak sıkıştırılmış.
 
+### "Yazar köken" satırı kaldırıldı
+
+Kitap detay sayfasından çıkarıldı. Alan **veride ve arama dizininde
+kalıyor** (`hydrate()` ve `fieldValues()` tanımları duruyor, `FILTER_TITLES`
+içindeki başlık da yerinde) — sadece detay sayfasında gösterilmiyor.
+`/kitap/filtre/authorOrigin/<slug>` adresi çalışmaya devam ediyor.
+
+Not: `density` ve `authorOrigin` gibi alanları tamamen silmek istersen
+`build-data.mjs` içindeki `SCHEMAS` girişleri de kaldırılmalı; şu an
+JSON'da duruyorlar, sadece görünmüyorlar.
+
 ### "Yazıldığı dil" artık tıklanabilir
 
 Detay sayfasında "Yazıldığı dil" artık bir bağlantı; tıklanınca o dilde
