@@ -197,6 +197,22 @@ log(`   Sunucu: http://127.0.0.1:${port}${PREFIX}/  (bilinmeyen yol -> 404.html,
 const profile = mkdtempSync(join(tmpdir(), 'check-site-'));
 const failures = [];
 
+/* Sure butleri. Rota basina butce, yoksa bir tarayici takilirsa 21 rota x
+   180 sn = bir saati gecer ve hata oldugu halde kimse fark etmez.
+   Ilk kosuda 11 dakika sonra hâlâ 9. adimdaydik.
+     VIRTUAL_TIME 8 sn : saglam bir rota ~10 sn gercek surede biter. Tarayici
+                          butce bitince cikar; sayfa daha once bosu dolarsa
+                          daha once de cikabilir.
+     ROUTE_TIMEOUT 60sn : saglam rotanin 6 kati. Asil bir sayfa hatasi bu
+                          surede gorunur, "tarayici calistirilamadi" degil.
+     MAX_LAUNCH_FAIL 3 : uc kez ardisik acilamazsa gerisi denenmez. Tarayici
+                          acilamiyorsa 21 rota denemenin anlami yok; 3'te
+                          kesip nedeni bildirmek yeterli. */
+const VIRTUAL_TIME = 8000;
+const ROUTE_TIMEOUT = 60000;
+const MAX_LAUNCH_FAIL = 3;
+let launchFails = 0;
+
 async function check(route) {
   const url = `http://127.0.0.1:${port}${PREFIX}/${route.path}`;
   /* DOM dogrudan okunmaz; bir dosyaya yazdirilir.
@@ -211,16 +227,18 @@ async function check(route) {
     fd = openSync(domFile, 'w');
     execFileSync(browser, [
       '--headless=new', '--disable-gpu', '--no-sandbox', '--hide-scrollbars',
-      `--user-data-dir=${profile}`, '--virtual-time-budget=25000', '--dump-dom', url
-    /* 180 sn: sayfa Google Fonts'u bekliyor. Ag yavas olan bir makinede
-       90 sn dar kalir ve "tarayici calistirilamadi" gibi YANLIIS bir hata
-       uretir; asil sayfa hatasi bu kadar surede gorunmez. */
-    ], { stdio: ['ignore', fd, 'ignore'], timeout: 180000 });
+      `--user-data-dir=${profile}`, `--virtual-time-budget=${VIRTUAL_TIME}`, '--dump-dom', url
+    ], { stdio: ['ignore', fd, 'ignore'], timeout: ROUTE_TIMEOUT });
   } catch (error) {
     if (fd !== null) { try { closeSync(fd); } catch { /* yoksay */ } fd = null; }
-    failures.push(`${route.path}: tarayici calistirilamadi (${error.message.split('\n')[0]})`);
+    launchFails++;
+    failures.push(`${route.path}: tarayici acilamadi / zaman asimina ugradi (${error.message.split('\n')[0]})`);
+    if (launchFails >= MAX_LAUNCH_FAIL) {
+      failures.push(`--> ${MAX_LAUNCH_FAIL} rota ustuste acilamadi; kalan rotalar denenmedi. Ortam sorunu (${process.env.RUNNER_OS || 'bu makine'}).`);
+    }
     return;
   }
+  launchFails = 0;
   closeSync(fd);
   let dom = '';
   try { dom = readFileSync(domFile, 'utf8'); }
@@ -250,13 +268,23 @@ async function check(route) {
 }
 
 log('');
-log(`== ${ROUTES.length} rota deneniyor ==`);
+log(`== ${ROUTES.length} rota deneniyor (tarayici acilamazsa en fazla ${MAX_LAUNCH_FAIL} deneme sonra kesilir) ==`);
+const startedAt = Date.now();
+let tried = 0;
 for (const route of ROUTES) {
+  /* Tarayici acilamiyorsa kalan rotalarin da acilmayacagi bellidir; saatlerce
+     beklemenin anlami yok, sonuc zaten basarisiz. */
+  if (launchFails >= MAX_LAUNCH_FAIL) {
+    log(`   - /${route.path}  atlandi (tarayici acilamiyor)`);
+    continue;
+  }
+  tried++;
   const before = failures.length;
   await check(route);
   const added = failures.length - before;
   log(`   ${added ? 'x' : 'v'} /${route.path}${added ? '  -> ' + failures[failures.length - 1] : ''}`);
 }
+log(`   (${Math.round((Date.now() - startedAt) / 1000)} sn, ${tried}/${ROUTES.length} rota denendi)`);
 
 await new Promise((resolve) => server.close(resolve));
 try { rmSync(profile, { recursive: true, force: true }); } catch { /* temizlik onemsiz */ }
