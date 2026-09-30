@@ -14,7 +14,7 @@
   padding-top:env(safe-area-inset-top,0px);
   padding-bottom:env(safe-area-inset-bottom,0px);
   --bg:#D5DAE2;--panel:#EAEDF2;--raise:#F5F7FA;--well:#C7CDD8;--line:#B7BFCC;
-  --text:#1B2230;--muted:#556074;--accent:#8A2334;--star:#9AA7BD;--link:#999999;
+  --text:#1B2230;--muted:#556074;--accent:#8A2334;--star:#9AA7BD;--link:#fff2cc;
   --sh1:rgba(24,34,54,.28);--sh2:rgba(24,34,54,.16);--hi:rgba(255,255,255,.7);
   --ledge-a:#B9C1CF;--ledge-b:#A5AEBE;
   --head:'Alegreya',Georgia,'Times New Roman',serif;
@@ -25,14 +25,14 @@
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
     --bg:#1b2230;--panel:#283244;--raise:#303c52;--well:#19212d;--line:#38455c;
-    --text:#E6E2D8;--muted:#A3AEC0;--accent:#DE7488;--star:#9AA7BD;--link:#999999;
+    --text:#E6E2D8;--muted:#A3AEC0;--accent:#DE7488;--star:#9AA7BD;--link:#fff2cc;
     --sh1:rgba(6,10,18,.6);--sh2:rgba(6,10,18,.4);--hi:rgba(255,255,255,.06);
     --ledge-a:#3a475e;--ledge-b:#2b3548;
   }
 }
 :root[data-theme="dark"]{
   --bg:#1b2230;--panel:#283244;--raise:#303c52;--well:#19212d;--line:#38455c;
-  --text:#E6E2D8;--muted:#A3AEC0;--accent:#DE7488;--star:#9AA7BD;--link:#999999;
+  --text:#E6E2D8;--muted:#A3AEC0;--accent:#DE7488;--star:#9AA7BD;--link:#fff2cc;
   --sh1:rgba(6,10,18,.6);--sh2:rgba(6,10,18,.4);--hi:rgba(255,255,255,.06);
   --ledge-a:#3a475e;--ledge-b:#2b3548;
 }
@@ -163,6 +163,10 @@ kbd{font-family:var(--ui);font-size:.72rem;background:var(--well);border:1px sol
 .fav-link{font-family:var(--ui);font-size:.82rem;line-height:1.6;color:var(--link);background:var(--raise);border:1px solid var(--line);border-radius:3px;padding:.22rem .5rem;text-decoration:none;overflow-wrap:anywhere;box-shadow:inset 0 1px 0 var(--hi)}
 .fav-link:hover{border-color:var(--link)}
 .fav-count{font-family:var(--ui);font-size:.68rem;color:var(--muted)}
+.fav-sub{margin-top:1.1rem}
+.fav-sub:first-of-type{margin-top:.6rem}
+.fav-sub h3{font-family:var(--ui);font-size:.78rem;font-weight:600;color:var(--muted);letter-spacing:.03em;margin:0 0 .5rem}
+.fav-sub .sub{font-weight:400}
 .tag-chip:hover,.compact-link:hover{border-color:var(--link);text-decoration:underline;text-underline-offset:2px}
 .detail-value-chips{margin-top:0;gap:.3rem}
 .detail-value-chips .tag-chip{font-size:.72rem;padding:.16rem .4rem}
@@ -219,6 +223,14 @@ const CFG={
 const ROUTE_PREFIX={books:'kitap',films:'film',series:'dizi',playlists:'playlist'};
 const FILTER_TITLES={author:'Yazar',genre:'Tür',subgenre:'Alt tür',authorOrigin:'Yazar köken',fiction:'Kurgu mu?',city:'İlk okunan şehir',acquisition:'İlk erişim / edinim şekli',formats:'Okunan tüm formatlar',translator:'Çevirmen',publisher:'Yayınevi',platform:'İlk kez hangi platformda',director:'Yönetmen',firstCity:'İlk kez izlenen şehir',country:'Yapım ülkesi',directorOrigin:'Yönetmen nereli',reason:'Nasıl keşfettim / neden izledim',done:'Bitirildi mi?',category:'Kategori',feeling:'His'};
 const NAV=[['home','Ana sayfa'],['films','Filmler'],['series','Diziler'],['books','Kitaplar'],['concerts','Konserler'],['favs','Favoriler'],['lists','Playlistler']];
+/* Playlist siralama sirası: ana liste once, sonra versucher II, artist, genre. */
+const PLAYLIST_CATEGORY_ORDER=['main','versucher II','artist','genre'];
+/* Anasayfadaki playlist sirasi elle secildi; "main" kategorisinden bu sirayla. */
+const HOME_PLAYLISTS=[
+  'loşş salınım',"victoria's spell",'alice in angerland',"sade'ın kırbacı",
+  'astral çürüme','hiç ışık yok','ebedi döngü','depedehşet',
+  'çözülüş','sentetik gece','tender violence','itlik & serserilik'
+];
 
 const $=(s,e=document)=>e.querySelector(s);
 const $$=(s,e=document)=>[...e.querySelectorAll(s)];
@@ -288,6 +300,9 @@ function dateSort(value){
   const months={ocak:0,şubat:1,subat:1,mart:2,nisan:3,mayıs:4,mayis:4,haziran:5,temmuz:6,ağustos:7,agustos:7,eylül:8,eylul:8,ekim:9,kasım:10,kasim:10,aralık:11,aralik:11};
   let m=s.match(/(\d{1,2})\s+([a-zçğıöşü]+)\s+(\d{4})/i);
   if(m&&months[m[2]]!=null)return Date.UTC(Number(m[3]),months[m[2]],Number(m[1]));
+  /* 13.06.2026 -> gun/ay/yil. Film sayfasindaki "izleme tarihi" bu bicimde. */
+  m=s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/);
+  if(m)return Date.UTC(Number(m[3]),Number(m[2])-1,Number(m[1]));
   m=s.match(/(\d{4})[-/.](\d{1,2})(?:[-/.](\d{1,2}))?/);
   if(m)return Date.UTC(Number(m[1]),Number(m[2])-1,Number(m[3]||1));
   const y=yearValue(s);return y?Date.UTC(y,0,1):-Infinity;
@@ -469,9 +484,24 @@ function favRow(kind){
   const list=favoriteItems(kind);
   return `<div class="sh"><h2>${CFG[kind].fav}</h2><a class="link" href="${esc(hrefFor('/'+kind))}" data-route="/${kind}">Tümünü gör</a></div><div class="niche"><div class="grid">${list.length?list.map(poster).join(''):'<p class="empty">Henüz favori işaretlenmedi.</p>'}</div></div>`;
 }
+/** Anasayfa playlist satiri: "main" kategorisinden elle secilen 12 kayit, sirayla. */
+function homePlaylistItems(){
+  const byKey=new Map();
+  for(const item of D.playlists||[]){
+    if(looseKey(item.category)!=='main')continue;
+    const key=looseKey(item.title);
+    if(!byKey.has(key))byKey.set(key,item);
+  }
+  return HOME_PLAYLISTS.map(name=>byKey.get(looseKey(name))).filter(Boolean);
+}
+function playlistFavRow(){
+  const list=homePlaylistItems();
+  return `<div class="sh"><h2>${CFG.lists.fav}</h2><a class="link" href="${esc(hrefFor('/lists'))}" data-route="/lists">Tümünü gör</a></div><div class="niche"><div class="grid">${list.length?list.map(poster).join(''):'<p class="empty">Henüz seçilmedi.</p>'}</div></div>`;
+}
 function home(){
-  const index=['films','series','books'].map(kind=>`<li><a href="${esc(hrefFor('/'+kind))}" data-route="/${kind}"><span>${CFG[kind].label}</span><span>${D[kind].length}</span></a></li>`).join('');
-  main.innerHTML=`<section class="welcome"><p class="eyebrow">Kişisel versucher</p><h1>Film, dizi ve kitaplar</h1><p class="sub">Sheets kayıtlarından üretilmiş versucher; her kutu kendi kişisel sayfasına bağlanır.</p></section>${favRow('films')}${favRow('series')}${favRow('books')}<div class="sh"><h2>Raflar</h2></div><ul class="shelf">${index}</ul><div class="sh"><h2>Yakında</h2></div><div class="placeholder">Playlistler ve konserler için ayrı veri tabloları eklendiğinde burada görünecek.</div>`;
+  /* Görünüm anahtarı ile veri anahtarı aynı değil ('lists' -> 'playlists'), dataType() gerekir. */
+  const index=['films','series','books','lists'].map(kind=>{const type=dataType(kind);return `<li><a href="${esc(hrefFor('/'+kind))}" data-route="/${kind}"><span>${CFG[kind].label}</span><span>${(D[type]||[]).length}</span></a></li>`}).join('');
+  main.innerHTML=`<section class="welcome"><p class="eyebrow">Kişisel versucher</p><h1>Film, dizi, kitap ve playlist</h1><p class="sub">Sheets kayıtlarından üretilmiş versucher; her kutu kendi kişisel sayfasına bağlanır.</p></section>${favRow('books')}${favRow('films')}${playlistFavRow()}${favRow('series')}<div class="sh"><h2>Raflar</h2></div><ul class="shelf">${index}</ul><div class="sh"><h2>Yakında</h2></div><div class="placeholder">Konserler için ayrı bir veri tablosu eklendiğinde burada görünecek.</div>`;
 }
 function sortItems(list,how){
   const a=[...list];
@@ -497,6 +527,14 @@ function sortItems(list,how){
   else if(how==='year')a.sort((x,y)=>yearCompare(x,y));
   else if(how==='yearasc')a.sort((x,y)=>yearCompare(x,y,true));
   else if(how==='title')a.sort((x,y)=>displayName(x).localeCompare(displayName(y),'tr'));
+  else if(how==='category'){
+    const rank=x=>{
+      const key=looseKey(x.category);
+      const i=PLAYLIST_CATEGORY_ORDER.findIndex(name=>looseKey(name)===key);
+      return i<0?PLAYLIST_CATEGORY_ORDER.length:i;
+    };
+    a.sort((x,y)=>rank(x)-rank(y)||displayName(x).localeCompare(displayName(y),'tr'));
+  }
   else if(how==='author')a.sort((x,y)=>clean(x.author).localeCompare(clean(y.author),'tr')||year(x)-year(y));
   else if(how==='tracks')a.sort((x,y)=>(y.tracks||0)-(x.tracks||0)||displayName(x).localeCompare(displayName(y),'tr'));
   return a;
@@ -507,8 +545,8 @@ function genresFor(kind){return unique((D[kind]||[]).flatMap(item=>item.genres))
 function gridView(kind){
   const cfg=CFG[kind],type=dataType(kind),genres=genresFor(type);
   const options=type==='playlists'
-    ?[['tracks','Şarkı sayısına göre'],['title','Ada göre']]
-    :[['date',type==='books'?'İlk okunma tarihine göre':'Tarihe göre'],['r','Puana göre'],['year','Yıla göre (yeniden eskiye)'],['yearasc','Yıla göre (eskiden yeniye)'],['title','Ada göre']];
+    ?[['category','Kategoriye göre'],['tracks','Şarkı sayısına göre'],['title','Ada göre']]
+    :[['date',type==='books'?'İlk okunma tarihine göre':type==='films'?'Son izlemeye göre':'Tarihe göre'],['r','Puana göre'],['year','Yıla göre (yeniden eskiye)'],['yearasc','Yıla göre (eskiden yeniye)'],['title','Ada göre']];
   if(type==='books')options.push(['author','Yazara göre']);
   const cats=type==='playlists'?unique((D.playlists||[]).map(item=>item.category)):[];
   main.innerHTML=`<h1>${cfg.label}</h1><p class="sub" id="count"></p><div class="ctl"><input id="q" type="search" placeholder="${cfg.label} içinde ara" aria-label="Ara" value="${esc(state.q)}"><select id="sort" aria-label="Sırala">${options.map(([value,label])=>`<option value="${value}">${label}</option>`).join('')}</select>${genres.length?`<select id="genre" aria-label="Tür"><option value="">Tüm türler</option>${genres.map(value=>`<option value="${esc(value)}">${esc(value)}</option>`).join('')}</select>`:''}${kind==='series'?`<select id="status" aria-label="Durum"><option value="">Tüm durumlar</option><option value="done">Bitirdiklerim</option><option value="part">Bitirmadiklerim</option><option value="ongoing">Sürüyor</option></select>`:''}${type==='playlists'?`<select id="cat" aria-label="Kategori"><option value="">Tüm kategoriler</option>${cats.map(value=>`<option value="${esc(value)}">${esc(value)}</option>`).join('')}</select>`:''}<select id="min" aria-label="En düşük puan"><option value="0">Tüm puanlar</option><option value="8">8 ve üstü</option><option value="9">9 ve üstü</option><option value="10">10</option></select></div><div id="grid" class="grid"></div><div id="pager"></div><div id="grid-sentinel" class="grid-sentinel" aria-hidden="true"></div>`;
@@ -820,6 +858,16 @@ function notFound(slug){
   main.innerHTML=`<a class="back" href="${esc(hrefFor('/'))}" data-route="/">← Ana sayfa</a><div class="placeholder" style="margin-top:1rem"><h2>Kayıt bulunamadı</h2><p>Bu adrese ait bir kayıt yok: <code>${esc(slug)}</code></p></div>`;
 }
 /** Ayni degerin buyuk/kucuk harf varyantlarini tek kayda indirger, adetleri toplar. */
+/** Baslik karsilastirmak icin: HTML kacisi, tirnak cesidi ve aksanlari sadelestirir. */
+function looseKey(value){
+  return clean(value)
+    .replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"')
+    .replace(/&#0?39;|&apos;|[\u2018\u2019\u02bc]/g,"'").replace(/&amp;/g,'&')
+    .toLocaleLowerCase('tr-TR')
+    .replace(/[ıİ]/g,'i').replace(/[şŞ]/g,'s').replace(/[ğĞ]/g,'g')
+    .replace(/[öÖ]/g,'o').replace(/[üÜ]/g,'u').replace(/[çÇ]/g,'c')
+    .replace(/\s+/g,' ').trim();
+}
 function collectValues(values){
   const map=new Map();
   values.map(clean).filter(value=>!missing(value)).forEach(value=>{
@@ -828,22 +876,34 @@ function collectValues(values){
     if(found)found.count++;
     else map.set(key,{value,count:1});
   });
-  return [...map.values()].sort((a,b)=>a.value.localeCompare(b.value,'tr'));
+  /* En cok kayda sahip olan basta; ayni sayida ise alfabetik. */
+  return [...map.values()].sort((a,b)=>b.count-a.count||a.value.localeCompare(b.value,'tr'));
 }
 function favoritesView(){
   const authors=collectValues((D.books||[]).map(item=>item.author));
   const directors=collectValues((D.films||[]).flatMap(item=>item.directors||[]));
-  const genres=collectValues(genreValues());
-  const group=(title,list,toPath)=>{
-    if(!list.length)return '';
-    const items=list.map(entry=>{
-      const path=toPath(entry.value);
-      if(!path)return `<li>${esc(entry.value)}</li>`;
-      return `<li><a class="fav-link" href="${esc(hrefFor(path))}" data-route="${esc(path)}">${esc(entry.value)}</a><span class="fav-count">${entry.count}</span></li>`;
-    }).join('');
-    return `<section><h2>${esc(title)} <span class="sub">${list.length} kayıt</span></h2><ul>${items}</ul></section>`;
-  };
-  main.innerHTML=`<h1>Favoriler</h1><p class="sub">Veri kayıtlarından otomatik oluşturulan özetler. Bağlantıya tıklayınca o kişinin ya da türün kayıtları listelenir.</p><div class="favs" style="margin-top:1.5rem">${group('Yazarlar',authors,value=>filterPath('books','author',value))}${group('Yönetmenler',directors,value=>filterPath('films','director',value))}${group('Türler',genres,value=>{const slug=globalGenreSlug(value);return slug?'/tur/'+slug:''})}</div>`;
+  /* Türler tür tür ayrılır. DİKKAT: genreValues() tekilleştirdiği için burada KULLANILMAZ;
+     aksi halde her türün sayısı hep 1 çıkardı. */
+  const genresOf=kind=>collectValues((D[kind]||[]).flatMap(item=>fieldValues(item,'genre')));
+  const byKind={books:genresOf('books'),series:genresOf('series'),films:genresOf('films'),playlists:genresOf('playlists')};
+  const chips=(list,toPath)=>list.map(entry=>{
+    const path=toPath(entry.value);
+    if(!path)return `<li>${esc(entry.value)}</li>`;
+    return `<li><a class="fav-link" href="${esc(hrefFor(path))}" data-route="${esc(path)}">${esc(entry.value)}</a><span class="fav-count">${entry.count}</span></li>`;
+  }).join('');
+  const group=(title,list,toPath)=>list.length
+    ?`<section><h2>${esc(title)} <span class="sub">${list.length} kayıt</span></h2><ul>${chips(list,toPath)}</ul></section>`
+    :'';
+  const subGroup=(title,list,toPath)=>list.length
+    ?`<div class="fav-sub"><h3>${esc(title)} <span class="sub">${list.length} tür</span></h3><ul>${chips(list,toPath)}</ul></div>`
+    :'';
+  const typeRows=[['books','Kitap'],['series','Dizi'],['films','Film']]
+    .filter(pair=>byKind[pair[0]].length)
+    .map(pair=>subGroup(pair[1],byKind[pair[0]],value=>filterPath(pair[0],'genre',value)))
+    .join('');
+  const turler=typeRows?`<section><h2>Türler</h2>${typeRows}</section>`:'';
+  const muzik=group('Müzik türleri',byKind.playlists,value=>filterPath('playlists','genre',value));
+  main.innerHTML=`<h1>Favoriler</h1><p class="sub">Veri kayıtlarından otomatik oluşturulan özetler. Sayılar en çok olandan en aza sıralıdır ve o türdeki gerçek kayıt adedini gösterir; bağlantıya tıklayınca o kişinin ya da türün kayıtları listelenir.</p><div class="favs" style="margin-top:1.5rem">${group('Yazarlar',authors,value=>filterPath('books','author',value))}${group('Yönetmenler',directors,value=>filterPath('films','director',value))}${turler}${muzik}</div>`;
 }
 function placeholderView(kind){
   const isConcerts=kind==='concerts';

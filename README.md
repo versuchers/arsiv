@@ -266,6 +266,90 @@ Herhangi bir sayfada **`/`** tuşuna basmak da aramayı açar (odak alan içinde
   içerenler.
 * Adres çubuğu canlı güncellenir (`/ara?q=nolan`), yani arama paylaşılabilir.
 * Listelerdeki arama kutuları değişmeden duruyor; `/ara` tüm siteyi tarar.
+## v1.12 değişiklikleri
+
+### Playlistler varsayılan olarak kategoriye göre sıralanır
+`/lists` sayfası "Şarkı sayısına göre" ile açılmıyor. Varsayılan **"Kategoriye
+göre"** ve kategori sırası:
+
+```
+main  →  versucher II  →  artist  →  genre
+```
+
+(26 / 18 / 21 / 44 kayıt). Aynı kategoride ad alfabetik sıralanır. Seçenek
+listesinde sıra: Kategoriye göre · Şarkı sayısına göre · Ada göre.
+
+### Filmler varsayılan olarak son izlemeye göre sıralanır
+`/films` sayfası artık "Son izlemeye göre" ile açılıyor ve **gerçekten** o
+sırayı uyguluyor.
+
+> Bulunan hata: `dateSort` yalnızca `13 Haziran 2026` ve `2026-06-13`
+> biçimlerini çözebiliyordu. Film sayfasındaki tarihler ise **gün/ay/yıl**
+> (`13.06.2026`) biçiminde; bu yüzden 144 tarihin hiçbiri çözülmüyor, hepsi
+> "tarihsiz" sayılıp sheet satır sırasına düşüyordu. Desen eklendi.
+>
+> Doğrulama: ilk sayfadaki 30 kartın tarihleri 27.09.2026 → 13.06.2026 arasında
+> kesin azalan; tarihi olmayanlar en sona gidiyor. Kitap (`2016`) ve dizi
+> (`2000`) yalnızca yıl içerdiği için davranışları değişmedi.
+
+### Anasayfa
+* Sıra artık: **Kitaplar → Filmler → Playlistler → Diziler**.
+* Playlist satırı eklendi: `main` kategorisinden 12 kayıt, elle seçilmiş sırayla
+  (loşş salınım, victoria's spell, alice in angerland, sade'ın kırbacı,
+  astral çürüme, hiç ışık yok, ebedi döngü, depedehşet, çözülüş, sentetik gece,
+  tender violence, itlik & serserilik).
+* "Raflar" listesine Playlistler de eklendi; "Yakında" metni artık yalnızca
+  konserleri anıyor (metin güncellendi, playlist verisi artık var).
+
+Başlıklar `looseKey()` ile eşleştirilir: HTML kaçışı, tırnak çeşidi ve aksan
+farkları yok sayılır, bu yüzden `"itlik &amp; serserilik"` ile yazılan kayıt da
+bulunur.
+
+### Favoriler sayfası yeniden düzenlendi
+* **Yazarlar**, **Yönetmenler**, tür listeleri ve **Müzik türleri** en çok
+  kayda sahip olandan en aza doğru sıralanır (aynı sayıda ise alfabetik).
+* **Türler** başlığı altında türler tür tür ayrıldı: **Kitap** (20 tür),
+  **Dizi** (34 tür), **Film** (23 tür). Her biri kendi türlerini ve kendi
+  tür sayısını gösterir.
+* Yeni **Müzik türleri** bölümü: playlist türleri (88 tür).
+  *Not: `feeling` sütunu sheet'te tamamen boş (0/109), dolayısıyla müzik
+  türleri playlist `tür` değerlerinden geliyor. Playlist türlerini "Türler"
+  altında görmek isterseniz `favoritesView` içindeki `muzik` satırı
+  `turler`in içine taşınabilir.*
+
+### Tür sayıları düzeltildi
+> Bulunan hata: `collectValues(genreValues())` çağrısı sayıları **her zaman 1**
+> gösteriyordu. `genreValues()` zaten `unique()` ile türleri tekilleştiriyor,
+> sonra sayaç o tekilleşmiş listeyi sayıyordu. Bu yüzden "bilim kurgu 1"
+> yazıyordu, halbuki tıklanınca 109 kayıt geliyordu.
+
+Artık türler ham kayıtlardan sayılıyor ve **her tür kendi türünün filtresine**
+bağlanıyor, yani yazan sayı ile tıklayınca çıkan sonuç birebir aynı:
+
+| Bağlantı | Yazan | Tıklayınca çıkan |
+|---|---|---|
+| Film / bilim kurgu | 109 | 109 |
+| Film / drama | 203 | 203 |
+| Dizi / bilim kurgu | 24 | 24 |
+| Kitap / roman | 118 | 118 |
+| Müzik / black metal | 11 | 11 |
+| Yazar / orkun uçar | 16 | 16 |
+| Yönetmen / christopher nolan | 8 | 8 |
+
+### Link rengi `#fff2cc`
+Üç tema bloğunda da `--link` `#fff2cc` yapıldı.
+
+> **Dikkat — açık tema.** Koyu temada kontrast 14.28:1, kusursuz. Açık temada
+> (`--bg:#D5DAE2`) kontrast **1.26:1**; WCAG AA için gereken 4.5:1'in çok
+> altında, yani linkler neredeyse görünmez. Sitenin açık temasını kullanırsanız
+> ilk blokta şu değişiklik gerekir:
+>
+> ```css
+> /* :root { ... --link:#999999; }  ->  */
+> :root{ --link:#6b5a1f; }   /* aynı krem tonunun koyu varyantı, kontrast 4.81:1 */
+> ```
+>
+> Koyu temalar `#fff2cc` olarak kalır. İsterseniz bunu doğrudan uygularım.
 ## Yeni başlık gelirse
 
 `scripts/build-data.mjs` içindeki `SCHEMAS[type]` listesine yeni alan adını ve
