@@ -176,6 +176,24 @@ const clean = (s) => String(s ?? '').replace(/\r/g, '').replace(/\n/g, ' ').repl
  */
 /* Baglac kelimeler ("ve", "ile", "de") buyuk harfle baslamaz; ilk kelime her zaman buyutulur. */
 const TITLE_KEEP_LOWER = new Set(['ve', 'ile', 'de']);
+
+/* Turkce kurallarina gore "i" -> "İ" olur; bu Ingilizce adlar icin yanlis:
+   "isaac" -> "İsaac", "inception" -> "İnception". Ayri bir kelime listesiyle
+   bu kelimeler "I" ile baslatilir. Liste veriden cikarildi; Turkce kelimeler
+   ("İstanbul", "İki", "İpek", "İthaki" ...) bilerek listede YOK, onlar
+   Turkce kurallarina devam eder. */
+const ENGLISH_I_WORDS = new Set([
+  'idiocracy', 'ihostage', 'ii', 'illuminati', 'immaculate', 'impossible', 'imprint',
+  'improbable', 'in', 'inception', 'incident', 'independence', 'indische', 'industrial',
+  'inferno', 'inglorious', 'ingmar', 'inside', 'instinct', 'intelligence', 'intern',
+  'interstellar', 'interview', 'introvert', 'invention', 'invincible', 'iris', 'irishman',
+  'irreversible', 'is', 'isaac', 'ishii', 'island', 'isles', 'it', "it's", 'iv', 'ivana',
+  'ivory', 'iñárritu', 'iguchi', 'im'
+]);
+
+/* Roma rakamlari (i, ii, iii, iv) tamamen buyutulur: "versucher ii" -> "Versucher II". */
+const isRomanInitial = (word) => /^(i|ii|iii|iv|v|vi|vii|viii|ix|xi|xii)$/i.test(word);
+
 function titleCase(value) {
   const s = clean(value);
   if (!s) return '';
@@ -184,6 +202,12 @@ function titleCase(value) {
     const atStart = first;
     first = false;
     if (!atStart && TITLE_KEEP_LOWER.has(word.toLocaleLowerCase('tr-TR'))) return pre + word;
+    const lower = word.toLocaleLowerCase('tr-TR');
+    /* "i" ile basliyorsa: once roma rakami, sonra Ingilizce listesi, kalan Turkce. */
+    if (lower.charAt(0) === 'i') {
+      if (isRomanInitial(lower)) return pre + lower.toLocaleUpperCase('en-US');
+      if (ENGLISH_I_WORDS.has(lower)) return pre + word.charAt(0).toLocaleUpperCase('en-US') + word.slice(1);
+    }
     return pre + word.charAt(0).toLocaleUpperCase('tr-TR') + word.slice(1);
   });
 }

@@ -675,9 +675,91 @@ görsel **hata verirse** geri geliyordu.
 * `prefers-reduced-motion` altında animasyon kapatılıyor.
 
 
-## Yeni başlık gelirse
+## v1.12 - tur 5 (favoriler sıralaması, iki yeni dizin, İ/İ düzeltmesi)
+
+### `i` → `İ` hatası (gerçek veri bozulmasıydı)
+
+`titleCase()` her kelimenin baş harfini `toLocaleUpperCase('tr-TR')` ile
+büyütüyordu. Bu İngilizce adlar için yanlıştı: `isaac` → **İ**saac (14 kayıt),
+`inception` → **İ**nception, `ideocracy` → **İ**deocracy, `impossible` →
+**İ**mpossible, `isles` → **İ**sles. Hepsinde nokta ve tire var, yanlış olan
+tek şey ilk harf.
+
+Türkçe tarafı bozmamak için kural **kelime listesiyle** çözüldü, sezgisel
+değil: `ilk`, `istanbul`, `israil`, `ispanyol`, `italyan`, `ipek` gibi Türkçe
+kelimeler listede yok, onlar Türkçe kurallara devam eder. Aksi hâlde 137
+kayıttaki "İstanbul" "Istanbul" olurdu.
+
+Roma rakamları ayrı: `versucher ii` → `Versucher II` (`isRomanInitial`).
+
+Sonuç: **944 kaydın slug'ı değişmedi** (`i`/`İ` farkı küçük büyük harfte
+görünür, slug tamamen küçük harf). Değişen tek şey 43 film, 8 dizi ve 3
+playlist başlığı.
+
+### Arama "Isaac" yazınca sonuç gelmiyordu (bulunan hata)
+
+`hydrate()` arama dizinini `toLocaleLowerCase('tr-TR')` ile kuruyordu.
+Türkçe küçültmede `I` → `ı` olduğu için dizinde "Isaac Asimov"
+**"ısaac asimov"** olarak yazılıyordu. Kullanıcı `isaac` yazınca iğne
+`isaac` kalıyor, dizin `ısaac` → eşleşme yok. Aynı sorun `İngilizce`
+içeren her sorguda vardı.
+
+Yeni `foldText()`: küçültme + `ı→i, ş→s, ğ→g, ö→o, ü→u, ç→c`
+indirgemesi. Hem arama dizini hem sorgu hem de sonuç sıralaması bunu
+kullanıyor; artık `Isaac`, `isaac` ve `İsaac` aynı kayda gidiyor.
+
+`/ara?q=isaac` rotası `check-site.mjs` eşiklerine eklendi (sonuç ≥ 1)
+ve bulunmayan bir sorgu için `maxCards: 0` eklendi.
+
+### Favoriler sayfası
+
+- **Yazarlar**: istenen 10 kişi, istenen sırayla. Yazım veriden alınır, kod
+  sabitinden değil; eşleştirme boşluğa duyarsız (`J.R.R. Tolkien` = `J. R. R.
+  Tolkien`). Bulunamayan isim sessizce kaybolmaz, `console.warn` yazar.
+- **Yönetmenler**: istenen 10 kişi, istenen sırayla.
+- **Türler**: kitap 5, dizi 5, film 5 · türler tümü 10 · main label 10 ·
+  müzik türleri 10.
+- Her bloğun altında "Tüm N ... gör" bağlantısı. `/favs` 693 → **69
+  bağlantı**.
+
+### Yeni dizin sayfaları
+
+- **`/yazarlar`** — 105 yazarın tamamı, sayıya göre sıralı; ada tıklayınca o
+  yazarın 14 kitabı açılır.
+- **`/yonetenler`** — 355 yönetmenin tamamı; ada tıklayınca o yönetmenin tüm
+  filmleri açılır.
+
+`/tur` ve `/etiket` zaten vardı. Dört dizin sayfası artık birbirine
+bağlı (`DIZINLER` / `dizinSatiri()`), böylece her sayfadan diğerlerine tek
+tıkla geçilir.
+
+### `check-site.mjs`
+
+`/yazarlar` ve `/yonetenler` rotaya eklendi; `/favs` eşiği 100 → 40 çekildi
+(sayfa artık kısıtlı, 69 bağlantı).
+
+### PowerShell ile dosya yamalarken
+
+Bu turda üç hata birden yapıldı ve üçü de sessizdi:
+
+1. `-replace` **arama dizesini regex sayar**. `${chips(...)}` içindeki
+   parantezler deseni bozuyordu, "BULUNAMADI" hatası yanlış yere işaret
+   ediyordu. Çözüm: `.Replace` (literal).
+2. Çift tırnaklı PowerShell dizesi `${...}` ifadelerini **değerlendirir**.
+   Yamalar tek tırnaklı olmalı; içerideki `'` çiftlenir.
+3. Değişken adları **büyük/küçük harf duyarsızdır**: `$L` ile `$l` aynı
+   değişkendir. Bir doğrulama betiği beklenen çıktı yerine dosyanın tamamını
+   yazdı.
+
+Ayrıca: Türkçe metni harf harf eşleyerek üretmek **yanlış**. Kural kelime
+başı uygulanır; `sirayi` → `sırayı` (baştaki `s` değişmez), `etiketler`
+içindeki `i` düz kalır. Harf harf eşleme `şırayı`, `etıketler`,
+`taşııyan` gibi bozuk metinler üretti. Türkçe metin tek tırnaklı
+here-string içinde **doğrudan yazılmalı**.
+
+
 
 `scripts/build-data.mjs` içindeki `SCHEMAS[type]` listesine yeni alan adını ve
 `scripts/sources.json` içindeki `required` listesine ekleyin. Alan JSON'a otomatik
-düşer; sitede göstermek için `arsiv-taslak-v6.html` içindeki `detailSection(...)`
+düşer; sitede göstermek için `index.html` içindeki `detailSection(...)`
 çağrısına bir satır ekleyin.

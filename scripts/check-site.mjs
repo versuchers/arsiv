@@ -107,9 +107,13 @@ const ROUTES = [
   { path: 'books', h1: /^Kitaplar$/, minCards: 30 },
   { path: 'lists', h1: /^Playlistler$/, minCards: 30 },
   { path: 'concerts', h1: /^Konserler$/, minCards: 0 },
-  { path: 'favs', h1: /^Favoriler$/, minLinks: 100 },
+  /* Favoriler sayfasi artik kisitli: 10 yazar + 10 yonetmen + 5/5/5 tur,
+     10 tur, 10 etiket, 10 muzik turu = 65 baglanti + 4 "daha fazla" baglantisi. */
+  { path: 'favs', h1: /^Favoriler$/, minLinks: 40 },
   { path: 'tur', h1: /^Türler$/, minLinks: 50 },
   { path: 'etiket', h1: /^Main label$/, minLinks: 50 },
+  { path: 'yazarlar', h1: /^Yazarlar$/, minLinks: 50 },
+  { path: 'yonetenler', h1: /^Yönetmenler$/, minLinks: 50 },
   { path: `tur/${slugPart(firstGenre)}`, h1: /^Tür:/, minCards: 1 },
   { path: `etiket/${slugPart(firstLabel)}`, h1: /^Etiket:/, minCards: 1 },
   { path: pick('films').route.replace(/^\/film\//, 'film/'), h1: null, mustContain: pick('films').title, kind: 'detail' },
@@ -117,7 +121,11 @@ const ROUTES = [
   { path: pick('books').route.replace(/^\/kitap\//, 'kitap/'), h1: null, mustContain: pick('books').title, kind: 'detail' },
   { path: pick('playlists').route.replace(/^\/playlist\//, 'playlist/'), h1: null, mustContain: pick('playlists').title, kind: 'detail' },
   { path: 'film/boyle-bir-film-yok-12345', expectMissing: true },
-  { path: 'ara?q=dune', h1: /^Arama$/, minCards: 1 }
+  { path: 'ara?q=dune', h1: /^Arama$/, minCards: 1 },
+  /* Yazar adiyla arama: "Isaac" tr-TR kucultmesiyle "ısaac" olurdu; foldText
+     sayesinde "isaac" yazan kullanici da sonuc alir. */
+  { path: 'ara?q=isaac', h1: /^Arama$/, minCards: 1 },
+  { path: 'ara?q=buradaboylebirkitapyok', h1: /^Arama$/, minCards: 0, maxCards: 0 }
 ];
 
 /* ------------------------------------------------------------------ *
@@ -221,6 +229,7 @@ async function check(route) {
   }
   if (route.h1 && !route.h1.test(probe.h1)) failures.push(`${route.path}: baslik "${probe.h1}" beklenen ${route.h1} degil`);
   if (route.minCards && probe.cards < route.minCards) failures.push(`${route.path}: ${probe.cards} kart, en az ${route.minCards} bekleniyordu`);
+  if (route.maxCards != null && probe.cards > route.maxCards) failures.push(`${route.path}: ${probe.cards} kart, en fazla ${route.maxCards} bekleniyordu`);
   if (route.minLinks && probe.links < route.minLinks) failures.push(`${route.path}: ${probe.links} baglanti, en az ${route.minLinks} bekleniyordu`);
 }
 
