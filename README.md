@@ -7,9 +7,9 @@ ile okur.
 ## Klasör yapısı
 
 ```
-index.html                  site (arsiv-taslak-v6.html ile aynı içerik)
+index.html                  site — tek dosya (HTML + CSS + JS, ~1180 satır)
 404.html                    doğrudan detay adresi yenilendiğinde fallback
-arsiv-taslak-v6.html        çalışma dosyası
+                            ⚠ ÜRETİLİR: workflow her koşuda index.html'den kopyalar
 data/
   books.json                Kitaplar  (üretilir)
   films.json                Filmler   (üretilir)
@@ -17,6 +17,8 @@ data/
 scripts/
   build-data.mjs            CSV -> JSON dönüştürücü + doğrulamalar
   sources.json              kaynak CSV adresleri ve zorunlu başlıklar
+  check-data.mjs            veri + adres + HTML tutarlılık kontrolleri (tarayıcı gerektirmez)
+  check-site.mjs            18 rotayı GitHub Pages benzeri sunumda başsız tarayıcıda açar
 .github/workflows/
   update-and-deploy.yml     saatlik veri üretimi + Pages yayını
 ```
@@ -62,6 +64,10 @@ yapılmaz; eski JSON'lar ve eski site yerinde kalır.
 # Veriyi yeniden üret
 node scripts/build-data.mjs
 
+# Değişiklikten önce kendi kendine kontrol et (ikisi de bağımlılıksız)
+node scripts/check-data.mjs     # veri, adres, HTML, çakışma işareti
+node scripts/check-site.mjs     # 18 rota, başsız tarayıcıda (tarayıcı yoksa atlar)
+
 # Sitenin data/*.json okuyabilmesi için HTTP sunucusu şart (file:// çalışmaz)
 python -m http.server 8000
 # sonra: http://localhost:8000/
@@ -87,6 +93,11 @@ alt bilgide açıkça bildirir. Bu yüzden yerelde de bir HTTP sunucusu kullanı
 | `main` dalına `index.html`, `404.html`, `data/`, `scripts/` veya bu workflow yüklenirse | **hemen** (push tetikleyicisi) |
 | Sheets verisi değişirse | saatlik koşuda otomatik |
 | Elle **Run workflow** | anında |
+
+Yayından önce üç kontrol daha çalışır ve biri bile kırmızıysa **yayın yapılmaz**:
+`404.html` yeniden üretilir ve `index.html` ile aynı olduğu doğrulanır,
+`check-data.mjs` tutarlılıkları denetler, `check-site.mjs` rotaları gerçek bir
+tarayıcıda açar.
 
 > Push tetikleyicisi `paths` ile sınırlıdır; `README.md` gibi ilgisiz dosyalar
 > yeni koşu başlatmaz.
@@ -585,6 +596,83 @@ Tema anahtarını kaldırıp siteyi her koşulda koyu yapmak isterseniz tek yap�
 `#E3DEC3` / `#0F0F10` = **14.1:1**, `#8A8778` / `#0F0F10` = 5.3:1,
 `#C5A880` / `#0F0F10` = 8.5:1, `#D4B98C` / `#18181A` = 9.4:1.
 Hedeflerin hepsi 4.5:1 üstünde. Açık temada en düşük değer 4.7:1 (ikincil metin).
+
+
+## Kırılganlığı azaltma turu
+
+### "Üç dosya aynı" kuralı artık kodla garanti ediliyor
+Önceden `index.html`, `404.html` ve `arsiv-taslak-v6.html` elle aynı tutuluyordu;
+insan disiplinine dayanan bir kuraldı. Artık:
+
+* **`arsiv-taslak-v6.html` kaldırıldı.** Çalışma dosyası doğrudan `index.html`.
+  Kural "iki dosya aynı"ya indi ve workflow bunu **kendisi** üretiyor.
+* Workflow, yayından hemen önce `cp index.html 404.html` çalıştırıyor ve
+  `cmp -s` ile bayt bayt aynı olduğunu doğruluyor. Ayrıca `arsiv-taslak-v6.html`
+  depoda kalmışsa işi hata ile durduruyor.
+* Depodaki `404.html` `index.html` ile farklıysa yalnızca uyarı verir (yayın yine de
+  yapılır, çünkü dosya zaten üretildi).
+* "Çalışma ağacı temiz mi" kontrolü artık `404.html` dosyasını hariç tutar;
+  çünkü bir önceki adım onu bilerek değiştiriyor.
+* Sürüm klasörleri yerine **git etiketleri** kullanılmalı (aşağıya bak).
+
+### Doğrulama depoya taşındı: iki betik
+Bu turun bulduğu "detay sayfası yenilemede veri hatası" gerilemesi türü şeyleri
+insan gözüne bırakmak riskti. Artık iki betik var, ikisi de **bağımlılıksız**
+(sadece Node modüllerinden):
+
+| Betik | Ne yapar | Hata durumunda |
+|---|---|---|
+| `scripts/check-data.mjs` | Veri dosyaları, adres tutarlılığı, HTML bütünlüğü, çakışma işareti, kritik alan doluluğu, **sütun eşleştirme raporu** | `exit 1` |
+| `scripts/check-site.mjs` | Siteyi GitHub Pages gibi sunar (bilinmeyen yol → `404.html`, 404 kodu) ve 18 rotayı başsız tarayıcıda açar | `exit 1` |
+
+`check-site.mjs` her rota için şunları doğruluyor: sayfa yüklendi, konsolda JavaScript
+hatası yok, "veri yüklenemedi" uyarısı yok, beklenen başlık ve kart/bağlantı sayısı
+eşleşti. Olmayan bir kayıt adresi de "bulunamadı" mesajı veriyor mu diye sınanıyor.
+**Tarayıcı bulunamazsa atlar ve 0 döner** — yerelde Node çalıştıran ama tarayıcısı
+olmayan biri hata görmez. GitHub runnerlarında `google-chrome` hazır olduğu için
+CI da bu test gerçekten çalışır.
+
+Rotalar `data/*.json` üzerinden dinamik üretiliyor; `check-site.mjs` içindeki
+`slugPart()` kopyası sitedeki kuralın aynısıdır ve eşleşmezse haber verir.
+
+### `reason` / `reasonFound` alias hatası düzeltildi
+Önceden `reason: ['nasıl keşfettim / neden izledim']` diyelim birleşik bir başlık
+tek sütun olarak **yoksa** eşleştirme bulanık (alt dizi) moda düşüyor ve onu
+"nasıl keşfettim" sütununa bağlıyordu; böylece `reason` ve `reasonFound` **aynı
+sütuna** biniyordu. Bu bir kod hatasıydı.
+
+* `columnMap()` artık alias başındaki `=` işaretini tanıyor: `=` varsa o alias **sadece
+  tam eşleşmede** kullanılır, bulanık eşleştirmeye hiç girmez.
+* Üç tipte de `reason` alias'ı `=nasıl keşfettim / ...` yapıldı.
+* Sonuç: `reason` artık hiçbir yere bağlanmıyor (o sütunlarda birleşik başlık yok),
+  `reasonFound` ve `reasonWhy` kendi sütunlarında kaldı. Doğrulandı:
+  film `reasonWhy` 136, dizi `reasonFound` 20, ikisi de doğru sütunda.
+
+### `/tur` ve `/etiket` artık gerçek dizin sayfaları
+Bu adresler daha önce **ana sayfaya düşüyordu** — gerçek bir gezinme boşluğuydu.
+
+* `/tur` → kitap (20) + dizi (34) + film (23) türleri + müzik türleri (88),
+  166 bağlantı. Film/dizi/kitap türleri `/tur/<slug>`, müzik türleri kendi
+  filtre adresine gider.
+* `/etiket` → **429** main label'ın tamamı, 292 bağlantı (bazı etiketlerin slug'ı
+  boş olduğu için düz metin olarak listeleniyor).
+* Favoriler sayfasındaki main label bölümü artık **ilk 30** etiketi gösterip
+  "Tüm 429 etiketi gör" bağlantısı veriyor. Favoriler sayfasının DOM yükü
+  **693 → 434 bağlantıya** indi.
+* Favorilerde "Türler tümü" başlığına da "Tüm türleri gör" bağlantısı eklendi.
+
+### Afişlerde yükleme efekti
+Afişler harici bir depodan geldiği için yavaş bağlantıda kap boş siyah bir kutu
+gibi görünüyordu: `.has-image` sınıfı atanır atanmaz başlığı gizliyor, başlık ancak
+görsel **hata verirse** geri geliyordu.
+
+* `loading="lazy"` ve `decoding="async"` zaten vardı, korundu.
+* Yeni: kap içinde bir **skeleton** (ışık geçişi) ve `is-loaded` sınıfı.
+  `.cover.has-image.is-loaded .cover-fallback` olarak değişti, yani **başlık
+  görsel gerçekten boyanana kadar görünür** kalıyor.
+* `load` ve `error` dinleyicileri `document` seviyesinde (capture) bağlandı;
+  `render()` sonunda `markLoadedImages()` çalışıyor (önbellekten gelen görseller için).
+* `prefers-reduced-motion` altında animasyon kapatılıyor.
 
 
 ## Yeni başlık gelirse

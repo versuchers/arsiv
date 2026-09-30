@@ -18,7 +18,7 @@
   --text:#1F1D18;--muted:#625E4A;--accent:#7E5F2F;--star:#8A6E3C;--link:#6E5426;
   --sh1:rgba(60,48,26,.22);--sh2:rgba(60,48,26,.11);--hi:rgba(255,255,255,.75);
   --ledge-a:#CFC7AE;--ledge-b:#B9AF94;--line-ctl:#ADA389;
-  --cover:#EAE5D4;--cover-frame:rgba(31,29,24,.3);
+  --cover:#EAE5D4;--cover-frame:rgba(31,29,24,.3);--sk:rgba(31,29,24,.055);
   --head:'Alegreya',Georgia,'Times New Roman',serif;
   --body:'Bitter',Georgia,'Times New Roman',serif;
   --ui:'Manrope',system-ui,-apple-system,'Segoe UI',sans-serif;
@@ -31,8 +31,8 @@
     --text:#E3DEC3;--muted:#8A8778;--accent:#C5A880;--star:#B29572;--link:#D4B98C;
     --sh1:rgba(0,0,0,.72);--sh2:rgba(0,0,0,.45);--hi:rgba(227,222,195,.07);
     --ledge-a:#2E2E33;--ledge-b:#1A1A1D;--line-ctl:#5E5E66;
-  --cover:#1B1B1F;--cover-frame:rgba(227,222,195,.24);
-    --cover:#1B1B1F;--cover-frame:rgba(227,222,195,.24);
+  --cover:#1B1B1F;--cover-frame:rgba(227,222,195,.24);--sk:rgba(227,222,195,.07);
+    --cover:#1B1B1F;--cover-frame:rgba(227,222,195,.24);--sk:rgba(227,222,195,.07);
   }
 }
 :root[data-theme="dark"]{
@@ -41,7 +41,7 @@
   --text:#E3DEC3;--muted:#8A8778;--accent:#C5A880;--star:#B29572;--link:#D4B98C;
   --sh1:rgba(0,0,0,.72);--sh2:rgba(0,0,0,.45);--hi:rgba(227,222,195,.07);
   --ledge-a:#2E2E33;--ledge-b:#1A1A1D;--line-ctl:#5E5E66;
-  --cover:#1B1B1F;--cover-frame:rgba(227,222,195,.24);
+  --cover:#1B1B1F;--cover-frame:rgba(227,222,195,.24);--sk:rgba(227,222,195,.07);
 }
 html{scroll-padding-top:env(safe-area-inset-top,0px);background:var(--bg)}
 *,*::before,*::after{box-sizing:inherit}
@@ -63,7 +63,7 @@ nav a[aria-current="page"]{border-bottom-color:var(--accent)}
 .site-foot{width:min(1100px,calc(100% - 1.5rem));margin:0 auto;padding:.9rem 0 2.5rem;font-family:var(--ui);font-size:.76rem;line-height:1.5;color:var(--muted);border-top:1px solid var(--line)}
 .spinner{width:15px;height:15px;flex:none;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-@media (prefers-reduced-motion:reduce){.spinner{animation:none}}
+@media (prefers-reduced-motion:reduce){.spinner{animation:none}.sk{animation:none;background:none}}
 main{width:min(1100px,calc(100% - 1.5rem));margin:1rem auto 3rem;padding:1.5rem;background:var(--panel);border:1px solid var(--line);border-radius:6px;box-shadow:inset 0 1px 0 var(--hi),0 2px 4px var(--sh1),0 22px 44px -8px var(--sh1)}
 main:has(.detail-page){width:min(1100px,calc(100% - 1.5rem))}
 /* Yukseklikten hesaplanan daraltma yalnizca genis ekranda: kisa/kucuk ekranda
@@ -102,7 +102,12 @@ p{margin-top:.55rem}
 .cover-fallback{position:relative;z-index:0;max-width:100%;overflow-wrap:anywhere}
 .cover .ct{font-family:var(--head);font-weight:700;font-size:1.1rem;line-height:1.25}
 .cover .cy{font-family:var(--ui);position:absolute;bottom:14px;left:14px;right:14px;text-align:center;font-size:.72rem;color:rgba(233,228,216,.72);z-index:3}
-.cover.has-image .cover-fallback{display:none}
+/* Baslik ancak gorsel boyandiktan sonra gizlenir. */
+.cover.has-image.is-loaded .cover-fallback{display:none}
+.sk{position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(100deg,transparent 18%,var(--sk) 45%,transparent 72%);background-size:260% 100%;animation:sk 1.4s linear infinite}
+@keyframes sk{from{background-position:170% 0}to{background-position:-70% 0}}
+.cover:not(.has-image) .sk{display:none}
+.cover.has-image.is-loaded .sk{display:none}
 .cover.has-image::before{border-color:rgba(255,255,255,.32)}
 .pal0{background:linear-gradient(#4a1b28,#25101a)}
 .pal1{background:linear-gradient(#1f3a44,#0f1e26)}
@@ -181,6 +186,10 @@ p{margin-top:.55rem}
 .search-ctl{margin:1.1rem 0 .4rem}
 kbd{font-family:var(--ui);font-size:.72rem;background:var(--well);border:1px solid var(--line-ctl);border-radius:3px;padding:.05rem .3rem}
 .favs ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:.4rem}
+/* Dizin sayfalari: uzun etiket listesi icin siki, okunabilir izgara. */
+.idx-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.35rem .7rem}
+.idx-list li{display:flex;align-items:baseline;justify-content:space-between;gap:.5rem;min-width:0}
+.idx-list .fav-link{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .favs li{display:inline-flex;align-items:baseline;gap:.3rem}
 .fav-link{font-family:var(--ui);font-size:.82rem;line-height:1.6;color:var(--link);background:var(--raise);border:1px solid var(--line);border-radius:3px;padding:.22rem .5rem;text-decoration:none;overflow-wrap:anywhere;box-shadow:inset 0 1px 0 var(--hi)}
 .fav-link:hover{border-color:var(--link)}
@@ -253,6 +262,8 @@ const PLAYLIST_CATEGORY_ORDER=['main','versucher II','artist','genre'];
 const FAV_EXCLUDE_DIRECTORS=['hasan karacadağ'];
 /* Favoriler sayfasinda gosterilecek minimum film sayisi (yonetmen icin). */
 const FAV_MIN_DIRECTOR_FILMS=2;
+/* Favoriler sayfasinda gosterilecek main label siniri; tamami /etiket dizininde. */
+const FAV_LABEL_LIMIT=30;
 /* Coklu yazarli kitaplarda tek tek gosterilecek yazarlar; grubun digerleri gosterilmez. */
 const FAV_MULTI_AUTHORS=['Demokan Atasoy','Galip Dursun','İşın Beril Tetik'];
 /* Anasayfadaki playlist sirasi elle secildi; "main" kategorisinden bu sirayla. */
@@ -485,8 +496,12 @@ function parseRoute(){
   const routeType=Object.keys(ROUTE_PREFIX).find(key=>ROUTE_PREFIX[key]===first);
   if(routeType&&parts[1]?.toLocaleLowerCase('tr-TR')==='filtre'&&parts[2]&&parts[3])return {kind:'filter',type:routeType,field:parts[2],valueSlug:parts.slice(3).join('/')};
   if(routeType&&parts[1])return {kind:'detail',type:routeType,slug:parts.slice(1).join('/')};
+  /* Slug'siz /tur ve /etiket birer dizin sayfasidir; slug'li halleri tek tur /
+     tek etiket listesidir. Once slug'li dal denenir. */
   if(first==='etiket'&&parts[1])return {kind:'tag',slug:parts.slice(1).join('/')};
   if(first==='tur'&&parts[1])return {kind:'genre',slug:parts.slice(1).join('/')};
+  if(first==='etiket')return {kind:'tagIndex'};
+  if(first==='tur')return {kind:'genreIndex'};
   if(first==='ara')return {kind:'search'};
   if(['films','series','books','concerts','favs','lists'].includes(first)){
     const page=Number(parts[1]);
@@ -520,7 +535,11 @@ function pal(value){let h=0;for(const c of clean(value))h+=c.charCodeAt(0);retur
 function imageFrame(item,large=false){
   const image=item.image;
   const fallback=`<span class="cover-fallback"><span class="ct">${esc(displayName(item))}</span><span class="cy">${esc(item.sec==='books'?(item.author||item.year||''):(item.year||''))}</span></span>`;
-  return `<div class="cover ${pal(displayName(item))} ${image?'has-image':''} ${large?'large':''}">${fallback}${image?`<img src="${esc(image)}" alt="${esc(displayName(item))}" loading="${large?'eager':'lazy'}" decoding="async">`:''}</div>`;
+  /* Gorel adreslar yavas oldugunda kap bos siyah bir kutu gibi gorunuyordu:
+     .has-image, .cover-fallback'i hemen gizliyordu, baslik ancak hata
+     olursa geri geliyordu. Artik skeleton isik gecisi gosteriyor ve baslik
+     gorsel gercekten boyanana kadar gorunur kaliyor. */
+  return `<div class="cover ${pal(displayName(item))} ${image?'has-image':''} ${large?'large':''}">${fallback}${image?`<span class="sk" aria-hidden="true"></span><img src="${esc(image)}" alt="${esc(displayName(item))}" loading="${large?'eager':'lazy'}" decoding="async">`:''}</div>`;
 }
 function poster(item){
 
@@ -708,6 +727,54 @@ function genrePage(route){
     return `<section class="tag-result-section"><div class="sh"><h2>${label}</h2><span class="sub">${list.length.toLocaleString('tr-TR')} kayıt</span></div><div class="grid">${list.map(poster).join('')}</div></section>`;
   }).join('');
   main.innerHTML=`<a class="back" href="${esc(hrefFor('/'))}" data-route="/">← Ana sayfa</a><h1 style="margin-top:1rem">Tür: ${esc(value)}</h1><div style="margin-top:1.5rem">${sections||'<p class="empty">Bu türde kayıt yok.</p>'}</div>`;
+}
+/** Index sayfalari bir zamanlar ana sayfaya dusuyordu; artik gercek birer liste var.
+ *  /etiket  -> tum main label'lar (sanal olarak 400+ adet)
+ *  /tur     -> film + dizi + kitap turleri (+ playlist muzik turleri)
+ * Favoriler sayfasi yalnizca ilk 30 etiketi gosterip buraya yonlendirir; boylece
+ * en agir sayfanin DOM yuku dusuyor.
+ */
+function indexShell(eyebrow,title,intro,body){
+  document.title=title+' - versucher';
+  return `<a class="back" href="${esc(hrefFor('/'))}" data-route="/">&larr; Ana sayfa</a>`
+    +`<p class="eyebrow" style="margin-top:1.4rem">${esc(eyebrow)}</p>`
+    +`<h1>${esc(title)}</h1><p class="sub" style="max-width:60ch">${esc(intro)}</p>`
+    +`<div class="favs" style="margin-top:1.6rem">${body}</div>`;
+}
+function indexGroup(title,list,toPath,unit){
+  if(!list.length)return '';
+  const chips=list.map(entry=>{
+    const path=toPath(entry.value);
+    const label=path
+      ?`<a class="fav-link" href="${esc(hrefFor(path))}" data-route="${esc(path)}">${esc(entry.value)}</a>`
+      :esc(entry.value);
+    return `<li>${label}<span class="fav-count">${entry.count}</span></li>`;
+  }).join('');
+  return `<section><h2>${esc(title)} <span class="sub">${list.length} ${esc(unit)}</span></h2><ul class="idx-list">${chips}</ul></section>`;
+}
+function tagIndexView(){
+  const values=['books','series','films'].flatMap(kind=>(D[kind]||[]).flatMap(item=>fieldValues(item,'mainLabel')));
+  const list=collectValues(values);
+  const body=indexGroup('Main label',list,value=>{
+    const slug=globalTagSlug(value);
+    return slug?'/etiket/'+slug:'';
+  },'etiket');
+  main.innerHTML=indexShell('Etiketler','Main label',
+    'Film, dizi ve kitaplarda işaretlenen bütün ana etiketler. Sayı o etiketi taşıyan gerçek kayıt adedidir; etikete tıklayınca o kayıtların listesi açılır.',
+    body);
+}
+function genreIndexView(){
+  const genresOf=kind=>collectValues((D[kind]||[]).flatMap(item=>fieldValues(item,'genre')));
+  const sections=[['books','Kitap türleri'],['series','Dizi türleri'],['films','Film türleri']]
+    .map(pair=>indexGroup(pair[1],genresOf(pair[0]),value=>{
+      const slug=globalGenreSlug(value);
+      return slug?'/tur/'+slug:'';
+    },'tür')).join('');
+  /* Playlist turleri /tur/<slug> sayfasinda yer almaz; kendi filtre adresine gider. */
+  const music=indexGroup('Müzik türleri',genresOf('playlists'),value=>filterPath('playlists','genre',value),'tür');
+  main.innerHTML=indexShell('Türler','Türler',
+    'Film, dizi ve kitap türleri bir arada: bir türe tıklayınca o türün üç türdeki tüm kayıtları tek listede açılır. Müzik türleri playlistlere gider.',
+    sections+music);
 }
 function tagPage(route){
   const value=findTagValue(route.slug);
@@ -1006,10 +1073,16 @@ function favoritesView(){
     .join('');
   /* "Türler tümü": bir türdeki film + dizi + kitaplar birlikte (/tur/<slug>). */
   const allGenres=collectValues(['books','series','films'].flatMap(kind=>(D[kind]||[]).flatMap(item=>fieldValues(item,'genre'))));
-  const allRow=subGroup('Türler tümü',allGenres,value=>{const slug=globalGenreSlug(value);return slug?'/tur/'+slug:''});
+  const allRow=(subGroup('Türler tümü',allGenres,value=>{const slug=globalGenreSlug(value);return slug?'/tur/'+slug:''})
+    +`<a class="link-chip" href="${esc(hrefFor('/tur'))}" data-route="/tur">Tüm türleri gör</a>`);
   /* Main label olarak işaretlenenler (/etiket/<slug>). */
+  /* 400+ etiket favoriler sayfasinda tek tek basilirdi; en agir sayfa buydu.
+     Ilk 30 gosterilir, tamami /etiket dizininde. */
   const labelValues=['books','series','films'].flatMap(kind=>(D[kind]||[]).flatMap(item=>fieldValues(item,'mainLabel')));
-  const labelRow=subGroup('Main label',collectValues(labelValues),value=>{const slug=globalTagSlug(value);return slug?'/etiket/'+slug:''});
+  const labelList=collectValues(labelValues);
+  const labelMore=labelList.length>FAV_LABEL_LIMIT
+    ?`<a class="link-chip" href="${esc(hrefFor('/etiket'))}" data-route="/etiket">Tüm ${labelList.length.toLocaleString('tr-TR')} etiketi gör</a>`:'';
+  const labelRow=(labelList.length?subGroup('Main label',labelList.slice(0,FAV_LABEL_LIMIT),value=>{const slug=globalTagSlug(value);return slug?'/etiket/'+slug:''}):'')+labelMore;
   const turler=(typeRows+allRow+labelRow)?`<section><h2>Türler</h2>${typeRows}${allRow}${labelRow}</section>`:'';
   const muzik=group('Müzik türleri',byKind.playlists,value=>filterPath('playlists','genre',value));
   main.innerHTML=`<h1>Favoriler</h1><p class="sub">Veri kayıtlarından otomatik oluşturulan özetler. Sayılar en çok olandan en aza sıralıdır ve o türdeki gerçek kayıt adedini gösterir; bağlantıya tıklayınca o kişinin ya da türün kayıtları listelenir.</p><div class="favs" style="margin-top:1.5rem">${group('Yazarlar',authors,value=>filterPath('books','author',value))}${group('Yönetmenler',directors,value=>filterPath('films','director',value))}${turler}${muzik}</div>`;
@@ -1024,7 +1097,13 @@ function nav(){
   const current=(state.route.kind==='detail'||state.route.kind==='filter')?viewKey(state.route.type):(state.route.view||'');
   $('#nav').innerHTML=NAV.map(([key,label])=>`<a href="${esc(hrefForView(key))}" data-route="${key==='home'?'/':`/${key}`}" ${current===key?'aria-current="page"':''}>${label}</a>`).join('');
 }
+/* Afisler innerHTML ile eklendigi icin onbellekten gelen, load olayini atlayan
+   goreller isaretlenmeli. */
 function render(){
+  renderPage();
+  markLoadedImages();
+}
+function renderPage(){
   updateStatus();nav();
   if(state.route.kind==='detail'){
     const item=REG.get(`${state.route.type}:${state.route.slug}`);
@@ -1033,7 +1112,9 @@ function render(){
   }
   if(state.route.kind==='filter'){filterPage(state.route);return}
   if(state.route.kind==='tag'){tagPage(state.route);return}
+  if(state.route.kind==='tagIndex'){tagIndexView();return}
   if(state.route.kind==='genre'){genrePage(state.route);return}
+  if(state.route.kind==='genreIndex'){genreIndexView();return}
   if(state.route.kind==='search'){state.q=searchQuery();searchPage();return}
   if(state.route.kind==='view')state.page=state.route.page||1;
   document.title=CFG[state.route.view]?.label?CFG[state.route.view].label+' — versucher':'versucher';
@@ -1088,10 +1169,27 @@ document.addEventListener('change',event=>{
   else return;
   state.page=1;fillGrid(state.route.view);
 });
+/* Afisler innerHTML ile eklendigi icin tek dinleyici yeter. load olayı
+   yuklenmez; bu yuzden capture (true) ile dinlenir. */
+document.addEventListener('load',event=>{
+  const image=event.target;
+  if(image instanceof HTMLImageElement&&image.closest('.cover'))image.closest('.cover').classList.add('is-loaded');
+},true);
 document.addEventListener('error',event=>{
   const image=event.target;
-  if(image instanceof HTMLImageElement&&image.closest('.cover')){image.remove();image.closest('.cover')?.classList.remove('has-image')}
+  if(image instanceof HTMLImageElement&&image.closest('.cover')){
+    const cover=image.closest('.cover');
+    image.remove();
+    cover.classList.remove('has-image');
+    cover.classList.add('is-loaded');
+  }
 },true);
+/* Onbellekten gelen, load olayi atlayan goreller: hazir mi diye bakilir. */
+function markLoadedImages(){
+  document.querySelectorAll('.cover img').forEach(image=>{
+    if(image.complete&&image.naturalWidth>0)image.closest('.cover').classList.add('is-loaded');
+  });
+}
 function routeSignature(route){return [route.kind,route.type||'',route.view||'',route.page||'',route.slug||'',route.field||'',route.valueSlug||''].join('|')}
 function syncFromLocation(){
   const next=parseRoute();

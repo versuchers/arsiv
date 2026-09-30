@@ -49,7 +49,7 @@ const SCHEMAS = {
     seriesScore: ['seri puanı', 'seri puan'],
     seriesName: ['seri sıralaması', 'seri adı'],
     mainLabel: ['main label'],
-    reason: ['nasıl keşfettim / neden okudum'],
+    reason: ['=nasıl keşfettim / neden okudum'],
     goodreads: ['goodreads linki'],
     publisher: ['yayınevi'],
     translator: ['çevirmen'],
@@ -81,7 +81,7 @@ const SCHEMAS = {
     year: ['yapım yılı'],
     pre: ['ön ek'],
     mainLabel: ['main label'],
-    reason: ['nasıl keşfettim / neden izledim'],
+    reason: ['=nasıl keşfettim / neden izledim'],
     reasonFound: ['nasıl keşfettim'],
     reasonWhy: ['neden izledim'],
     genre: ['tür', 'tür (letterboxd)', "tür (letterboxd'da yazanlar)"],
@@ -111,7 +111,7 @@ const SCHEMAS = {
     year: ['yapım yılı'],
     watchDate: ['başladığım yıl', 'başladığım tarih', 'izlenme tarihi'],
     mainLabel: ['main label'],
-    reason: ['nasıl keşfettim / neden izledim'],
+    reason: ['=nasıl keşfettim / neden izledim'],
     reasonFound: ['nasıl keşfettim'],
     reasonWhy: ['neden izledim'],
     favoriteSeason: ['favori sezon'],
@@ -331,15 +331,27 @@ function findHeaderRow(rows, schema) {
   return bestScore >= 2 ? best : -1;
 }
 
+/**
+ * Sutun eslestirme. Once tam eslesme denenir; bulunamazsa bulanik (alt dizi)
+ * eslesme yapilir. Alias'in basinda "=" varsa o alias SADECE tam eslesmede
+ * kullanilir.
+ *
+ * "=" isareti gerekli: "nasil kefettim / neden izledim" gibi birlesik bir
+ * baslik tabloda tek sutun olarak yoksa, bulanik eslestirme onu "nasil
+ * kefettim" sutununa dusuruyor ve iki farkli alan ayni sutuna biniyordu.
+ */
 function columnMap(headers, schema) {
   const keys = headers.map(headerKey);
   const map = {};
   for (const [field, aliases] of Object.entries(schema)) {
-    const aliasKeys = aliases.map(headerKey);
-    let index = keys.findIndex((key) => aliasKeys.includes(key));
-    if (index < 0) {
+    const exact = [], loose = [];
+    for (const alias of aliases) (alias.startsWith('=') ? exact : loose).push(alias.replace(/^=/, ''));
+    const exactKeys = exact.map(headerKey);
+    const looseKeys = loose.map(headerKey);
+    let index = keys.findIndex((key) => exactKeys.includes(key) || looseKeys.includes(key));
+    if (index < 0 && looseKeys.length) {
       index = keys.findIndex((key) =>
-        aliasKeys.some((alias) => alias.length >= 3 && key.length >= 3 && (key.includes(alias) || alias.includes(key))));
+        looseKeys.some((alias) => alias.length >= 3 && key.length >= 3 && (key.includes(alias) || alias.includes(key))));
     }
     if (index >= 0) map[field] = index;
   }

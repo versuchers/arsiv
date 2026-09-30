@@ -10,7 +10,6 @@ on:
     paths:
       - 'index.html'
       - '404.html'
-      - 'arsiv-taslak-v6.html'
       - 'data/**'
       - 'scripts/**'
       - '.github/workflows/update-and-deploy.yml'
@@ -91,7 +90,8 @@ jobs:
       - name: Yayınlanacak ağacın sağlam olduğunu doğrula
         run: |
           set -e
-          if [ -n "$(git status --porcelain)" ]; then
+          # 404.html bir adim once uretildi; bu yuzden kirli sayilmayacak.
+          if [ -n "$(git status --porcelain -- . ':(exclude)404.html')" ]; then
             echo "::error::Çalışma ağacı temiz değil; yayınlamak yerine duruluyor."
             git status --short
             exit 1
@@ -106,6 +106,32 @@ jobs:
             echo "  $f geçerli ($(node -e "console.log(JSON.parse(require('fs').readFileSync('$f','utf8')).items.length)") kayıt)"
           done
           echo "Yayınlanacak dosyalar sağlam."
+      - name: 404.html dosyasini index.html'den uret
+        run: |
+          if ! cmp -s index.html 404.html; then
+            echo "::warning::Depodaki 404.html index.html ile ayni degildi; uretilerek duzeltiliyor."
+          fi
+          cp index.html 404.html
+          if ! cmp -s index.html 404.html; then
+            echo "::error::404.html uretilemedi."
+            exit 1
+          fi
+          if [ -e arsiv-taslak-v6.html ]; then
+            echo "::error::arsiv-taslak-v6.html hala depoda; kaldirilmalidir."
+            exit 1
+          fi
+          echo "404.html index.html ile ayni ($(wc -c < index.html) bayt)."
+
+      - name: Yerel tutarlilik kontrolleri
+        run: node scripts/check-data.mjs
+
+      # Rota denemesi: site GitHub Pages gibi sunulur (bilinmeyen yol -> 404.html,
+      # 404 kodu) ve secilen rotalar bassiz tarayicida acilir. Boylece "detay
+      # sayfasinda yenilemede veri hatasi" gibi regresyonlar insan gozune degil
+      # makineye birakilir. Tarayici yoksa betik atlar ve 0 doner; GitHub
+      # runner'larinda google-chrome hazir oldugu icin CI'da gercekten calisir.
+      - name: Rota denemesi
+        run: node scripts/check-site.mjs
 
       - name: GitHub Pages yapılandır
         id: pages
