@@ -475,6 +475,65 @@ Afişin altındaki main label artık sitenin en belirgin vurgusu: accent renkli
   `orta` → `Orta`, `hayır` → `Hayır`, `düşük ihtimalle` → `Düşük İhtimalle`.
 
 Doğrulama: 30 metin alanı tarandı, **küçük harfle başlayan 0 kayıt** kaldı.
+## v1.12 - tur 4
+
+### 1) Favorilerde ve her yerde yazım kuralı
+Bağlaç kelimeler (`ve`, `ile`, `de`) artık büyük harfle başlamıyor; **ilk kelime her zaman
+büyütülüyor** (yani "De İkinci Ufuk" gibi bir başlık bozulmuyor).
+Apostroftan sonra gelen kelimeler de küçük kalıyor: `Agatha'nın Anahtarı`, `Calla'nın Kurtları`,
+`Vakıf'ın Sürüsü`. Tireli bileşikler korunuyor: `Post-punk`, `Middle-earth`, `Avant-garde`.
+
+`FAV_MULTI_AUTHORS` listesindeki üç yazar sitede küçük harfle duruyordu
+(`demokan atasoy`, `ışın beril tetik`); düzeltildi. Sheet'te "Işın" yazdığı için
+eşleştirme `looseKey()` ile yapılıyor (İ/ı farkını görmez), listede ise doğru yazım
+görünüyor: `Demokan Atasoy`, `Galip Dursun`, `İşın Beril Tetik`.
+
+### 2) Detay sayfasında yenileme veri hatası veriyordu - DÜZELTİLDİ
+Veri dosyaları göreli yoldan çekiliyordu (`data/books.json`). `/arsiv/film/bugonia-2025`
+gibi bir adres yenilendiğinde adres `/arsiv/film/data/books.json` olup 404 dönüyor, dört dosya
+da düştüğü için site "Veri dosyaları yüklenemedi" diyordu. Artık `dataUrl()` her zaman uygulama
+kökünden okuyor (`APP_BASE + data/...`).
+
+### 3) Favoriler yavaş açılıyordu - DÜZELTİLDİ (6,5 kat)
+Kök neden `routeValueSlug()` idi: her etiket için kardeş değerlerinin **tamamı** taranıyor ve
+her tarama `slugPart()` yeniden hesaplıyordu. Favoriler sayfasında bu yüz binlerce kez
+oluyordu.
+
+* `slugPart()` ve `valueKey()` saf fonksiyonlar; `Map` önbelleğine alındı (O(n²) → O(n)).
+* `genreValues()` ve `siblingValues()` da önbelleklendi.
+
+Ölçüm (başsız Edge, 944 kayıt): **15.3 sn → 1.7-3.1 sn**. Favoriler 693 bağlantı üretiyor.
+Ayrıca favoriler, tür ve filtre sayfalarında içerik basılmadan önce spinner gösteriliyor
+(`showLoading()`), yani "açılıyor mu" sorusu cevaplanıyor.
+
+### 7) Kitaplarda ilk okunma tarihi
+Sheet'te aynı sütun dört biçimde dolu: `2026`, `2026 Eylül`, `Aralık 2025`, `20.01.2026`.
+Önceden hepsi yıl olarak sayılıyordu, yani **"2026 Eylül" Ocak 2026 ile aynı yere düşüyordu**.
+
+* `parseReadDate()` dört biçimi de çözüyor.
+* Yalnızca yıl yazan kayıtlara o yılın **en yeni ayı** yazılıyor (2025 → `Aralık 2025`).
+* Build iki alan üretiyor: `firstReadSort` (`YYYY-AA-GG`, sıralama için) ve
+  `firstReadLabel` (`Eylül 2026`, `20 Ocak 2026`, gösterim için).
+* Kitaplar sekmesinde iki sıralama seçeneği var:
+  **İlk okunma sırasına göre: sondan başa** (varsayılan) ve
+  **İlk okunma sırasına göre: baştan sona**.
+  (Filmlerde `date` artık gerçekten son izlemeye göre sıralıyor; diziler yıla göre.)
+
+### 4-6) Detay değerlerinin büyük harfle başlaması
+İstendiği listedeki alanların **zaten** büyük harfle başladığı veri üzerinde doğrulandı
+(film, dizi, kitap: 0 küçük harfle başlayan kayıt) - bu turda ek değişiklik gerekmedi.
+Apostrof kuralı uygulanmadığı için `Calla'Nın Kurtları` gibi hatalar vardı, düzeltildi.
+
+### Doğrulama
+* GitHub Pages davranışını taklit eden yerel sunucu (bilinmeyen yol → `404.html`, 404 kodu)
+  üzerinde 15 rota denendi: **hepsi hatasız**, konsolda JS hatası yok.
+* Detay sayfası doğrudan adresle açıldığında (yenileme senaryosu) veri yükleniyor.
+* `arsiv-taslak-v6.html`, `index.html`, `404.html` üçü de bayt bayt aynı.
+* 944 kayıt üretildi (kitap 199, film 494, dizi 142, playlist 109).
+* **Slug/adresler değişmedi**: eski verideki 944 slug'ın tamamı yeni veride de var.
+  (`titleCase` yalnızca gösterim metnini değiştiriyor, slug zaten küçük harfe iniyor.)
+
+
 ## Yeni başlık gelirse
 
 `scripts/build-data.mjs` içindeki `SCHEMAS[type]` listesine yeni alan adını ve

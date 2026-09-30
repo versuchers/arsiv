@@ -174,12 +174,48 @@ const clean = (s) => String(s ?? '').replace(/\r/g, '').replace(/\n/g, ' ').repl
  * "ali smith" -> "Ali Smith", "bilim kurgu" -> "Bilim Kurgu", "post-punk" -> "Post-Punk".
  * Slug uretimi (slugPart) zaten kucuk harfe cevirdigi iciv adresler degismez.
  */
+/* Baglac kelimeler ("ve", "ile", "de") buyuk harfle baslamaz; ilk kelime her zaman buyutulur. */
+const TITLE_KEEP_LOWER = new Set(['ve', 'ile', 'de']);
 function titleCase(value) {
   const s = clean(value);
   if (!s) return '';
-  return s.replace(/(^|[\s(\[\]\/"-])(\p{L})/gu, (_, pre, ch) => pre + ch.toLocaleUpperCase('tr-TR'));
+  let first = true;
+  return s.replace(/(^|[\s(\[\]\/"])(\p{L}+)/gu, (_, pre, word) => {
+    const atStart = first;
+    first = false;
+    if (!atStart && TITLE_KEEP_LOWER.has(word.toLocaleLowerCase('tr-TR'))) return pre + word;
+    return pre + word.charAt(0).toLocaleUpperCase('tr-TR') + word.slice(1);
+  });
 }
 
+/* Sheet'te "ilk okudugum yil" tek bicimde degil: "2026", "2026 Eylül",
+   "Aralık 2025", "20.01.2026", "2026-03" hepsi olabiliyor. */
+const MONTH_TR = { ocak: 0, 'şubat': 1, subat: 1, mart: 2, nisan: 3, 'mayıs': 4, mayis: 4, haziran: 5, temmuz: 6, 'ağustos': 7, agustos: 7, 'eylül': 8, eylul: 8, ekim: 9, 'kasım': 10, kasim: 10, 'aralık': 11, aralik: 11 };
+const MONTH_TR_NAME = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+function monthIndex(word) {
+  const k = String(word).replace(/ı/g, 'i').replace(/ş/g, 's').replace(/ğ/g, 'g').replace(/ö/g, 'o').replace(/ç/g, 'c').replace(/ü/g, 'u').toLowerCase();
+  return MONTH_TR[k];
+}
+/** Karisik bicimleri {y, m, d} nesnesine cevirir. */
+function parseReadDate(value) {
+  const s = clean(value);
+  if (!s) return null;
+  let m;
+  m = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/);
+  if (m) return { y: +m[3], m: +m[2], d: +m[1] };
+  m = s.match(/^(\d{4})[-/.](\d{1,2})(?:[-/.](\d{1,2}))?$/);
+  if (m) return m[3] ? { y: +m[1], m: +m[2], d: +m[3] } : { y: +m[1], m: +m[2], d: 1, monthOnly: true };
+  m = s.match(/^(\d{1,2})\s+(\S+)\s+(\d{4})$/);
+  if (m && monthIndex(m[2]) != null) return { y: +m[3], m: monthIndex(m[2]) + 1, d: +m[1] };
+  m = s.match(/^(\d{4})\s+(\S+)$/);
+  if (m && monthIndex(m[2]) != null) return { y: +m[1], m: monthIndex(m[2]) + 1, d: 1, monthOnly: true };
+  m = s.match(/^(\S+)\s+(\d{4})$/);
+  if (m && monthIndex(m[1]) != null) return { y: +m[2], m: monthIndex(m[1]) + 1, d: 1, monthOnly: true };
+  m = s.match(/^(\d{4})$/);
+  if (m) return { y: +m[1], m: 0, d: 0, yearOnly: true };
+  const y = yearValue(s);
+  return y ? { y, m: 0, d: 0, yearOnly: true } : null;
+}
 /** Yapim ulkeleri Sheet'te karisik (Ingilizce/Turkce, bazi yazim hatali) yaziliyor; hepsi Turkceye gecirilir. */
 const COUNTRY_TR = {
   // Ana listingeler (Ingilizce)
@@ -494,6 +530,26 @@ function makeItems(type, headers, rows) {
       });
     }
     items.push(item);
+  }
+  /* Kitaplarda "ilk okunma" tarihini coz. Yil-only kayitlara o yilin en yeni
+     ayi yazilir; boylece hem siralama hem gosterim dogru olur. */
+  if (type === 'books') {
+    const parsed = items.map((item) => parseReadDate(item.firstReadDate));
+    const latestMonth = {};
+    parsed.forEach((p) => {
+      if (!p || p.yearOnly) return;
+      latestMonth[p.y] = Math.max(latestMonth[p.y] || 0, p.m);
+    });
+    items.forEach((item, index) => {
+      const p = parsed[index];
+      if (!p) return;
+      const month = p.yearOnly ? (latestMonth[p.y] || 1) : (p.m || 1);
+      const day = p.yearOnly ? 1 : (p.d || 1);
+      item.firstReadSort = `${String(p.y).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      item.firstReadLabel = p.d && !p.yearOnly && !p.monthOnly
+        ? `${p.d} ${MONTH_TR_NAME[month - 1]} ${p.y}`
+        : `${MONTH_TR_NAME[month - 1]} ${p.y}`;
+    });
   }
   assignRoutes(type, items);
   return { items: items.map(compact), columns };

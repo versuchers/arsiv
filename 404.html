@@ -54,6 +54,9 @@ nav a[aria-current="page"]{border-bottom-color:var(--accent)}
 .note{font-family:var(--ui);width:min(1100px,calc(100% - 1.5rem));margin:1.1rem auto 0;color:var(--muted);font-size:.8rem;line-height:1.5}
 .note.is-error{color:#e0a3a3}
 .site-foot{width:min(1100px,calc(100% - 1.5rem));margin:0 auto;padding:.9rem 0 2.5rem;font-family:var(--ui);font-size:.76rem;line-height:1.5;color:var(--muted);border-top:1px solid var(--line)}
+.spinner{width:15px;height:15px;flex:none;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spinner{animation:none}}
 main{width:min(1100px,calc(100% - 1.5rem));margin:1rem auto 3rem;padding:1.5rem;background:var(--panel);border:1px solid var(--line);border-radius:6px;box-shadow:inset 0 1px 0 var(--hi),0 2px 4px var(--sh1),0 22px 44px -8px var(--sh1)}
 main:has(.detail-page){width:min(1100px,calc(100% - 1.5rem))}
 /* Yukseklikten hesaplanan daraltma yalnizca genis ekranda: kisa/kucuk ekranda
@@ -118,7 +121,7 @@ p{margin-top:.55rem}
 .shelf a:hover{color:var(--link)}
 .shelf span:last-child{color:var(--muted);font-weight:400}
 .empty{font-family:var(--ui);color:var(--muted);padding:2rem 0}
-.loading{font-family:var(--ui);color:var(--muted);padding:2rem 0}
+.loading:not(:has(.spinner)){font-family:var(--ui);color:var(--muted);padding:2rem 0}
 .back{font-family:var(--ui);font-size:.85rem;color:var(--link);text-decoration:underline;text-underline-offset:3px}
 .detail-page{--gap:25px;font-size:15px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;row-gap:1.25rem}
 .detail-heading{grid-column:1/-1;margin:0;padding:0;min-width:0}
@@ -224,6 +227,8 @@ kbd{font-family:var(--ui);font-size:.72rem;background:var(--well);border:1px sol
    Tarayıcı Google Sheets'e hiç bağlanmaz; yalnızca data/*.json okunur.
    no-store ile istenir: önbellekten eski veri gelmesin. */
 const DATA_FILES={books:'data/books.json',films:'data/films.json',series:'data/series.json',playlists:'data/playlists.json'};
+/* Veri dosyalari her zaman uygulama kokunden okunur (detay sayfasi yenilemesi). */
+function dataUrl(file){return isLocal?file:APP_BASE+file}
 
 const CFG={
   films:{label:'Filmler',unit:'film',fav:'Favori filmler',dateLabel:'İzlenme tarihi'},
@@ -242,7 +247,7 @@ const FAV_EXCLUDE_DIRECTORS=['hasan karacadağ'];
 /* Favoriler sayfasinda gosterilecek minimum film sayisi (yonetmen icin). */
 const FAV_MIN_DIRECTOR_FILMS=2;
 /* Coklu yazarli kitaplarda tek tek gosterilecek yazarlar; grubun digerleri gosterilmez. */
-const FAV_MULTI_AUTHORS=['demokan atasoy','galip dursun','ışın beril tetik'];
+const FAV_MULTI_AUTHORS=['Demokan Atasoy','Galip Dursun','İşın Beril Tetik'];
 /* Anasayfadaki playlist sirasi elle secildi; "main" kategorisinden bu sirayla. */
 const HOME_PLAYLISTS=[
   'loşş salınım',"victoria's spell",'alice in angerland',"sade'ın kırbacı",
@@ -300,7 +305,17 @@ function safeUrl(value){
   if(/^(?:\.{0,2}\/)/.test(v))return v;
   return '';
 }
+/* slugPart saf bir fonksiyon ama rotaValues() her deger icin tum kardesleri
+   taradigi icin yuz binlerce kez cagriliyordu. Onbellek sayesinde O(n). */
+const _slugCache=new Map();
 function slugPart(value){
+  const key=String(value);
+  if(_slugCache.has(key))return _slugCache.get(key);
+  const out=slugPartRaw(key);
+  _slugCache.set(key,out);
+  return out;
+}
+function slugPartRaw(value){
   let s=clean(value).toLocaleLowerCase('tr-TR');
   const map={'ğ':'g','Ğ':'g','ı':'i','İ':'i','ö':'o','Ö':'o','ç':'c','Ç':'c','ş':'s','Ş':'s','ü':'u','Ü':'u','ø':'o','æ':'ae','œ':'oe','ß':'ss','ð':'d','þ':'th','ł':'l','đ':'d','³':'3','²':'2'};
   s=s.replace(/[ğĞıİöÖçÇşŞüÜøæœßðþłđ³²]/g,c=>map[c]).normalize('NFD').replace(/[\u0300-\u036f]/g,'');
@@ -384,6 +399,7 @@ function applyData(next,meta){
   Object.values(D).flat().forEach(item=>{hydrate(item);all.push(item)});
   REG=new Map(all.map(item=>[item.id,item]));
   dataMeta=meta||{generatedAt:'',error:''};
+  _genreCache=null;_siblingCache=new Map();
   render();
 }
 function totalCount(){return Object.values(D).reduce((sum,list)=>sum+list.length,0)}
@@ -416,7 +432,9 @@ async function loadData(){
     const timer=controller?setTimeout(()=>controller.abort(),20000):null;
     try{
       const options={cache:'no-store'};if(controller)options.signal=controller.signal;
-      const response=await fetch(DATA_FILES[type],options);
+      /* Dogrusal yol kullanmak yanlisti: /arsiv/film/bugonia-2025 yenilendiginde
+         adres /arsiv/film/data/films.json oluyor ve 404 donuyordu. Taban adres eklendi. */
+      const response=await fetch(dataUrl(DATA_FILES[type]),options);
       if(!response.ok)throw new Error('HTTP '+response.status);
       const payload=await response.json();
       if(!payload||!Array.isArray(payload.items))throw new Error('beklenen biçimde değil');
@@ -470,10 +488,23 @@ function parseRoute(){
   return {kind:'view',view:'home'};
 }
 function resetFilters(){state.q='';state.sort='date';state.min=0;state.genre='';state.status='';state.cat='';state.page=1}
+/* Favoriler, tur ve filtre sayfalari yuzlerce kayit isler; kullaniciya once
+   bilgi gosterilir, icerik bir sonraki karede basilir. */
+function slowRoute(route){
+  if(route.kind==='view')return route.view==='favs';
+  return route.kind==='tag'||route.kind==='genre'||route.kind==='filter';
+}
+function showLoading(){
+  nav();
+  main.innerHTML='<p class="loading"><span class="spinner" aria-hidden="true"></span>Yükleniyor…</p>';
+}
 function navigate(path,replace=false){
   const target=isLocal?'#'+path:hrefFor(path);
   try{history[replace?'replaceState':'pushState']({},'',target)}catch(_){if(isLocal)location.hash=path;else location.href=target}
-  state.route=parseRoute();resetFilters();render();window.scrollTo(0,0);
+  state.route=parseRoute();resetFilters();
+  if(slowRoute(state.route)){showLoading();setTimeout(()=>render(),16)}
+  else render();
+  window.scrollTo(0,0);
 }
 function go(view){navigate(view==='home'?'/' :`/${view}`)}
 function hrefForView(view){return hrefFor(view==='home'?'/' :`/${view}`)}
@@ -525,7 +556,8 @@ function sortItems(list,how){
   const a=[...list];
   const score=x=>x.score==null?-1:x.score;
   const year=x=>x.yearNumber==null?-1:x.yearNumber;
-  const dateOf=x=>dateSort(x.sec==='books'?x.firstReadDate:x.watchDate);
+  /* Kitaplar icin build betigi normalize "firstReadSort" (YYYY-AA-GG) uretir. */
+  const dateOf=x=>dateSort(x.sec==='books'?(x.firstReadSort||x.firstReadDate):x.watchDate);
   const recent=(x,y)=>{
     const dx=dateOf(x),dy=dateOf(y);
     if(dx===dy)return y.rowIndex-x.rowIndex;
@@ -541,6 +573,7 @@ function sortItems(list,how){
     return ascending?dx-dy:dy-dx;
   };
   if(how==='date')a.sort(recent);
+  else if(how==='dateasc')a.sort((x,y)=>recent(y,x));
   else if(how==='r')a.sort((x,y)=>score(y)-score(x)||recent(x,y));
   else if(how==='year')a.sort((x,y)=>yearCompare(x,y));
   else if(how==='yearasc')a.sort((x,y)=>yearCompare(x,y,true));
@@ -564,8 +597,10 @@ function gridView(kind){
   const cfg=CFG[kind],type=dataType(kind),genres=genresFor(type);
   const options=type==='playlists'
     ?[['category','Kategoriye göre'],['tracks','Şarkı sayısına göre'],['title','Ada göre']]
-    :[['date',type==='books'?'İlk okunma tarihine göre':type==='films'?'Son izlemeye göre':'Tarihe göre'],['r','Puana göre'],['year','Yıla göre (yeniden eskiye)'],['yearasc','Yıla göre (eskiden yeniye)'],['title','Ada göre']];
-  if(type==='books')options.push(['author','Yazara göre']);
+    :type==='books'
+    ?[['date','İlk okunma sırasına göre: sondan başa'],['dateasc','İlk okunma sırasına göre: baştan sona'],['r','Puana göre'],['year','Yıla göre (yeniden eskiye)'],['yearasc','Yıla göre (eskiden yeniye)'],['title','Ada göre'],['author','Yazara göre']]
+    :[['date',type==='films'?'Son izlemeye göre':'Tarihe göre'],['r','Puana göre'],['year','Yıla göre (yeniden eskiye)'],['yearasc','Yıla göre (eskiden yeniye)'],['title','Ada göre']];
+  if(type==='books'&&!options.some(pair=>pair[0]==='author'))options.push(['author','Yazara göre']);
   const cats=type==='playlists'?unique((D.playlists||[]).map(item=>item.category)):[];
   main.innerHTML=`<h1>${cfg.label}</h1><p class="sub" id="count"></p><div class="ctl"><input id="q" type="search" placeholder="${cfg.label} içinde ara" aria-label="Ara" value="${esc(state.q)}"><select id="sort" aria-label="Sırala">${options.map(([value,label])=>`<option value="${value}">${label}</option>`).join('')}</select>${genres.length?`<select id="genre" aria-label="Tür"><option value="">Tüm türler</option>${genres.map(value=>`<option value="${esc(value)}">${esc(value)}</option>`).join('')}</select>`:''}${kind==='series'?`<select id="status" aria-label="Durum"><option value="">Tüm durumlar</option><option value="done">Bitirdiklerim</option><option value="part">Bitirmadiklerim</option><option value="ongoing">Sürüyor</option></select>`:''}${type==='playlists'?`<select id="cat" aria-label="Kategori"><option value="">Tüm kategoriler</option>${cats.map(value=>`<option value="${esc(value)}">${esc(value)}</option>`).join('')}</select>`:''}<select id="min" aria-label="En düşük puan"><option value="0">Tüm puanlar</option><option value="8">8 ve üstü</option><option value="9">9 ve üstü</option><option value="10">10</option></select></div><div id="grid" class="grid"></div><div id="pager"></div><div id="grid-sentinel" class="grid-sentinel" aria-hidden="true"></div>`;
   if(!options.some(pair=>pair[0]===state.sort))state.sort=options[0][0];
@@ -601,8 +636,11 @@ function findTagValue(slug){
   return '';
 }
 /** Tur degerleri ucu birden fazla turu kapsar; slug butun turlerde birlikte hesaplanir. */
+let _genreCache=null;
 function genreValues(){
-  return unique(['films','series','books','playlists'].flatMap(type=>(D[type]||[]).flatMap(item=>fieldValues(item,'genre'))));
+  if(_genreCache)return _genreCache;
+  _genreCache=unique(['films','series','books','playlists'].flatMap(type=>(D[type]||[]).flatMap(item=>fieldValues(item,'genre'))));
+  return _genreCache;
 }
 function globalGenreSlug(value){
   const base=slugPart(value);if(!base)return '';
@@ -724,11 +762,27 @@ function fieldValues(item,field){
   }
   return [];
 }
-function valueKey(value){return clean(value).toLocaleLowerCase('tr-TR')}
+/* valueKey de sik cagriliyor (collectValues, fieldMatches); onbellek. */
+const _valueKeyCache=new Map();
+function valueKey(value){
+  const key=String(value);
+  if(_valueKeyCache.has(key))return _valueKeyCache.get(key);
+  const out=clean(value).toLocaleLowerCase('tr-TR');
+  _valueKeyCache.set(key,out);
+  return out;
+}
 function valueHash(value){let hash=0;for(const c of valueKey(value))hash=(Math.imul(hash,31)+c.charCodeAt(0))|0;return (hash>>>0).toString(36)}
+/* Bu degerler her etiket icin yeniden hesaplaniyordu; favoriler sayfasi
+   yuzlerce kez tarandi ve yavas kaliyordu. Onbellek. */
+let _siblingCache=new Map();
 function siblingValues(type,field){
-  if(field==='mainLabel')return ['books','films','series'].flatMap(kind=>(D[kind]||[]).flatMap(item=>fieldValues(item,field)));
-  return (D[type]||[]).flatMap(item=>fieldValues(item,field));
+  const key=type+':'+field;
+  if(_siblingCache.has(key))return _siblingCache.get(key);
+  const values=field==='mainLabel'
+    ?['books','films','series'].flatMap(kind=>(D[kind]||[]).flatMap(item=>fieldValues(item,field)))
+    :(D[type]||[]).flatMap(item=>fieldValues(item,field));
+  _siblingCache.set(key,values);
+  return values;
 }
 function routeValueSlug(type,field,value){
   const base=slugPart(value);if(!base)return '';
@@ -814,7 +868,7 @@ function detailPage(item){
       ]),
       detailSection('Okuma bilgileri',[
         chipRow('Nasıl keşfettim||neden okudum',item,'reason'),chipRow('İlk erişim / edinim şekli',item,'acquisition'),row('Kitap bende var mı?',item.owned),chipRow('İlk okunan şehir',item,'city'),row('Kaç kez okudum?',item.readCountRaw),row('Tekrar okur muyum?',item.reread),row('Yoğunluk',item.density),chipRow('Okuduğum formatlar',item,'formats'),
-        row('İlk kez okunan tarih',item.firstReadDate),row('Okunduğu dil',item.readLanguage)
+        row('İlk kez okunan tarih',item.firstReadLabel||item.firstReadDate),row('Okunduğu dil',item.readLanguage)
       ])
     ];
   }else if(item.sec==='films'){
@@ -915,7 +969,8 @@ function favoritesView(){
     const names=fieldValues(item,'author');
     if(names.length<=1)continue;
     for(const wanted of FAV_MULTI_AUTHORS){
-      if(names.some(name=>valueKey(name)===valueKey(wanted)))authorValues.push(wanted);
+      /* looseKey: Sheet'te "Işın" yaziyor, listede "İşın" - ikisi de ayni kabul edilsin. */
+      if(names.some(name=>looseKey(name)===looseKey(wanted)))authorValues.push(wanted);
     }
   }
   const authors=collectValues(authorValues);
