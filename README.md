@@ -734,6 +734,63 @@ kayıt olduğu için olduğu gibi bırakıldı.
 Liste sayfaları (`/film`, `/kitap`, ...) 6 sütunda kaldı — orada kart
 sayısı 30 ve bilinçli olarak sıkıştırılmış.
 
+### Kitap araması: "alternatif isim - arama terimleri" sütunu eklendi
+
+İstenen sekiz sütundan **yedişi zaten** arama dizinindeydi (`hydrate()`):
+kitap türkçe ismi, kitap orijinal ismi, seri sıralaması, yazar, main label,
+yayınevi, çevirmen. Eksik olan tek biriydi.
+
+**Yol üstünde çıkan tuzak — ayraç farkı:** kitap tablosundaki başlık
+**tire** ile ayrılmış:
+
+```
+kitaplar:  alternatif isim - arama terimleri    (4. sütun)
+film/dizi: alternatif isim / arama terimleri    (8. / 7. sütun)
+```
+
+Film/dizideki alias listesini olduğu gibi kopyalasaydım eşleşme sessizce
+başarısız olurdu (filmlerde de oldu). `SCHEMAS.books.altTitle` alias'ına **her iki
+ayraç** yazıldı ki başlık hangisini kullanırsa kullansın eşleşme kırılmasın.
+`columnMap()` alias'ları `headerKey()` ile karşılaştırır; o fonksiyon
+`[^a-z0-9]` karakterleri attığı için tire ve slash ikisi de aynı anahtara
+düşüyor — yani aslında tek yazmak da yeterdi, ama iki ayraç yazmak açıklık
+kazandırıyor.
+
+Eklenenler:
+
+- `SCHEMAS.books.altTitle` (iki ayraçlı alias)
+- kitap kayıtlarına `altTitle: get('altTitle')` — **`titleCase` uygulanmadı**
+  (film/dizi ile aynı gerekçe: sütun arama kelimesi taşıyor)
+- `hydrate()` arama dizininde zaten `item.altTitle` vardı, film/dizi için
+  eklenmişti; üç türü birden kapsıyor
+
+**199 kitabın 59'unda** bu sütun dolu ("ateist", "cin", "derzulya", "din").
+Diğer üç tür değişmedi: films 101/494, series 15/142, playlist'te sütun yok.
+
+Dokuz alanın hepsi tarayıcıda denendi, hedef kitap sonuçlarda çıktı
+(hata yok):
+
+| Alan | Sorgu | Sonuç | Beklenen kitap |
+|---|---|---|---|
+| kitap türkçe ismi | `Kizil Vaiz` | 1 | `orkun-ucar-kizil-vaiz` |
+| yazar | `Orkun Ucar` | 18 | `orkun-ucar-kizil-vaiz` |
+| kitap orijinal ismi | `Habis` | 2 | `orkun-ucar-asi` |
+| **alternatif isim** | `derzulya` | 3 | `orkun-ucar-kizil-vaiz` |
+| seri sıralaması | `A Song Of Ice` | 6 | `george-r-r-martin-ejderhalarin-dansi` |
+| orijinal ismi (İng.) | `A Dance With` | 1 | `george-r-r-martin-ejderhalarin-dansi` |
+| yayınevi | `Ithaki` | 26 | (kapsam kontrolü) |
+| çevirmen | `Munire` | 1 | `marquis-de-sade-juliette-...` |
+| main label | `Ateizm` | 3 | (kapsam kontrolü) |
+
+**Not (güvenlik disiplini):** PowerShell ile toplu yama yaparken anchor'ın
+kaç kez geçtiği önce sayılmalı. Bu turda `originalTitle` (books) ve
+`publisher` (books) anchor'ları tek kez geçtiği doğrulandı — üç dalda birden
+yazan hatanın (film turunda olan) tekrarlanmadığı.
+
+Ayrıca: `NL` (newline) yardımcı fonksiyonu betiğin **sonuna** yazılmıştı ve
+oradan çağrıldığında "tanınmayan komut" hatası verdi. Yardımcı fonksiyonlar
+betiğin başına yazılmalı.
+
 ### Dizi araması: "alternatif isim / arama terimleri" ve "uyarlama kaynağı" eklendi
 
 İstenen yedi sütundan beşi zaten arama dizinindeydi (`hydrate()`): dizi

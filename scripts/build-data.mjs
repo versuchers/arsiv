@@ -44,6 +44,11 @@ const SCHEMAS = {
     title: ['kitap türkçe ismi', 'kitap (türkçe isim)'],
     author: ['yazar'],
     originalTitle: ['kitap orijinal ismi', 'kitap (orijinal isim)'],
+    /* Kitaplardaki baslik TIRE ile ayri: "alternatif isim - arama terimleri"
+       (film/dizide slash). Ikisini de alias'a yaziyoruz ki baslik hangi
+       ayraci kullanirsa kullansin eslesme kirilmasin. titleCase UYGULANMAZ,
+       metin aynen korunur; arama zaten foldText ile kucuk harfe indiriyor. */
+    altTitle: ['alternatif isim - arama terimleri', 'alternatif isim / arama terimleri', 'alternatif isim', 'arama terimleri'],
     image: ['kapak görseli', 'görsel linki'],
     bookScore: ['kitap puanı', 'kitap puan'],
     seriesScore: ['seri puanı', 'seri puan'],
@@ -477,6 +482,7 @@ function makeItems(type, headers, rows) {
         reasonWhy: titleCase(get('reasonWhy')),
         goodreads: get('goodreads'),
         publisher: titleCase(get('publisher')),
+        altTitle: get('altTitle'),
         translator: titleCase(get('translator')),
         character: titleCase(get('character')),
         formats: titleCase(get('formats')),
