@@ -734,6 +734,98 @@ kayıt olduğu için olduğu gibi bırakıldı.
 Liste sayfaları (`/film`, `/kitap`, ...) 6 sütunda kaldı — orada kart
 sayısı 30 ve bilinçli olarak sıkıştırılmış.
 
+### Dört arayüz düzeltmesi (linkler, navbar, kutu boyutu, kayıt sayısı)
+
+**1) Linklerde altı çizgi kaldırıldı, üstüne gelince rengi değişiyor.**
+
+Sitede `text-decoration:underline` **13 ayrı yerde** dağınıktı ve link türlerine
+göre farklı görünüyordu: `.link` ve `.back` hep altı çizgiliydi, `.ext-link`
+noktali alt çizgi kullanıyordu, `.tag-chip`/`.compact-link` **yalnızca üstüne
+gelince** altı çiziliyordu, `.link-chip` ise `--line` renginde ince bir çizgi
+çiziyordu. `a{color:inherit}` kuralı da altı çizgiyi kaldırmadığı için düz `<a>`
+etiketleri tarayıcı varsayılanını alıyordu.
+
+Tek kural getirildi:
+
+```css
+a{color:inherit;text-decoration:none}
+a:hover{color:var(--link-hi)}
+```
+
+`--link-hi` **yeni bir renk değişkeni**; `--link`'ten belirgin parlak:
+
+| Tema | `--link` | `--link-hi` |
+|---|---|---|
+| açık | `#6E5426` | `#9A7630` |
+| koyu | `#D4B98C` | `#F3DFB4` |
+
+`--link-hi` her iki temada da tanımlı (koyu tema bloğu **iki** yerde tanımlı:
+`@media (prefers-color-scheme:dark)` ve `:root[data-theme="dark"]`; ikisi de
+güncellendi). Hover'da `--link-hi` kullananlar: `nav a`, `.shelf a`, `.pager a`,
+`.fav-link`, `.tag-chip`, `.compact-link`, `.nav-arrow`, `.listen-btn`,
+`.ext-link`, `.link-chip`, `.tag-chip,.compact-link`, raf kartı başlığı.
+
+**Raf kartı başlığı özel:** `.poster` içindeki isim odun rengiyle **düz metin**
+gibi duruyordu; üstüne gelince `--link-hi` ile öne çıkıyor. Bu, altı çizgi
+kullanmadan "bu bir bağlantı" sinyalini korumanın en ucuz yolu.
+
+Sonuç: `text-decoration:underline` sayısı **13 → 0**. Tarayıcıda beş sayfada
+(anasayfa, kitap listesi, film detay, favoriler, etiket dizini) ölçüldü:
+`textDecorationLine` içinde `underline` geçen link **0 / 53**, detay sayfasında
+0/10, etiket dizininde 0/305.
+
+**2) Navbar site başlığının sağında, hepsi tek çizgide.**
+
+Önce iki ayrı satırdı: `.bar` (başlık + arama/tema) ve altında tam genişlikte
+`nav`. `nav` bloğu `.bar` içine taşındı; `.bar` `justify-content:space-between`
+yerine `gap` kullanan tek flex satırı oldu:
+
+```
+versucher  |  Ana sayfa Filmler Diziler Kitaplar Konserler Favoriler Playlistler  |  [Ara] [Koyu tema]
+```
+
+`nav` artık `flex:1 1 auto; min-width:0; overflow-x:auto` — yani daralınca
+**kayıyor**, düğmeler asla alt satıra düşmüyor. `nav a` için `flex:none` şart:
+aksi halde flex linkleri ezip yazıyı kırpardı. Kaydırma çubuğu gizlendi
+(`scrollbar-width:none` + `::-webkit-scrollbar{display:none}`).
+
+**Yol üstünde çıkan tuzak:** ilk ölçümde 420 px'de nav'a **sadece 140 px** kalıyordu
+— 7 linkten 2'si görünüyordu. Sebep: 1.9 rem'lik logo + 68 px arama + 86 px tema
++ 40 px iç boşluk. `max-width:640px` için küçültme eklendi (logo 1.35 rem,
+`.ghost` 1.95 rem ve yazı .74 rem, arama düğmesinin yazısı gizlenip ikon kalıyor).
+Sonuç: 420 px'de nav 140 → **249 px**, 640 px'de 373 px. İki düğme aynı ölçekte
+kalıyor (ikisi de `.ghost`).
+
+**3) Arama kutusu ile tema kutusu aynı boyda.**
+
+Sebep bulundu: `.search-btn` kendi `line-height:1.1` değerini taşıyordu, tema
+düğmesi ise gövdeden `1.65` miras alıyordu — **yükseklikleri farklıydı**. Tek
+kurala sabit ölçü verildi:
+
+```css
+.ghost{height:2.15rem;padding:0 .8rem;display:inline-flex;align-items:center;justify-content:center;line-height:1}
+.search-btn{gap:.35rem}   /* line-height kaldırıldı */
+```
+
+Ölçüm: her iki temada ve dört genişlikte (1440 / 640 / 420) arama ve tema
+kutusu **34.39 px** — birebir aynı. Tema düğmesinin metni değiştiği için
+("Koyu tema" ↔ "Açık tema") **genişlikleri** farklı kaldı (68 / 91 px); yükseklik
+eşit, istendiği gibi.
+
+**4) Kayıt sayısı footer'a taşındı.**
+
+`updateStatus()` iki yere birden yazıyordu: üst boşluk (`#data-status`) →
+`944 kayıt`, alt bilgi (`#data-footer`) → `Son güncelleme tarihi`. Şimdi:
+
+- `#data-status` **yalnızca veri hatası** mesajı için. Hata yokken `hidden`
+  ile tamamen gizleniyor (`display:none`) — yoksa boş bir `margin` boşluğu
+  bırakırdı. `.note[hidden]{display:none}` kuralı eklendi.
+- `#data-footer` → `944 kayıt · Son güncelleme tarihi: 1 ekim 2026 03:57 (tsi)`
+
+Doğrulama (6 koşu: açık/koyu tema × 1440/640/420, biri detay sayfası):
+`#data-status` → `hidden=true`, yükseklik `0`; footer metni her koşuda
+`944 kayıt · Son güncelleme...`. Hiçbirinde JavaScript hatası yok.
+
 ### Kitap araması: "alternatif isim - arama terimleri" sütunu eklendi
 
 İstenen sekiz sütundan **yedişi zaten** arama dizinindeydi (`hydrate()`):
