@@ -91,7 +91,8 @@ const SCHEMAS = {
     platform: ['ilk izlediğim platform', 'ilk kez hangi platformda'],
     director: ['yönetmen'],
     image: ['film afişi linki'],
-    originalTitle: ['film orjinal adı', 'film orijinal adı'],    /* Sheet'teki 'alternatif isim / arama terimleri' sutunu: yalnizca arama icin.
+    originalTitle: ['film orjinal adı', 'film orijinal adı'],
+    /* Sheet'teki 'alternatif isim / arama terimleri' sutunu: yalnizca arama icin.
        Hem baska adlar hem arama anahtar kelimeleri iceriyor ("alien",
        "kara sovalye, batman", "cin"); bu yuzden titleCase UYGULANMAZ, metin
        aynen korunur. Arama zaten foldText ile kucuk harfe indiriyor. */
@@ -131,6 +132,9 @@ const SCHEMAS = {
     country: ['yapım ülkesi'],
     status: ['durumu'],
     originalTitle: ['orijinal adı'],
+    /* Filmlerdeki gibi: baska ad + arama terimleri, yalnizca arama icin.
+       titleCase uygulanmaz, metin aynen korunur. */
+    altTitle: ['alternatif isim / arama terimleri', 'alternatif isim', 'arama terimleri'],
     creator: ['creator / showrunner'],
     network: ['network'],
     language: ['dili'],
@@ -467,7 +471,6 @@ function makeItems(type, headers, rows) {
         seriesName: titleCase(get('seriesName')),
         author: titleCase(get('author')),
         originalTitle: titleCase(get('originalTitle')),
-        altTitle: get('altTitle'),
         mainLabel: titleCase(get('mainLabel')),
         reason: titleCase(get('reason')),
         reasonFound: titleCase(get('reasonFound')),

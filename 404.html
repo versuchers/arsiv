@@ -457,6 +457,7 @@ function hydrate(item){
     item.authorOrigin,item.city,item.readLanguage,item.writtenLanguage,item.firstCity,item.directorOrigin,
     item.reasonFound,item.reasonWhy,
     item.watched,item.seriesOrder,item.creator,item.network,item.format,item.statusRaw,item.category,item.feeling,
+    item.adaptation,
     item.countries.join(' '),item.genres.join(' '),item.subgenres.join(' ')
   ].filter(Boolean).join(' ');
   item.searchText=foldText(item.searchText);

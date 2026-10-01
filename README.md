@@ -734,6 +734,52 @@ kayıt olduğu için olduğu gibi bırakıldı.
 Liste sayfaları (`/film`, `/kitap`, ...) 6 sütunda kaldı — orada kart
 sayısı 30 ve bilinçli olarak sıkıştırılmış.
 
+### Dizi araması: "alternatif isim / arama terimleri" ve "uyarlama kaynağı" eklendi
+
+İstenen yedi sütundan beşi zaten arama dizinindeydi (`hydrate()`): dizi
+(başlık), orijinal adı, network, creator / showrunner, main label.
+Eksik olan ikisi:
+
+- **`alternatif isim / arama terimleri`** — dizi tablosunda sütun var
+  (7. sütun, 15/142 dolu: "brooklyn 99", "poe", "game of thrones",
+  "supernatural") ama şemada tanımlı değildi. `SCHEMAS.series.altTitle`
+  eklendi, kayıtlara `altTitle: get('altTitle')` yazıldı — filmlerdeki gibi
+  **`titleCase` uygulanmadı**.
+- **`uyarlama kaynağı`** — `adaptation` alanı zaten üretiliyordu (27/142 dolu:
+  "Edgar Allan Poe öyküleri", "George R.r. Martin - Fire And Blood",
+  "William Gibson - The Peripheral") ama arama dizininde yoktu.
+
+`hydrate()` arama dizinine `item.adaptation` eklendi; `item.altTitle` film
+turundan sonra gelen ortak listede olduğu için iki türü birden kapsıyor.
+
+Yedi sütunun hepsi tarayıcıda denendi, hedef dizi sonuçlarda çıktı
+(hata yok):
+
+| Alan | Sorgu | Sonuç | Beklenen dizi |
+|---|---|---|---|
+| dizi | `Severance` | 1 | `severance-2022` |
+| alternatif isim | `brooklyn 99` | 1 | `brooklyn-nine-nine-2013` |
+| orijinal adı | `13 Geboden` | 1 | `13-commandments-2017` |
+| network | `Apple Tv` | 5 | `severance-2022` |
+| creator / showrunner | `Vince Gilligan` | 4 | `breaking-bad-2008` |
+| main label | `Muzip` | 90 | `brooklyn-nine-nine-2013` |
+| uyarlama kaynağı | `Edgar Allan Poe` | 2 | `the-fall-of-the-house-of-usher-2023` |
+
+**Yol üstünde çıkan iki tuzak:**
+
+1. `String.Replace` **tüm** eşleşmeleri yazdığı için
+   `originalTitle: titleCase(get('originalTitle')),` anchors'ı books + films +
+   series dallarının üçünde birden bulundu; `altTitle` üç dala da yazıldı ve
+   `if` dalı süzmeden önce **fazladan bir satır** daha eklendi. Kitaplarda bu
+   sütun olmadığı için `SCHEMAS.books.altTitle` tanımlı olmadan `get('altTitle')`
+   çağrıldı. PowerShell ile toplu yamada **önce dala özgü satır aralığı** bulun,
+   sonra o aralıkta değiştir.
+2. `run-build.ps1` + Edge harness'ı **bayat betiği** çalıştırıyordu: dosya
+   düzeltilmiş olmasına rağmen `series altTitle 0/142` geliyordu. Gerçek
+   kontrol `node scripts/build-data.mjs` ile yapıldı (betik `node:fs`,
+   `node:crypto` ve global `fetch` kullandığı için doğrudan Node'da sorunsuz
+   çalışıyor, harness'a gerek yok).
+
 ### Film araması "alternatif isim / arama terimleri" sütununu da kapsıyor
 
 İstediğin altı sütunun **beşi zaten** arama dizinindeydi (`hydrate()`):
