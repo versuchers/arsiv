@@ -46,8 +46,7 @@ const SCHEMAS = {
     originalTitle: ['kitap orijinal ismi', 'kitap (orijinal isim)'],
     /* Kitaplardaki baslik TIRE ile ayri: "alternatif isim - arama terimleri"
        (film/dizide slash). Ikisini de alias'a yaziyoruz ki baslik hangi
-       ayraci kullanirsa kullansin eslesme kirilmasin. titleCase UYGULANMAZ,
-       metin aynen korunur; arama zaten foldText ile kucuk harfe indiriyor. */
+       ayraci kullanirsa kullansin eslesme kirilmasin. */
     altTitle: ['alternatif isim - arama terimleri', 'alternatif isim / arama terimleri', 'alternatif isim', 'arama terimleri'],
     image: ['kapak görseli', 'görsel linki'],
     bookScore: ['kitap puanı', 'kitap puan'],
@@ -99,8 +98,8 @@ const SCHEMAS = {
     originalTitle: ['film orjinal adı', 'film orijinal adı'],
     /* Sheet'teki 'alternatif isim / arama terimleri' sutunu: yalnizca arama icin.
        Hem baska adlar hem arama anahtar kelimeleri iceriyor ("alien",
-       "kara sovalye, batman", "cin"); bu yuzden titleCase UYGULANMAZ, metin
-       aynen korunur. Arama zaten foldText ile kucuk harfe indiriyor. */
+       "kara sovalye, batman", "cin"). Artik bas harf buyutme kurallari
+       olmadigi icin zaten aynen korunuyor. */
     altTitle: ['alternatif isim / arama terimleri', 'alternatif isim', 'arama terimleri'],
     firstCity: ['ilk izlediğim şehir', 'ilk kez izlenen şehir'],
     watchDate: ['izleme tarihi', 'izlenme tarihi'],
@@ -137,8 +136,7 @@ const SCHEMAS = {
     country: ['yapım ülkesi'],
     status: ['durumu'],
     originalTitle: ['orijinal adı'],
-    /* Filmlerdeki gibi: baska ad + arama terimleri, yalnizca arama icin.
-       titleCase uygulanmaz, metin aynen korunur. */
+    /* Filmlerdeki gibi: baska ad + arama terimleri, yalnizca arama icin. */
     altTitle: ['alternatif isim / arama terimleri', 'alternatif isim', 'arama terimleri'],
     creator: ['creator / showrunner'],
     network: ['network'],
@@ -190,42 +188,12 @@ const clean = (s) => String(s ?? '').replace(/\r/g, '').replace(/\n/g, ' ').repl
  * Slug uretimi (slugPart) zaten kucuk harfe cevirdigi iciv adresler degismez.
  */
 /* Baglac kelimeler ("ve", "ile", "de") buyuk harfle baslamaz; ilk kelime her zaman buyutulur. */
-const TITLE_KEEP_LOWER = new Set(['ve', 'ile', 'de']);
-
-/* Turkce kurallarina gore "i" -> "İ" olur; bu Ingilizce adlar icin yanlis:
-   "isaac" -> "İsaac", "inception" -> "İnception". Ayri bir kelime listesiyle
-   bu kelimeler "I" ile baslatilir. Liste veriden cikarildi; Turkce kelimeler
-   ("İstanbul", "İki", "İpek", "İthaki" ...) bilerek listede YOK, onlar
-   Turkce kurallarina devam eder. */
-const ENGLISH_I_WORDS = new Set([
-  'idiocracy', 'ihostage', 'ii', 'illuminati', 'immaculate', 'impossible', 'imprint',
-  'improbable', 'in', 'inception', 'incident', 'independence', 'indische', 'industrial',
-  'inferno', 'inglorious', 'ingmar', 'inside', 'instinct', 'intelligence', 'intern',
-  'interstellar', 'interview', 'introvert', 'invention', 'invincible', 'iris', 'irishman',
-  'irreversible', 'is', 'isaac', 'ishii', 'island', 'isles', 'it', "it's", 'iv', 'ivana',
-  'ivory', 'iñárritu', 'iguchi', 'im'
-]);
-
-/* Roma rakamlari (i, ii, iii, iv) tamamen buyutulur: "versucher ii" -> "Versucher II". */
-const isRomanInitial = (word) => /^(i|ii|iii|iv|v|vi|vii|viii|ix|xi|xii)$/i.test(word);
-
-function titleCase(value) {
-  const s = clean(value);
-  if (!s) return '';
-  let first = true;
-  return s.replace(/(^|[\s(\[\]\/"])(\p{L}+)/gu, (_, pre, word) => {
-    const atStart = first;
-    first = false;
-    if (!atStart && TITLE_KEEP_LOWER.has(word.toLocaleLowerCase('tr-TR'))) return pre + word;
-    const lower = word.toLocaleLowerCase('tr-TR');
-    /* "i" ile basliyorsa: once roma rakami, sonra Ingilizce listesi, kalan Turkce. */
-    if (lower.charAt(0) === 'i') {
-      if (isRomanInitial(lower)) return pre + lower.toLocaleUpperCase('en-US');
-      if (ENGLISH_I_WORDS.has(lower)) return pre + word.charAt(0).toLocaleUpperCase('en-US') + word.slice(1);
-    }
-    return pre + word.charAt(0).toLocaleUpperCase('tr-TR') + word.slice(1);
-  });
-}
+/* Bas harf buyutme KALDIRILDI. Metinler sheet'teki yazim oldugu gibi gecer.
+   Once burada titleCase() vardi: Turkce "i" -> "İ" kurali Ingilizce adlari
+   bozuyordu ("isaac" -> "İsaac") ve duzeltmek icin ENGLISH_I_WORDS (30+ kelime)
+   ile isRomanInitial() Elle tutuluyordu. Artik gerek yok: ne bir kelime
+   listesi var ne de Roma rakami kurali. Slug'lar etkilenmedi — slugPart()
+   zaten once kucuk harfe indiriyor. */
 
 /* Sheet'te "ilk okudugum yil" tek bicimde degil: "2026", "2026 Eylül",
    "Aralık 2025", "20.01.2026", "2026-03" hepsi olabiliyor. */
@@ -287,7 +255,8 @@ const COUNTRY_TR = {
 function trCountry(value) {
   const v = clean(value);
   if (!v) return '';
-  return COUNTRY_TR[v.toLocaleLowerCase('tr-TR')] || titleCase(v);
+  /* Bilinmeyen ulke adi: sheet'teki yazim oldugu gibi gecer. */
+  return COUNTRY_TR[v.toLocaleLowerCase('tr-TR')] || v;
 }
 const missing = (s) => { const v = clean(s); return !v || /^[-–—]+$/.test(v); };
 
@@ -397,8 +366,13 @@ function columnMap(headers, schema) {
   return map;
 }
 
+/* Ayni slug'a dusuen kayitlara eklenen karma. KAYNAK KUCUK HARFE INDIRGEMIŞ
+   HALDE HESAPLANIR: once harf durumu bu karmanin parcasiydi, yani sheet'te
+   "Black Metal TR" yazimi "black metal tr"ye degistiginde adres de degisiyordu.
+   Adres, gosterilen yazimdan bagimsiz olmali. */
 function stableSuffix(item) {
-  const source = [item.author, item.title, item.pre, item.year, item.rawImage, item.goodreads, item.letterboxd, item.tmdb].join('|');
+  const source = [item.author, item.title, item.pre, item.year, item.rawImage, item.goodreads, item.letterboxd, item.tmdb]
+    .join('|').toLocaleLowerCase('tr-TR');
   let hash = 0;
   for (const c of source) hash = (Math.imul(hash, 31) + c.charCodeAt(0)) | 0;
   return (hash >>> 0).toString(36);
@@ -450,7 +424,7 @@ function makeItems(type, headers, rows) {
   const items = [];
   for (const row of rows) {
     const get = (field) => (columns[field] == null ? '' : clean(row[columns[field]]));
-    const title = titleCase(get('title'));
+    const title = get('title');
     if (missing(title)) continue;
     const yearRaw = type === 'books' ? get('originalDate') : get('year');
     const item = {
@@ -465,34 +439,34 @@ function makeItems(type, headers, rows) {
       score: type === 'books' ? numberValue(get('bookScore')) : numberValue(get('score')),
       image: safeUrl(get('image')),
       rawImage: get('image'),
-      genres: splitList(get('genre')).map(titleCase),
-      subgenres: splitList(get('subgenre')).map(titleCase)
+      genres: splitList(get('genre')),
+      subgenres: splitList(get('subgenre'))
     };
     if (type === 'books') {
       Object.assign(item, {
         firstReadDate: get('firstReadDate'),
         seriesScoreRaw: get('seriesScore'),
         seriesScore: numberValue(get('seriesScore')),
-        seriesName: titleCase(get('seriesName')),
-        author: titleCase(get('author')),
-        originalTitle: titleCase(get('originalTitle')),
-        mainLabel: titleCase(get('mainLabel')),
-        reason: titleCase(get('reason')),
-        reasonFound: titleCase(get('reasonFound')),
-        reasonWhy: titleCase(get('reasonWhy')),
+        seriesName: get('seriesName'),
+        author: get('author'),
+        originalTitle: get('originalTitle'),
+        mainLabel: get('mainLabel'),
+        reason: get('reason'),
+        reasonFound: get('reasonFound'),
+        reasonWhy: get('reasonWhy'),
         goodreads: get('goodreads'),
-        publisher: titleCase(get('publisher')),
+        publisher: get('publisher'),
         altTitle: get('altTitle'),
-        translator: titleCase(get('translator')),
-        character: titleCase(get('character')),
-        formats: titleCase(get('formats')),
-        acquisition: titleCase(get('acquisition')),
-        authorOrigin: titleCase(get('authorOrigin')),
-        fiction: titleCase(get('fiction')),
-        owned: titleCase(get('owned')),
-        city: titleCase(get('city')),
-        readLanguage: titleCase(get('readLanguage')),
-        writtenLanguage: titleCase(get('writtenLanguage')),
+        translator: get('translator'),
+        character: get('character'),
+        formats: get('formats'),
+        acquisition: get('acquisition'),
+        authorOrigin: get('authorOrigin'),
+        fiction: get('fiction'),
+        owned: get('owned'),
+        city: get('city'),
+        readLanguage: get('readLanguage'),
+        writtenLanguage: get('writtenLanguage'),
         authorScoreRaw: get('authorScore'),
         authorScore: numberValue(get('authorScore')),
         pages: get('pages'),
@@ -507,26 +481,26 @@ function makeItems(type, headers, rows) {
       Object.assign(item, {
         watchCountRaw: get('watchCount'),
         watchCount: numberValue(get('watchCount')),
-        pre: titleCase(get('pre')),
-        mainLabel: titleCase(get('mainLabel')),
-        reason: titleCase(get('reason')),
-        reasonFound: titleCase(get('reasonFound')),
-        reasonWhy: titleCase(get('reasonWhy')),
-        platform: titleCase(get('platform')),
-        directorRaw: titleCase(get('director')),
-        directors: splitList(get('director')).map(titleCase),
-        originalTitle: titleCase(get('originalTitle')),
+        pre: get('pre'),
+        mainLabel: get('mainLabel'),
+        reason: get('reason'),
+        reasonFound: get('reasonFound'),
+        reasonWhy: get('reasonWhy'),
+        platform: get('platform'),
+        directorRaw: get('director'),
+        directors: splitList(get('director')),
+        originalTitle: get('originalTitle'),
         altTitle: get('altTitle'),
-        firstCity: titleCase(get('firstCity')),
+        firstCity: get('firstCity'),
         watchDate: get('watchDate'),
-        seriesOrder: titleCase(get('seriesOrder')),
+        seriesOrder: get('seriesOrder'),
         countryRaw: trCountry(get('country')),
         countries: splitList(get('country')).map(trCountry),
-        directorOrigin: titleCase(get('directorOrigin')),
+        directorOrigin: get('directorOrigin'),
         letterboxd: get('letterboxd'),
         tmdb: get('tmdb'),
         tmdbId: get('tmdbId'),
-        adaptation: titleCase(get('adaptation')),
+        adaptation: get('adaptation'),
         downloaded: get('downloaded'),
         imdb: safeUrl(get('imdb')),
         rewatchRaw: get('rewatch'),
@@ -541,32 +515,32 @@ function makeItems(type, headers, rows) {
       const unwatched = /hiç|yok|izlenmedi/i.test(watchedValue);
       Object.assign(item, {
         watchDate: get('watchDate'),
-        mainLabel: titleCase(get('mainLabel')),
-        reason: titleCase(get('reason')),
-        reasonFound: titleCase(get('reasonFound')),
-        reasonWhy: titleCase(get('reasonWhy')),
-        platform: titleCase(get('platform')),
-        category: titleCase(get('category')),
-        doneRaw: titleCase(get('done')),
+        mainLabel: get('mainLabel'),
+        reason: get('reason'),
+        reasonFound: get('reasonFound'),
+        reasonWhy: get('reasonWhy'),
+        platform: get('platform'),
+        category: get('category'),
+        doneRaw: get('done'),
         done,
         ongoing,
         unwatched,
         partial: !!doneValue && !!watchedValue && !done && !ongoing && !unwatched,
         completionCountRaw: get('completionCount'),
         completionCount: numberValue(get('completionCount')),
-        watched: titleCase(get('watched')),
+        watched: get('watched'),
         countryRaw: trCountry(get('country')),
         countries: splitList(get('country')).map(trCountry),
-        statusRaw: titleCase(get('status')),
-        originalTitle: titleCase(get('originalTitle')),
+        statusRaw: get('status'),
+        originalTitle: get('originalTitle'),
         altTitle: get('altTitle'),
-        creator: titleCase(get('creator')),
-        favoriteSeason: titleCase(get('favoriteSeason')),
-        network: titleCase(get('network')),
-        language: titleCase(get('language')),
-        format: titleCase(get('format')),
-        adaptation: titleCase(get('adaptation')),
-        firstCity: titleCase(get('firstCity')),
+        creator: get('creator'),
+        favoriteSeason: get('favoriteSeason'),
+        network: get('network'),
+        language: get('language'),
+        format: get('format'),
+        adaptation: get('adaptation'),
+        firstCity: get('firstCity'),
         rewatchRaw: get('rewatch'),
         rewatch: scaleLabel(get('rewatch'), REREAD_LABELS),
         imdb: safeUrl(get('imdb')),
@@ -578,8 +552,8 @@ function makeItems(type, headers, rows) {
       Object.assign(item, {
         tracksRaw: get('tracks'),
         tracks: numberValue(get('tracks')),
-        category: titleCase(get('category')),
-        feeling: titleCase(get('feeling')),
+        category: get('category'),
+        feeling: get('feeling'),
         spotify: safeUrl(get('spotify'))
       });
     }

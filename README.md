@@ -734,6 +734,75 @@ kayıt olduğu için olduğu gibi bırakıldı.
 Liste sayfaları (`/film`, `/kitap`, ...) 6 sütunda kaldı — orada kart
 sayısı 30 ve bilinçli olarak sıkıştırılmış.
 
+### Baş harf büyütme kuralı tamamen kaldırıldı — metinler sheet'teki yazımla aynen geliyor
+
+`titleCase()` **tamamen silindi**. Artık hiçbir alanda baş harf büyütme yapılmıyor:
+`kitap türkçe ismi`, `kitap orijinal ismi`, `seri sıralaması`, yazar, main label,
+yayınevi, çevirmen, tür, ülke, ağ, yönetmen, creator, uyarlama kaynağı… hepsi
+sheet'te ne yazıyorsa öyle gösteriliyor. Sheet'te küçük harf yazılmışsa küçük
+harf çıkıyor.
+
+Silinen parçalar:
+
+| Ne | Not |
+|---|---|
+| `titleCase()` fonksiyonu | kelime kelime büyütme + Roma rakamı kuralı |
+| `ENGLISH_I_WORDS` | 30+ kelimelik elle tutulan liste (`isaac`, `inception`, `immaculate`…) |
+| `isRomanInitial()` | `i/ii/iii/iv` → `I/II/III/IV` kuralı |
+| `TITLE_KEEP_LOWER` | `ve`, `ile`, `de` kelimelerini küçük bırakan küme |
+| 50 × `titleCase(get('x'))` | → `get('x')` (`get` zaten `clean()` uyguluyor) |
+| 3 × `.map(titleCase)` | `splitList()` zaten her parçaya `clean()` uyguluyor, `map` gereksizdi |
+| `trCountry()` yedeği | `|| titleCase(v)` → `|| v` |
+
+**Bu neden önemliydi:** `titleCase` Türkçe kuralıyla `i` → `İ` yapıyordu, bu da
+İngilizce adları bozuyordu (`isaac` → `İsaac`). Düzeltmek için 30+ kelimelik
+elle liste ve Roma rakamı kuralı tutuluyordu; liste yetmeyince her yeni İngilizce
+ad eklemek gerekirdi. Artık kural yok, sorun da yok.
+
+#### Adresler (slug) etkilenmedi — 944 kayıt
+
+`slugPart()` zaten küçük harfe indirip Türkçe indirgeme yaptığı için
+baş harf büyütmenin slug'lara hiçbir etkisi yoktu. Doğrulandı:
+
+| Tip | Kayıt | Slug kümesi farkı |
+|---|---|---|
+| books | 199 | **0** |
+| films | 494 | **0** |
+| series | 142 | **0** |
+| playlists | 109 | **1** |
+
+Tek değişen adres: `/playlist/black-metal-tr-18x9g76` →
+`/playlist/black-metal-tr-1rm95u`. Sebep: sheet'te **iki** playlist de
+"black metal tr" adını taşıyor, biri `black-metal-tr` diyor, diğeri çakışma
+karması alıyor. Bu karma başlıktan hesaplandığı için yazım değişince o da
+değişti. Kalıcı çözüldü: `stableSuffix()` artık kaynağı **küçük harfe indirgeyerek**
+hash'liyor, yani adres artık gösterilen yazımdan bağımsız. İki kez üst üste
+build edildi, dört tipin slug'ları da birebir aynı kaldı.
+
+> **Fark etme:** veri dosyalarındaki **satır sırası** da değişmiş görünüyor.
+> Bu bizim değişikliğimizden değil: `build-data.mjs` içinde hiç `.sort(` yok,
+> yani JSON sırası doğrudan sheet sırası. Sheet'te satırlar yeniden
+> sıralanmış (eskiden alfabetikti: "300", "300: rise of an empire", "quiet
+> place"; şimdi "Limitless", "Joker", "V For Vendetta"). `rowIndex` farkı 0 —
+> yani aynı 944 kayıt, sadece sıra farklı.
+
+#### Diğer her şey hâlâ çalışıyor
+
+Kimlik ve filtreleme mantığı zaten büyük/küçük harf duyarsız olduğu için
+`titleCase` kaldırılınca bozulacak bir şey yok:
+
+- `foldText()` (arama dizini ve sorgu) — ı→i, ş→s, ğ→g, ö→o, ü→u, ç→ç indirger
+- `valueKey()` (filtre eşleşmesi) — küçük harfe indirger, iki tarafı da
+- `looseKey()` / `nameKey()` (favoriler listesi) — ayrıca Türkçe indirger
+- `slugPart()` / `routeValueSlug()` — küçük harf + Türkçe indirgeme
+- `scaleLabel()` — sayı (1-5) üzerinden çalışır, harf durumuyla ilgisi yok
+
+Tarayıcıda 12 rota denendi, **hiçbirinde JavaScript hatası yok**: anasayfa,
+`/books`, `/lists`, film detay, kitap detay, dizi detay, `/favs` (69 bağlantı,
+10 yazar + 10 yönetmen bulundu), `/etiket` (295 bağlantı), `/tur` (170 bağlantı).
+Arama da duyarsız kaldı: `ISAAC` → 16 sonuç (1 film, 1 dizi, 14 kitap), `300` →
+2 film.
+
 ### Sonsuz kaydırma kaldırıldı (aşağı inince sonraki 30 kayıt otomatik gelmiyor)
 
 Liste sayfalarında (`/films`, `/series`, `/books`, `/lists`) aşağı indikçe bir
