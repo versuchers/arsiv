@@ -734,6 +734,58 @@ kayıt olduğu için olduğu gibi bırakıldı.
 Liste sayfaları (`/film`, `/kitap`, ...) 6 sütunda kaldı — orada kart
 sayısı 30 ve bilinçli olarak sıkıştırılmış.
 
+### Site başlığı "more art" + navbar'dan "Ana sayfa" kalktı + sitede italik yok
+
+**1) Navbar'dan "Ana sayfa" kaldırıldı.**
+
+```js
+const NAV=[['films','Filmler'],['series','Diziler'],['books','Kitaplar'],
+           ['concerts','Konserler'],['favs','Favoriler'],['lists','Playlistler']];
+```
+
+7 link → 6 link. Site başlığı zaten `href="#/"` ile ana sayfaya gidiyor, yani
+girdi kaybolmadı. `hrefForView()`'in `view==='home'` dalı **bilerek silinmedi**:
+`go('home')` ile rota üretimi hâlâ yapılıyor ve ileride navbar'a ana sayfa geri
+eklenirse çalışır. Ölçüm: navbar'da `Ana sayfa` yok, 6 link, hepsi tek çizgide.
+
+**2) Başlık "more art", Manufacturing Consent, kalın.**
+
+```css
+--brand:'Manufacturing Consent','Alegreya',Georgia,serif;
+.mark{font-family:var(--brand);font-weight:700;font-style:normal;font-size:1.75rem;...;
+      -webkit-text-stroke:.014em currentColor}
+```
+
+**Önemli sınır:** Manufacturing Consent Google Fonts'ta **yalnızca 400
+ağırlıkta** yayınlanmış. `wght@700` isteği `400 Bad Request` döndürüyor (doğrulandı).
+Bu yüzden `font-weight:700` yazıldığında tarayıcı **sentetik kalın** uyguluyor;
+tek ağırlıklı ince fontlarda bunu `-webkit-text-stroke` ile keskinleştirdik.
+Alternatif istersen: 400 bırakılır (doğal, ama kalın değil) ya da kalın bir
+alternatif font (ör. `Oswald:wght@700` gerçek 700 döndürüyor).
+
+Ölçüm (1440 px): `document.fonts.check('700 28px "Manufacturing Consent"')` →
+**true**, `font-family` = `"Manufacturing Consent", Alegreya, Georgia, serif`,
+`font-weight` = 700, `font-style` = normal.
+
+**Yol üstünde çıkan tuzak:** ilk denemede başlık telefonda **iki satıra
+bölünüyordu** ("more" / "art") — ölçüm 68×25 yerine 68×**50** px veriyordu.
+Sebep: `.mark` `.bar`ın flex öğesi olduğu için daralıyor ve sıkışıyordu.
+`white-space:nowrap; flex:none` eklendi. Sonra 68×**25** px, tek satır.
+
+**3) Sitede italik kalmadı.**
+
+Kaynaklarda italik kullanan **tek yer** site başlığıydı
+(`.mark{...font-style:italic...}`) ve o kaldırıldı. Buna ek olarak:
+
+- Google Fonts isteğinden Alegreya ve Bitter'in **italik kesimleri çıkarıldı**
+  (`Alegreya:ital,wght@0,700;1,700` → `Alegreya:wght@700`). İtalik indirilmiyor.
+- Geleceğe karşı genel güvenlik kuralı:
+  `em,i,cite,dfn,var,address{font-style:normal}`
+
+Doğrulama: her sayfadaki **tüm metin düğümleri** bir `TreeWalker` ile gezildi,
+`getComputedStyle(...).fontStyle==='italic'` olan sayıldı. Beş koşuda
+(anasayfa, film detay, favoriler, 420 px, 640 px) sonuç **0**.
+
 ### Dört arayüz düzeltmesi (linkler, navbar, kutu boyutu, kayıt sayısı)
 
 **1) Linklerde altı çizgi kaldırıldı, üstüne gelince rengi değişiyor.**
