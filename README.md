@@ -734,6 +734,45 @@ kayıt olduğu için olduğu gibi bırakıldı.
 Liste sayfaları (`/film`, `/kitap`, ...) 6 sütunda kaldı — orada kart
 sayısı 30 ve bilinçli olarak sıkıştırılmış.
 
+### Sonsuz kaydırma kaldırıldı (aşağı inince sonraki 30 kayıt otomatik gelmiyor)
+
+Liste sayfalarında (`/films`, `/series`, `/books`, `/lists`) aşağı indikçe bir
+`IntersectionObserver` (`rootMargin:'800px'`) sonraki 30 kaydı kendiliğinden
+ekliyordu. **Kaldırıldı.** Sayfalama artık yalnızca ızgaranın altındaki klasik
+sayfalayıcıyla yapılıyor — o zaten her zaman vardı ve `state.page`'i doğrudan
+adresten okuyor (`/books/3`), yani hiçbir şey kaybolmadı.
+
+Silinen beş parça:
+
+| Ne | Nerede |
+|---|---|
+| `armSentinel()` fonksiyonunun tamamı | `fillGrid()`'in yanında |
+| `let sentinelObserver=null;` değişkeni | `PAGE_SIZE` altında |
+| `armSentinel(kind,pages)` çağrısı | `fillGrid()` sonu |
+| `<div id="grid-sentinel" class="grid-sentinel">` | liste sayfası HTML'i |
+| `.grid-sentinel{height:1px}` | CSS |
+
+Korunanlar: `PAGE_SIZE` (30), `totalPages()`, `pagerHtml()`, `state.page` —
+hepsi sayfalayıcı tarafından kullanılmaya devam ediyor. Kalan referans sayımı:
+`sentinelObserver` 0, `armSentinel` 0, `grid-sentinel` 0, `IntersectionObserver` 0.
+
+Doğrulama (dört liste sayfası, her biri 12 kez en alta kaydırılarak):
+
+| Sayfa | Başlangıç kart | Kaydırma sonrası | Sayfalayıcı |
+|---|---|---|---|
+| `/books` (199) | 30 | **30** | 6 sayfa |
+| `/films` (494) | 30 | **30** | 16 sayfa |
+| `/series` (142) | 30 | **30** | 4 sayfa |
+| `/lists` (109) | 30 | **30** | 3 sayfa |
+
+Sayfalayıcıya tıklamak da çalışıyor: `/books/3` adresine gidip 30 kart
+gösteriyor, orada da kaydırma ekleme yapmıyor. Dört sayfada da JS hatası yok.
+
+> **Hatırlatma (test tuzağı):** liste rotaları `/books`, `/films`, `/series`,
+> `/lists`'tir — `/kitap` **detay** rotasıdır. `/kitap` adresini açtığında site
+> sessizce ana sayfayı gösterir (404 değil), yani testte "liste açıldı" sanılıp
+> geçilebilir. `check-site.mjs` doğru rotaları kullanıyor (`minCards: 30`).
+
 ### Site başlığı "more art" + navbar'dan "Ana sayfa" kalktı + sitede italik yok
 
 **1) Navbar'dan "Ana sayfa" kaldırıldı.**

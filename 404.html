@@ -237,7 +237,7 @@ p{margin-top:.55rem}
 .pager a,.pager span{display:inline-flex;align-items:center;justify-content:center;min-width:2.1rem;height:2.1rem;padding:0 .5rem;border:1px solid var(--line);border-radius:3px;color:var(--link);text-decoration:none;font-size:.82rem;background:var(--raise)}
 .pager a:hover{border-color:var(--link-hi);color:var(--link-hi)}
 .pager .pager-cur{background:var(--link);color:var(--text);border-color:var(--link);font-weight:700}
-.grid-sentinel{height:1px}
+
 .bar-actions{display:flex;align-items:center;gap:.4rem;flex:none}
 .search-btn{gap:.35rem}
 .search-btn svg{display:block;flex:none}
@@ -448,7 +448,7 @@ let REG=new Map();
 const state={route:parseRoute(),q:'',sort:'date',min:0,genre:'',status:'',cat:'',page:1};
 /* Bir sayfada gosterilen kayit sayisi. */
 const PAGE_SIZE=30;
-let sentinelObserver=null;
+
 function totalPages(total){return Math.max(1,Math.ceil(total/PAGE_SIZE))}
 function pagerHtml(total,view,current){
   const pages=totalPages(total);
@@ -460,18 +460,9 @@ function pagerHtml(total,view,current){
   for(let p=1;p<=pages;p++)add(p);
   return `<nav class="pager" aria-label="Sayfalar">${parts.join('')}</nav>`;
 }
-/* Liste sonuna gelindiginde sonraki 30 kayit eklenir. */
-function armSentinel(kind,pages){
-  const el=$('#grid-sentinel');
-  if(!el)return;
-  if(sentinelObserver){sentinelObserver.disconnect();sentinelObserver=null}
-  if(state.page>=pages||typeof IntersectionObserver!=='function')return;
-  sentinelObserver=new IntersectionObserver(entries=>{
-    if(!entries.some(entry=>entry.isIntersecting))return;
-    state.page++;fillGrid(kind);
-  },{rootMargin:'800px'});
-  sentinelObserver.observe(el);
-}
+/* Sonsuz kaydirma kaldirildi: asagi indikce sonraki 30 kayit otomatik
+   eklenmiyor. Sayfalama yalnizca #pager (pagerHtml) ile yapiliyor; o zaten
+   her zaman vardi ve state.page'i dogrudan adresten okuyor (/kitap/2). */
 let dataMeta={generatedAt:'',error:''};
 
 /* JSON'dan gelen kayıtta türetilmiş alanları hesaplar. */
@@ -737,7 +728,7 @@ function gridView(kind){
     :[['date',type==='films'?'Son izlemeye göre':'Tarihe göre'],['r','Puana göre'],['year','Yıla göre (yeniden eskiye)'],['yearasc','Yıla göre (eskiden yeniye)'],['title','Ada göre']];
   if(type==='books'&&!options.some(pair=>pair[0]==='author'))options.push(['author','Yazara göre']);
   const cats=type==='playlists'?unique((D.playlists||[]).map(item=>item.category)):[];
-  main.innerHTML=`<h1>${cfg.label}</h1><p class="sub" id="count"></p><div class="ctl"><input id="q" type="search" placeholder="${cfg.label} içinde ara" aria-label="Ara" value="${esc(state.q)}"><select id="sort" aria-label="Sırala">${options.map(([value,label])=>`<option value="${value}">${label}</option>`).join('')}</select>${genres.length?`<select id="genre" aria-label="Tür"><option value="">Tüm türler</option>${genres.map(value=>`<option value="${esc(value)}">${esc(value)}</option>`).join('')}</select>`:''}${kind==='series'?`<select id="status" aria-label="Durum"><option value="">Tüm durumlar</option><option value="done">Bitirdiklerim</option><option value="part">Bitirmadiklerim</option><option value="ongoing">Sürüyor</option></select>`:''}${type==='playlists'?`<select id="cat" aria-label="Kategori"><option value="">Tüm kategoriler</option>${cats.map(value=>`<option value="${esc(value)}">${esc(value)}</option>`).join('')}</select>`:''}<select id="min" aria-label="En düşük puan"><option value="0">Tüm puanlar</option><option value="8">8 ve üstü</option><option value="9">9 ve üstü</option><option value="10">10</option></select></div><div id="grid" class="grid${type==='playlists'?' grid-3':''}"></div><div id="pager"></div><div id="grid-sentinel" class="grid-sentinel" aria-hidden="true"></div>`;
+  main.innerHTML=`<h1>${cfg.label}</h1><p class="sub" id="count"></p><div class="ctl"><input id="q" type="search" placeholder="${cfg.label} içinde ara" aria-label="Ara" value="${esc(state.q)}"><select id="sort" aria-label="Sırala">${options.map(([value,label])=>`<option value="${value}">${label}</option>`).join('')}</select>${genres.length?`<select id="genre" aria-label="Tür"><option value="">Tüm türler</option>${genres.map(value=>`<option value="${esc(value)}">${esc(value)}</option>`).join('')}</select>`:''}${kind==='series'?`<select id="status" aria-label="Durum"><option value="">Tüm durumlar</option><option value="done">Bitirdiklerim</option><option value="part">Bitirmadiklerim</option><option value="ongoing">Sürüyor</option></select>`:''}${type==='playlists'?`<select id="cat" aria-label="Kategori"><option value="">Tüm kategoriler</option>${cats.map(value=>`<option value="${esc(value)}">${esc(value)}</option>`).join('')}</select>`:''}<select id="min" aria-label="En düşük puan"><option value="0">Tüm puanlar</option><option value="8">8 ve üstü</option><option value="9">9 ve üstü</option><option value="10">10</option></select></div><div id="grid" class="grid${type==='playlists'?' grid-3':''}"></div><div id="pager"></div>`;
   if(!options.some(pair=>pair[0]===state.sort))state.sort=options[0][0];
   $('#sort').value=state.sort;if($('#min'))$('#min').value=String(state.min);if($('#genre'))$('#genre').value=state.genre;if($('#status'))$('#status').value=state.status;if($('#cat'))$('#cat').value=state.cat;
   if(type==='playlists'){const ctl=$('#min');if(ctl)ctl.remove()}
@@ -755,7 +746,6 @@ function fillGrid(kind){
   $('#grid').innerHTML=shown.length?shown.map(poster).join(''):'<p class="empty">Bu filtreyle eşleşen kayıt yok.</p>';
   const pager=$('#pager');
   if(pager)pager.innerHTML=pagerHtml(total,kind,state.page);
-  armSentinel(kind,pages);
 }
 function filterPage(route){
   const type=route.type,value=findFilterValue(type,route.field,route.valueSlug);
