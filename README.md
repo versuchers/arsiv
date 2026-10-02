@@ -734,6 +734,38 @@ kayıt olduğu için olduğu gibi bırakıldı.
 Liste sayfaları (`/film`, `/kitap`, ...) 6 sütunda kaldı — orada kart
 sayısı 30 ve bilinçli olarak sıkıştırılmış.
 
+### Navbar'da başlık ile nav linkleri artık aynı taban çizgisinde
+
+`.bar` `align-items:center` kullanıyordu — bu **kutuları** ortalar, metni değil.
+Başlık 28 px, nav linkleri 14.4 px olduğu için taban çizgileri kayıyordu:
+ölçümde başlığın metin tabanı **53 px**, nav'ınki **44.2 px** → **8.8 px fark**.
+Görselde başlık biraz aşağıda duruyordu.
+
+```css
+.bar>.mark,nav{align-self:baseline}
+```
+
+İki düğme (`align-self` almayan `.bar-actions`) ortalanmış kalıyor.
+
+Sonuç: **taban çizgisi farkı 0 px** (ikisi de 40.2).
+
+> **Ölçüm tuzağı (önemli):** taban çizgisini `Range.getClientRects()` ile
+> ölçmek **yanlış** — dönen dikdörtgen metnin alt kenarıdır ve fontun `descent`
+> değerini de içerir. Farklı fontlarda (Manufacturing Consent ↔ Manrope) bu
+> yüzden baseline hizalı olsa bile 4 px "fark" görünüyordu. Doğru yöntem:
+> elemana `display:inline-block;width:0;height:0;vertical-align:baseline`
+> olan geçici bir `<span>` eklemek; onun alt kenarı tam taban çizgisine oturur.
+
+Yedi koşuda doğrulandı (1440/1024/640/420 px × anasayfa, `/films`, `/books`,
+`/series`, `/lists`, `/favs`, film detay): **taban farkı 0**, nav tek çizgi,
+başlığın sağında, arama/tema kutuları eşit (34.4 px / dar ekranda 31.2 px),
+italik 0, altı çizili link 0, sentinel yok, JS hatası yok.
+
+Kalan tek dengesizlik **boyut oranı**: başlığın büyük harf yüksekliği 26 px,
+nav'ınki 15 px (oran **1.73**). Bu taban çizgisi hizasından gelmiyor, başlığın
+gerçekten daha büyük olmasından. Logo/nav oranını değiştirmek istersen
+`.mark` font-size'u düşürmek yeterli (şu an `1.75rem`).
+
 ### Baş harf büyütme kuralı tamamen kaldırıldı — metinler sheet'teki yazımla aynen geliyor
 
 `titleCase()` **tamamen silindi**. Artık hiçbir alanda baş harf büyütme yapılmıyor:

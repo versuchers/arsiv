@@ -66,6 +66,11 @@ header{position:relative;z-index:2;background:var(--panel);border-bottom:1px sol
 /* Baslik, nav ve sagdaki dugmeler TEK satirda. nav daralan ekranda kayar
    (overflow-x:auto) ki dugmeler asla alt satira dusmesin. */
 .bar{display:flex;align-items:center;gap:1.1rem;max-width:1100px;margin:0 auto;padding:.9rem 1.25rem}
+/* Baslik ve nav TABAN CIZGISINE gore hizalanir, kutu ortasina gore degil.
+   align-items:center sadece kutulari ortalar; baslik 28px, nav linkleri 14.4px
+   oldugu icin taban cizgileri 8.8 px kayik duruyordu (metin tabani 53'e karsi
+   44.2). align-self:baseline bu kaymayi kaldirir. Iki dugme ortalanmis kalir. */
+.bar>.mark,nav{align-self:baseline}
 /* Site basligi: "more art", Manufacturing Consent, kalin.
    Font yalnizca 400 agirlikta yayinlandigi icin 700 istegi tarayiciya
    "sentetik kalin" yaptirir; text-stroke kalinligi keskinlestirir.
