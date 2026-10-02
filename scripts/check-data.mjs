@@ -179,6 +179,42 @@ for (const [type, field, label] of expect) {
 }
 
 log('');
+log('== 7. Tarih cozumleme degismezleri (anasayfa "Son ..." satirlari) ==');
+/* Anasayfadaki "Son okunanlar" / "Son izlenenler" satirlari SU ALANLARA bakar:
+   books.firstReadSort+firstReadLabel, films.watchSort+watchLabel. Tarihi bos ya
+   da cozumlenemeyen kayitlar sort anahtari ALMAMALI (sessizce elenir), ve
+   sort anahtari olan her kayitta etiket de olmali. Asagidaki iki kural bunu
+   denetler; sayilar sadece bilgi olarak yazilir (bos tarih normaldir). */
+const filledCount = (items, field) => items.filter((i) => i[field] !== undefined && i[field] !== null && String(i[field]).trim() !== '').length;
+const dateRules = [
+  ['books', 'firstReadDate', 'firstReadSort', 'firstReadLabel', 'firstReadPrecision'],
+  ['films', 'watchDate', 'watchSort', 'watchLabel', 'watchPrecision']
+];
+for (const [type, rawField, sortField, labelField, precisionField] of dateRules) {
+  const items = data[type]?.items;
+  if (!items) { warn(`${type}: veri yok, tarih kontrolu atlandi`); continue; }
+  const raw = filledCount(items, rawField);
+  const sort = filledCount(items, sortField);
+  const label = filledCount(items, labelField);
+  const skipped = items.length - sort;
+  if (sort !== label) fail(`${type}.${sortField} (${sort}) ile ${type}.${labelField} (${label}) sayilari esit degil`);
+  if (sort > raw) fail(`${type}.${sortField} (${sort}) ham tarihten (${raw}) fazla; cozumlenemeyen tarih uretilmis`);
+  /* Etiketi olan kaydin hassasiyeti de olmali. */
+  const missingPrecision = items.filter((i) => i[labelField] && !i[precisionField]).length;
+  if (missingPrecision) fail(`${type}: ${missingPrecision} kayitta ${labelField} var ama ${precisionField} yok`);
+  const byPrecision = {};
+  for (const item of items) {
+    const key = item[precisionField] || '(bos)';
+    byPrecision[key] = (byPrecision[key] || 0) + 1;
+  }
+  const dagilim = Object.keys(byPrecision).sort().map((k) => `${k}=${byPrecision[k]}`).join(' ');
+  log(`   ${type}: ham tarih ${raw}, listeye giren ${sort}, atlanan ${skipped}  [${dagilim}]`);
+}
+const books = data.books?.items || [];
+const eligible = books.filter((i) => i.firstReadPrecision === 'day' || i.firstReadPrecision === 'month').length;
+log(`   books: firstReadPrecision day|month = ${eligible}/${books.length} ("Son okunanlar" bu kayitlari gosterir)`);
+
+log('');
 if (warnings.length) {
   log(`-- ${warnings.length} uyari --`);
   for (const message of warnings) log(`   ! ${message}`);

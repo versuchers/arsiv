@@ -107,9 +107,12 @@ const ROUTES = [
   { path: 'books', h1: /^Kitaplar$/, minCards: 30 },
   { path: 'lists', h1: /^Playlistler$/, minCards: 30 },
   { path: 'concerts', h1: /^Konserler$/, minCards: 0 },
-  /* Favoriler sayfasi artik kisitli: 10 yazar + 10 yonetmen + 5/5/5 tur,
-     10 tur, 10 etiket, 10 muzik turu = 65 baglanti + 4 "daha fazla" baglantisi. */
-  { path: 'favs', h1: /^Favoriler$/, minLinks: 40 },
+  /* /favs artik Favoriler: anasayfadan tasinan dort favori bolumu (olculen:
+     40 baglanti, 33 kart). /enler ise ONCEKI Favoriler sayfasinin tamami
+     (olculen: 69 baglanti). Eski /favs adresi kirilmadi; yeni icerigi
+     gosteriyor, ayri bir yonlendirme gerekmiyor. */
+  { path: 'favs', h1: /^Favoriler$/, minLinks: 30 },
+  { path: 'enler', h1: /^Enler$/, minLinks: 60 },
   { path: 'tur', h1: /^Türler$/, minLinks: 50 },
   { path: 'etiket', h1: /^Main label$/, minLinks: 50 },
   { path: 'yazarlar', h1: /^Yazarlar$/, minLinks: 50 },

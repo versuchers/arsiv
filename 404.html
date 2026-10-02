@@ -171,6 +171,9 @@ p{margin-top:.55rem}
 .badge{position:absolute;top:14px;left:14px;z-index:4;font-family:var(--ui);font-weight:600;font-size:.65rem;padding:.1rem .45rem;background:rgba(0,0,0,.55);border:1px solid rgba(233,228,216,.35);color:#E9E4D8;border-radius:2px}
 .cap{font-family:var(--ui);margin-top:.55rem;font-size:.9rem;color:var(--muted);text-align:center}
 .st{color:var(--star);letter-spacing:.05em;white-space:nowrap}
+/* "Son okunanlar" / "Son izlenenler" kartlarinda tarih satiri. Yildiz
+   puaninin altinda, ayni .cap icinde. */
+.cap-date{display:block;margin-top:.2rem;font-size:.78rem;color:var(--muted);letter-spacing:.02em;white-space:nowrap}
 .pc{display:block;color:var(--muted);white-space:nowrap;letter-spacing:.02em;font-size:.85rem;margin-top:.2rem}
 .listen-btn{display:inline-block;font-family:var(--ui);font-size:.92rem;font-weight:600;padding:.6rem 1.15rem;border:1px solid var(--link);border-radius:3px;color:var(--link);background:var(--raise);transition:background .15s,color .15s,border-color .15s}
 .listen-btn:hover{border-color:var(--link-hi);color:var(--link-hi)}
@@ -317,6 +320,7 @@ const CFG={
   series:{label:'Diziler',unit:'dizi',fav:'Favori diziler',dateLabel:'İzlenme tarihi'},
   books:{label:'Kitaplar',unit:'kitap',fav:'Favori kitaplar',dateLabel:'İlk okunma tarihi'},
   concerts:{label:'Konserler',unit:'konser',recent:'Konserler',dateLabel:'Tarih'},
+  enler:{label:'Enler',unit:'kayıt'},
   lists:{label:'Playlistler',unit:'playlist',fav:'Favori playlistler',dateLabel:''}
 };
 const ROUTE_PREFIX={books:'kitap',films:'film',series:'dizi',playlists:'playlist'};
@@ -325,7 +329,9 @@ const FILTER_TITLES={author:'Yazar',genre:'Tür',subgenre:'Alt tür',authorOrigi
    Bu yuzden NAV icinde 'home' anahtari kalmadi. hrefForView()'in 'home'
    dalini (view==='home' ? '/' : ...) SILMEDIK: go('home') ile rota uretimi
    hala yapiliyor ve ileride NAV'a ana sayfa geri eklenirse calisir. */
-const NAV=[['films','Filmler'],['series','Diziler'],['books','Kitaplar'],['concerts','Konserler'],['favs','Favoriler'],['lists','Playlistler']];
+/* "Enler", onceki Favoriler sayfasinin adresidir (/favs -> /enler). Menude
+   Favoriler'in HEMEN YANINDA durur; Playlistler en sonda kalir. */
+const NAV=[['films','Filmler'],['series','Diziler'],['books','Kitaplar'],['concerts','Konserler'],['favs','Favoriler'],['enler','Enler'],['lists','Playlistler']];
 /* Playlist siralama sirası: ana liste once, sonra versucher II, artist, genre. */
 const PLAYLIST_CATEGORY_ORDER=['main','versucher II','artist','genre'];
 /* Favoriler sayfasinda gosterilmeyecek yonetmenler (kullanici istegi). */
@@ -369,7 +375,7 @@ function detectAppBase(){
   const parts=location.pathname.split('/').filter(Boolean);
   /* Bu liste, depo adini (orn. /arsiv) rotanin basindan ayirmak icin gereklidir.
      ROUTE_PREFIX ve sayfa adlari tutulmali; aksi halde /arsiv/playlist/... 404 sonrasi bozulur. */
-  const known=[...Object.values(ROUTE_PREFIX),'films','series','books','concerts','favs','lists','etiket','tur','ara','yazarlar','yonetenler']
+  const known=[...Object.values(ROUTE_PREFIX),'films','series','books','concerts','favs','enler','lists','etiket','tur','ara','yazarlar','yonetenler']
     .map(part=>part.toLocaleLowerCase('tr-TR'));
   const routeIndex=parts.findIndex(part=>known.includes(part.toLocaleLowerCase('tr-TR')));
   if(routeIndex===0)return '/';
@@ -603,17 +609,18 @@ function parseRoute(){
   if(first==='yazarlar')return {kind:'authorsIndex'};
   if(first==='yonetenler')return {kind:'directorsIndex'};
   if(first==='ara')return {kind:'search'};
-  if(['films','series','books','concerts','favs','lists'].includes(first)){
+  if(['films','series','books','concerts','favs','enler','lists'].includes(first)){
     const page=Number(parts[1]);
     return {kind:'view',view:first,page:Number.isInteger(page)&&page>0?page:1};
   }
   return {kind:'view',view:'home'};
 }
 function resetFilters(){state.q='';state.sort='date';state.min=0;state.genre='';state.status='';state.cat='';state.page=1}
-/* Favoriler, tur ve filtre sayfalari yuzlerce kayit isler; kullaniciya once
-   bilgi gosterilir, icerik bir sonraki karede basilir. */
+/* Enler, tur ve filtre sayfalari yuzlerce kayit isler; kullaniciya once
+   bilgi gosterilir, icerik bir sonraki karede basilir. Favoriler artik
+   yalnizca dort izgara satiri oldugu icin burada degil. */
 function slowRoute(route){
-  if(route.kind==='view')return route.view==='favs';
+  if(route.kind==='view')return route.view==='enler';
   return route.kind==='tag'||route.kind==='genre'||route.kind==='filter';
 }
 function showLoading(){
@@ -641,14 +648,21 @@ function imageFrame(item,large=false){
      gorsel gercekten boyanana kadar gorunur kaliyor. */
   return `<div class="cover ${pal(displayName(item))} ${image?'has-image':''} ${large?'large':''}">${fallback}${image?`<span class="sk" aria-hidden="true"></span><img src="${esc(image)}" alt="${esc(displayName(item))}" loading="${large?'eager':'lazy'}" decoding="async">`:''}</div>`;
 }
-function poster(item){
-
+/** Tek kart. dateText verilirse yildiz puaninin altina tarih satiri eklenir
+ *  ("Son okunanlar" / "Son izlenenler" satirlari icin).
+ *
+ *  ONEMLI: `typeof dateText==='string'` kontrolu sart. Sitede 7 yerde
+ *  `list.map(poster)` yaziliyor ve Array.map ikinci arguman olarak DIZIN'i
+ *  gecirir; kontrol olmazsa her kartin altina "0","1","2" yazardi.
+ *  (Bu hata gercekten oldu: /favs'ta 32 kartta goruldu.) */
+function poster(item,dateText){
   const name=displayName(item);
   const isPl=item.sec==='playlists';
   const cap=isPl
     ?`<span class="pl-name" title="${esc(name)}">${esc(name)}</span>${item.tracks?`<span class="pc">${esc(item.tracks.toLocaleString('tr-TR'))} şarkı</span>`:''}`
     :(item.score!=null?`<span class="st">${esc(stars(item.score))}</span>`:'');
-  return `<article class="poster-card${isPl?' pl-card':''}"><a class="poster" href="${esc(hrefFor(item.route))}" data-route="${esc(item.route)}" title="${esc(name)}" aria-label="${esc(name)}${item.score==null?'':', '+esc(stars(item.score))+' puan'}">${imageFrame(item)}</a><div class="cap">${cap}</div></article>`;
+  const when=(typeof dateText==='string'&&dateText)?`<span class="cap-date">${esc(dateText)}</span>`:'';
+  return `<article class="poster-card${isPl?' pl-card':''}"><a class="poster" href="${esc(hrefFor(item.route))}" data-route="${esc(item.route)}" title="${esc(name)}" aria-label="${esc(name)}${item.score==null?'':', '+esc(stars(item.score))+' puan'}">${imageFrame(item)}</a><div class="cap">${cap}${when}</div></article>`;
 }
 function unique(values){return [...new Set(values.filter(v=>!missing(v)))].sort((a,b)=>a.localeCompare(b,'tr'))}
 /* Sheets'teki "anasayfa sıra" sütunundan gelen favori kayıtlar. Anasayfada
@@ -678,10 +692,49 @@ function playlistFavRow(){
   const list=homePlaylistItems();
   return `<div class="sh"><h2>${CFG.lists.fav}</h2><a class="link" href="${esc(hrefFor('/lists'))}" data-route="/lists">Tümünü gör</a></div><div class="niche"><div class="grid grid-3">${list.length?list.map(poster).join(''):'<p class="empty">Henüz seçilmedi.</p>'}</div></div>`;
 }
+/* ------------------------------------------------------------------ *
+ * Anasayfadaki "Son okunanlar" / "Son izlenenler" satirlari
+ * ------------------------------------------------------------------ */
+const RECENT_LIMIT=4;
+/** Anasayfada gosterilecek kayit sayisi (4 kart = .grid'in bir satiri). */
+function recentItems(sec,sortKey,labelKey,precisionKey){
+  return (D[sec]||[])
+    /* Kural 1: siralama anahtari olmayan kayit girmez -> tarihi bos ya da
+       COZUMLENEMEYEN kayit sessizce atlanir (filmlerde 350 kayit boyle). */
+    .filter(item=>item[sortKey]&&item[labelKey])
+    /* Kural 2: hassasiyet 'day' veya 'month' olmali. 'year' olanlar GIRMEZ —
+       onlarda gun/ay bilgisi yok, "1 Ocak 2011" gibi uydurma bir tarih
+       gostermek yaniltici olurdu. Kitaplarda 175 kayit boyle.
+       (firstReadSort yil-only kayitlar icin de DOLU; bu yuzden ayrica
+       precisionKey ile elenmesi gerekiyor. Bu süzgec olmadan 175 kitap
+       listeye giriyordu.) */
+    .filter(item=>item[precisionKey]==='day'||item[precisionKey]==='month')
+    /* Sira Sheet'teki satir sirasina DEGIL, tarihe gore. Ayni gune denk gelen
+       kayitlarda ikincil olcut: Sheet'te daha ALTTA olan daha yeni sayilir
+       (rowIndex buyuk = asagida = yeni kayit). */
+    .sort((x,y)=>String(y[sortKey]).localeCompare(String(x[sortKey]))||y.rowIndex-x.rowIndex)
+    .slice(0,RECENT_LIMIT);
+}
+/** Baslik + "Tümünü gör" + tek satırda 4 kart. .sh ve .grid mevcut
+ *  bölüm başlığı / kart izgarası; yeni bir tasarım değil. */
+function recentRow(title,view,sec,sortKey,labelKey,precisionKey,emptyText){
+  const list=recentItems(sec,sortKey,labelKey,precisionKey);
+  return `<div class="sh"><h2>${esc(title)}</h2><a class="link" href="${esc(hrefFor('/'+view))}" data-route="/${view}">Tümünü gör</a></div><div class="niche"><div class="grid">${list.length?list.map(item=>poster(item,item[labelKey])).join(''):`<p class="empty">${esc(emptyText)}</p>`}</div></div>`;
+}
+/** Anasayfanin yeni ana icerigi: once okunanlar, sonra izlenenler. */
+function recentRows(){
+  return recentRow('Son okunanlar','books','books','firstReadSort','firstReadLabel','firstReadPrecision','Henüz tarih girilmiş kitap yok.')
+    + recentRow('Son izlenenler','films','films','watchSort','watchLabel','watchPrecision','Henüz tarih girilmiş film yok.');
+}
+/** Favoriler sayfasi (/favs): anasayfadan tasinan dort favori bolumu.
+ *  İçerik ve gosterim aynen: favRow / playlistFavRow yeniden kullanildi. */
+function favoritesView(){
+  main.innerHTML=`<h1>Favoriler</h1>${favRow('books')}${favRow('films')}${playlistFavRow()}${favRow('series')}`;
+}
 function home(){
   /* Görünüm anahtarı ile veri anahtarı aynı değil ('lists' -> 'playlists'), dataType() gerekir. */
   const index=['films','series','books','lists'].map(kind=>{const type=dataType(kind);return `<li><a href="${esc(hrefFor('/'+kind))}" data-route="/${kind}"><span>${CFG[kind].label}</span><span>${(D[type]||[]).length}</span></a></li>`}).join('');
-  main.innerHTML=`<section class="welcome"><p class="eyebrow">Kişisel versucher</p><h1>Film, dizi, kitap ve playlist</h1><p class="sub">Sheets kayıtlarından üretilmiş versucher; her kutu kendi kişisel sayfasına bağlanır.</p></section>${favRow('books')}${favRow('films')}${playlistFavRow()}${favRow('series')}<div class="sh"><h2>Raflar</h2></div><ul class="shelf">${index}</ul><div class="sh"><h2>Yakında</h2></div><div class="placeholder">Konserler için ayrı bir veri tablosu eklendiğinde burada görünecek.</div>`;
+  main.innerHTML=`<section class="welcome"><p class="eyebrow">Kişisel versucher</p><h1>Film, dizi, kitap ve playlist</h1><p class="sub">Sheets kayıtlarından üretilmiş versucher; her kutu kendi kişisel sayfasına bağlanır.</p></section>${recentRows()}<div class="sh"><h2>Raflar</h2></div><ul class="shelf">${index}</ul><div class="sh"><h2>Yakında</h2></div><div class="placeholder">Konserler için ayrı bir veri tablosa eklendiğinde burada görünecek.</div>`;
 }
 function sortItems(list,how){
   const a=[...list];
@@ -1226,7 +1279,10 @@ function collectValues(values){
   /* En cok kayda sahip olan basta; ayni sayida ise alfabetik. */
   return [...map.values()].sort((a,b)=>b.count-a.count||a.value.localeCompare(b.value,'tr'));
 }
-function favoritesView(){
+/** "Enler" (/enler): eski Favoriler sayfasinin icerigi ve davranisi AYNI.
+ *  Sadece ad ve adres degisti (/favs -> /enler). Alt aciklama metnine
+ *  dokunulmadi. */
+function enlerView(){
   /* Yazarlar: coklu yazarli kitaplar haric; onlardan yalnizca istenen uc kisi. */
   const authorValues=[];
   for(const item of D.books||[]){
@@ -1282,7 +1338,7 @@ function favoritesView(){
   const muzik=subGroup('Müzik türleri',byKind.playlists.slice(0,FAV_MUSIC_LIMIT),value=>filterPath('playlists','genre',value));
   const authorTail=more('/yazarlar',`Tüm ${authorList.length} yazarı gör`);
   const directorTail=more('/yonetenler',`Tüm ${directorList.length} yönetmeni gör`);
-  main.innerHTML=`<h1>Favoriler</h1><p class="sub">Yazarlar ve yönetmenler elle seçilmiş sırayı, türler ve etiketler sayıya göre sıralanır. Sayı o değeri taşıyan gerçek kayıt adedidir; bağlantıya tıklayınca o kişinin ya da türün kayıtları listelenir.</p><div class="favs" style="margin-top:1.5rem">${group('Yazarlar',authors,value=>filterPath('books','author',value),authorTail)}${group('Yönetmenler',directors,value=>filterPath('films','director',value),directorTail)}${turler}${muzik}</div>`;
+  main.innerHTML=`<h1>Enler</h1><p class="sub">Yazarlar ve yönetmenler elle seçilmiş sırayı, türler ve etiketler sayıya göre sıralanır. Sayı o değeri taşıyan gerçek kayıt adedidir; bağlantıya tıklayınca o kişinin ya da türün kayıtları listelenir.</p><div class="favs" style="margin-top:1.5rem">${group('Yazarlar',authors,value=>filterPath('books','author',value),authorTail)}${group('Yönetmenler',directors,value=>filterPath('films','director',value),directorTail)}${turler}${muzik}</div>`;
 }
 function placeholderView(kind){
   const isConcerts=kind==='concerts';
@@ -1320,6 +1376,7 @@ function renderPage(){
   if(state.route.view==='home')home();
   else if(['films','series','books','lists'].includes(state.route.view))gridView(state.route.view);
   else if(state.route.view==='favs')favoritesView();
+  else if(state.route.view==='enler')enlerView();
   else placeholderView(state.route.view);
 }
 

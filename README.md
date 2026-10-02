@@ -766,6 +766,98 @@ nav'ınki 15 px (oran **1.73**). Bu taban çizgisi hizasından gelmiyor, başlı
 gerçekten daha büyük olmasından. Logo/nav oranını değiştirmek istersen
 `.mark` font-size'u düşürmek yeterli (şu an `1.75rem`).
 
+### Anasayfa ve menü yeniden düzenlemesi: /enler, yeni /favs, "Son okunanlar" / "Son izlenenler"
+
+Hero, diğer sayfalar, stil sistemi ve veri hattı **aynen korundu**. Değişenler:
+
+**1) Eski "Favoriler" → "Enler" (`/favs` → `/enler`).** İçerik ve davranış
+birebir aynı (10 yazar + 10 yönetmen, 5/5/5 tür, 10 tür, 10 etiket, 10 müzik
+türü; ölçülen 69 bağlantı, değişmedi). Sadece ad, adres ve `<h1>` değişti.
+Alt açıklama metnine dokunulmadı. `favoritesView()` → `enlerView()`,
+`renderPage`'e yeni dal, `parseRoute`/`known`/`NAV`/`CFG` güncellendi.
+Eski `/favs` adresi **kırılmadı** — çakışma olmadı çünkü `/favs`'in yeni
+içeriği başka bir şey; ayrı yönlendirme gerekmiyor.
+
+**2) Anasayfadaki dört favori bölümü `/favs`'a taşındı.** "Favori kitaplar",
+"Favori filmler", "Favori playlistler", "Favori diziler" `favRow()` /
+`playlistFavRow()` ile **olduğu gibi** taşındı (33 kart, 40 bağlantı, aynı kaplar,
+yıldızlar, "Tümünü gör" bağlantıları, aynı `.niche`/`.grid` düzeni). `/favs`'a
+bir `<h1>Favoriler</h1>` eklendi — sayfada başlık olmazsa erişilemez olurdu.
+
+**3) Anasayfaya iki yeni satır.** Hero'nun altında, "Raflar" ve "Yakında"
+bloğları yerinde kalarak önüne geldi:
+
+```
+Son okunanlar        [Tümünü gör → /books]     4 kart
+Son izlenenler       [Tümünü gör → /films]     4 kart
+```
+
+`.grid` zaten 4 sütun olduğu için 4 kart tam bir satır. Başlık + "Tümünü gör"
+için mevcut `.sh` deseni, kart için mevcut `poster()` kullanıldı — yeni tasarım
+yok. `poster(item, dateText)` imzası genişletildi: `dateText` verilirse yıldız
+puanının altına `.cap-date` satırı eklenir ("27 Eylül 2026").
+
+**4) `slowRoute` değişti.** Ağır sayfa artık `enler` (yüzlerce kayıt işler);
+`favs` artık yalnızca dört ızgara satırı olduğu için ağır listeden çıkarıldı.
+
+### Tarih sütunları ve çözümleme
+
+| Tip | Sheet sütunu | Konum | Ham dolu | Listeye giren | Atlanan |
+|---|---|---|---|---|---|
+| Filmler | **İzleme Tarihi** | 21. sütun (0 tabanlı 20) | 144/494 | **144** | **350** |
+| Kitaplar | **İlk Okuduğum Yıl** | 10. sütun (0 tabanlı 9) | 199/199 | **24** | **175** |
+
+**Filmler:** 144 kaydın **hepsi** `GG.AA.YYYY`. Biçim yönü kanıtlandı: ilk
+sayısı >12 olan 86 kayıt var; eğer biçim `AA.GG.YYYY` olsaydı ilk sayı ay
+olurdu ve >12 olamazdı. 350 boş kayıt sessizce atlanıyor.
+
+**Kitaplar:** sütun adı "Yıl" dese de **karışık** — 17 kayıtta `GG.AA.YYYY`,
+7 kayıtta ay+yıl metni (`2026 Eylül`, `Aralık 2025`), **175 kayıtta sadece yıl**
+(`2011`). Kullanıcı kararı: **ay yeterli, günü bilinmeyene gün yazma.** Yani
+sadece yıl olan 175 kayıt hiç gösterilmiyor (uydurma "1 Ocak 2011" yazmak
+yanıltıcı olurdu). 24 uygun kayıt: 17 gün + 7 ay.
+
+**İkinci sıralama (gün çakışması):** aynı güne denk gelen kayıtlarda
+Sheet'te **daha altta olan daha yeni** sayılır (`rowIndex` büyük = aşağıda =
+yeni kayıt). 21 günde çakışma var; en büyüğü `2026-02-22`'de 7 kayıt. Bu kural
+`recentItems()` içinde yorum olarak yazılı.
+
+**Yeni veri alanları** (`build-data.mjs`, derleme zamanı):
+
+| Alan | Tip | Açıklama |
+|---|---|---|
+| `books.firstReadPrecision` | `'day' \| 'month' \| 'year'` | Kitaplar (mevcut `firstReadSort`'a ek) |
+| `films.watchPrecision` | aynı | Filmler |
+| `films.watchSort` | `YYYY-AA-GG` | Sıralama anahtarı (yıl-only **yok**) |
+| `films.watchLabel` | `27 Eylül 2026` | Gösterilecek metin |
+
+`datePrecision()` adlı ortak yardımcı eklendi. `check-data.mjs`'e **bölüm 7**
+geldi: `watchSort`/`firstReadSort` doluluğu ham tarihle tutarlı mı, etiketi olan
+kaydın hassasiyeti var mı, ve dağılım nedir — hepsi her derlemede raporlanır.
+
+### Bu turda yakalanan iki hata (ikisi de sessizdi)
+
+**1) `Array.map` ikinci argümanı.** `poster(item, dateText)` yaptığımda sitedeki
+**7 çağrı noktası** `list.map(poster)` yazıyordu ve `Array.map` ikinci argüman
+olarak **dizini** geçirir. Sonuç: `/favs`'taki 32 kartın altında `"1"`, `"2"`,
+`"3"` yazıyordu. Düzeltme: `poster()` içinde `typeof dateText==='string'`
+kontrolü. 7 çağrı noktasını değiştirmek yerine tek yerde savunma yapıldı —
+`map`'in bu tuhaf davranışı ileride tekrar sorun çıkarmasın diye.
+
+**2) Hassasiyet süzgeci hiç yazılmamıştı.** `recentItems()` yalnızca
+`sıralama anahtarı var mı` diye bakıyordu. Ama `firstReadSort` **yıl-only
+kitaplar için de dolu** (mevcut davranış: o yılın en yeni ayı yazılır), yani
+175 kitap listeye girecekti. Koddaki yorum "firstReadPrecision==='year' olanlar
+da girmez" diyordu ama kod onu **yapmıyordu** — yorum yalan söylüyordu.
+`.filter(item=>item[precisionKey]==='day'||item[precisionKey]==='month')`
+eklendi.
+
+Bu hatanın görünür olmaması tuzak: süzgeç olmadan da ilk 4 **aynı** çıkıyordu,
+çünkü 2026'nın aylı kayıtları 2025'in yıl-only kayıtlarını zaten geçiyor. Yani
+bugün fark edilmiyordu; kullanıcı 2027 için sadece yıl yazılmış bir kitap
+eklediğinde uydurma bir tarihle ekranda belirirdi. Bu yüzden test sonucuna
+değil akıl yürütmesine bakılarak düzeltildi.
+
 ### Baş harf büyütme kuralı tamamen kaldırıldı — metinler sheet'teki yazımla aynen geliyor
 
 `titleCase()` **tamamen silindi**. Artık hiçbir alanda baş harf büyütme yapılmıyor:

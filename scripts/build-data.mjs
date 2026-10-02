@@ -203,6 +203,12 @@ function monthIndex(word) {
   const k = String(word).replace(/ı/g, 'i').replace(/ş/g, 's').replace(/ğ/g, 'g').replace(/ö/g, 'o').replace(/ç/g, 'c').replace(/ü/g, 'u').toLowerCase();
   return MONTH_TR[k];
 }
+/** Tarihin hassasiyeti: 'day' | 'month' | 'year'. Bos girdi icin ''.
+ *  Anasayfadaki "Son okunanlar" / "Son izlenenler" satirlari yalnizca 'day'
+ *  ve 'month' olanlari gosterir; 'year' olanlarda gun/ay UYDURULMAZ, onlar
+ *  hic gosterilmez (175 kitapta sadece yil yaziyor). */
+const datePrecision = (p) => (!p ? '' : p.yearOnly ? 'year' : p.monthOnly ? 'month' : 'day');
+
 /** Karisik bicimleri {y, m, d} nesnesine cevirir. */
 function parseReadDate(value) {
   const s = clean(value);
@@ -575,6 +581,31 @@ function makeItems(type, headers, rows) {
       const day = p.yearOnly ? 1 : (p.d || 1);
       item.firstReadSort = `${String(p.y).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       item.firstReadLabel = p.d && !p.yearOnly && !p.monthOnly
+        ? `${p.d} ${MONTH_TR_NAME[month - 1]} ${p.y}`
+        : `${MONTH_TR_NAME[month - 1]} ${p.y}`;
+      /* firstReadSort icin yil-only kayitlara o yilin en yeni ayi yaziliyor
+         (yukari bakiyor, mevcut davranis). "Son okunanlar" satiri ise
+         firstReadSort'a bakmaz; bunun yerine firstReadSort + firstReadLabel'i
+         birlikte kullanir ve firstReadPrecision==='year' olanlari eler. */
+      item.firstReadPrecision = datePrecision(p);
+    });
+  }
+  /* Filmlerde "izleme tarihi" (Sheet'te GG.AA.YYYY) cozulur. watchSort siralama
+     anahtari, watchLabel gosterilecek metin ("18 Kasim 2017"), watchPrecision
+     ise hassasiyet. Bos veya sadece-yil olan kayitlar watchSort/watchLabel
+     ALMAZ; anasayfadaki "Son izlenenler" satiri onlari sessizce atlar.
+     Series'in "basladigim yil" sutunu ayni parseReadDate'i kullanir ama bu
+     bloga girmez (orada gosterilecek tarih yok). */
+  if (type === 'films') {
+    items.forEach((item) => {
+      const p = parseReadDate(item.watchDate);
+      if (!p) return;
+      const precision = datePrecision(p);
+      item.watchPrecision = precision;
+      if (precision === 'year') return;
+      const month = p.m || 1;
+      item.watchSort = `${String(p.y).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(p.d || 1).padStart(2, '0')}`;
+      item.watchLabel = precision === 'day'
         ? `${p.d} ${MONTH_TR_NAME[month - 1]} ${p.y}`
         : `${MONTH_TR_NAME[month - 1]} ${p.y}`;
     });
