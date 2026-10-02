@@ -766,6 +766,77 @@ nav'ınki 15 px (oran **1.73**). Bu taban çizgisi hizasından gelmiyor, başlı
 gerçekten daha büyük olmasından. Logo/nav oranını değiştirmek istersen
 `.mark` font-size'u düşürmek yeterli (şu an `1.75rem`).
 
+### Anasayfaya "Rastgele" satırı (7/10 üstü, dört tür seçiciyle)
+
+Son iki satırın altına üçüncü satır eklendi:
+`Son okunanlar → Son izlenenler → **Rastgele** → Raflar → Yakında`.
+
+Hero, menü, diğer sayfalar, mevcut iki satır, stil sistemi ve veri hattı
+aynen korundu. `.sh` bölüm başlığı ve `.grid` kart ızgarası yeniden kullanıldı;
+kart için mevcut `poster()` bileşeni. **Veri hattına hiç dokunulmadı** —
+rastgelelik tarayıcıda `Math.random()` ile üretiliyor, saatlik build'e ek
+yapılmadı.
+
+**Puan filtresi — ham puan, yıldız değil.** Sheet puanları 10 üzerinden;
+sitede 5 yıldıza çevriliyor. `RANDOM_MIN_SCORE=7` **ham** puana bakıyor:
+7/10 = 3,5 yıldız, 8/10 = 4 yıldız, 9/10 = 4,5 yıldız. Filtre
+`typeof item.score==='number' && isFinite(...) && score>=7` — boş ya da
+sayıya çevrilemeyen puan **havuza girmiyor**, sessizce.
+
+| Tür | Toplam | **7/10 üstü (havuz)** | Puanı boş/yok | 7'nin altında |
+|---|---|---|---|---|
+| Dizi | 142 | **77** | 0 | 65 |
+| Film | 494 | **276** | **70** | 148 |
+| Kitap | 199 | **139** | 0 | 60 |
+| Karışık | 835 | **492** | 70 | — |
+
+Havuz dağılımı: dizi 10×10 puanlı 10, 9×10:15, 8×10:14, 7×10:38 ·
+film 39/44/53/140 · kitap 11/32/39/57.
+
+**Karışık modda türe öncelik yok.** Üç liste tek havuzda birleştirilip
+tek tip üzerinden örnekleniyor; havuzun doğal oranları film %56,1,
+dizi %15,7, kitap %28,3. (Bunlar havuzun kendi büyüklüğünden geliyor, kodda
+hiçbir ağırlıklandırma yok.)
+
+**Seçici ve "Yeniden çek".** Başlığın sağında `.seg` düğmeleri: Dizi · Film ·
+Kitap · Karışık + Yeniden çek. İlk açılışta **Dizi** seçili.
+Seçici `.pager .pager-cur` desenini ödünç alıyor: seçili düğme dolu arka plan
++ kalın yazı, yani **hover gerekmeden** görünüyor (dokunmatikte de belli).
+Karisik modda her kartın üstünde küçük bir tür etiketi (`.cap-kind`, `.eyebrow`
+diliyle) çıkıyor; tek tür modlarında etiket yok.
+
+**Aynı kayıt iki kez çıkmıyor.** Çekiliş kısmi Fisher–Yates ile yapılıyor
+(`for i=bag.length-1..1` karıştırma, ilk 4 alınıyor). Havuz 4'ten küçükse
+havuzun tamamı döner — hata vermez, olan kadar gösterir; bu projede dört
+havuz da 4'ten büyük (77 / 276 / 139 / 492).
+
+**Yeniden çekilenler öncekilerle aynı çıkmıyor.** Çekilişten hemen önceki 4
+kayıt, havuz yeterince büyükse havuzdan **tamamen çıkarılıyor**
+(`fresh.length>=4` kontrolü). Tarayıcıda 5 kez "Yeniden çek" denendi: 5
+çekilişte de içinde tekrar **0**, önceki 4 ile birebir aynı olan çekiliş
+**0**. (Bir çekilişte önceki *bir öncekinden* 1 kayıt örtüşebildi — kural
+"hemen önceki" ile sınırlı, "mümkünse" dediği için bu kabul edildi.)
+
+**Tarih metni kaynak kütüğe göre değişiyor:**
+
+| Tür | Okunan alan | Ekranda |
+|---|---|---|
+| Film | `watchLabel` | `18 Kasım 2017` — tarih yoksa **hiçbir şey yazılmaz** |
+| Dizi | `watchDate` | `2016` — Sheet sütunu "başladığım yıl", 142 kaydın **hepsi** 4 haneli yıl |
+| Kitap | `firstReadLabel` / `firstReadSort` | `6 Mart 2025` veya sadece yıl: `2005` |
+
+Kitapta sadece yıl yazılmışsa `firstReadLabel` o yılın en yeni ayını
+**uydurur** ("Ocak 2005"); geçen turdaki "gün uydurma" kararıyla aynı
+gerekçeyle burada da yalnızca yıl yazılıyor. Filmlerde 7/10 üstü 276
+kaydın **207'sinde tarih yok** → o kartlarda tarih satırı hiç oluşmuyor
+(boş `<span>` bile konmuyor, yer boş bırakılmıyor).
+
+**Ölçüm (5 genişlik: 1440 / 768 / 640 / 420 / 360 px).** Beşinde de yatay
+taşma **0**, beş düğme de aynı satırda (hepsi aynı `y`), dokunma hedefi
+27 px, seçili düğme hover'suz görünüyor, 4 kart, JS hatası yok. (Edge'un
+en dar pencere genişliği 492 px olduğu için 360 px gerçekten ölçülemedi;
+en dar ölçüm 492 px ve o da sığıyor.)
+
 ### Anasayfa ve menü yeniden düzenlemesi: /enler, yeni /favs, "Son okunanlar" / "Son izlenenler"
 
 Hero, diğer sayfalar, stil sistemi ve veri hattı **aynen korundu**. Değişenler:

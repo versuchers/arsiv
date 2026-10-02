@@ -174,6 +174,17 @@ p{margin-top:.55rem}
 /* "Son okunanlar" / "Son izlenenler" kartlarinda tarih satiri. Yildiz
    puaninin altinda, ayni .cap icinde. */
 .cap-date{display:block;margin-top:.2rem;font-size:.78rem;color:var(--muted);letter-spacing:.02em;white-space:nowrap}
+/* "Rastgele" bolumunde Karisik modda kartin tur etiketi. .eyebrow ile ayni
+   dilde (buyuk harf, pirinc, kalin) ama kart icin daha kucuk. */
+.cap-kind{display:block;margin-bottom:.15rem;font-family:var(--ui);font-size:.66rem;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:700}
+/* "Rastgele" secici + Yeniden cek dugmesi. secili olan dolu arka planla
+   belirgin; hover GEREKMEZ, yani dokunmatik/mobilde de secim gorunur. */
+.seg{display:inline-flex;flex-wrap:wrap;gap:.3rem;align-items:center}
+.seg button{font-family:var(--ui);font-size:.76rem;line-height:1.4;color:var(--link);background:var(--raise);border:1px solid var(--line);border-radius:3px;padding:.24rem .55rem;cursor:pointer;box-shadow:inset 0 1px 0 var(--hi);transition:color .15s,border-color .15s,background .15s}
+.seg button:hover{border-color:var(--link-hi);color:var(--link-hi)}
+.seg button[aria-pressed="true"]{background:var(--link);border-color:var(--link);color:var(--text);font-weight:700}
+.seg .seg-redraw{margin-left:.2rem;color:var(--muted)}
+.seg .seg-redraw:hover{color:var(--link-hi)}
 .pc{display:block;color:var(--muted);white-space:nowrap;letter-spacing:.02em;font-size:.85rem;margin-top:.2rem}
 .listen-btn{display:inline-block;font-family:var(--ui);font-size:.92rem;font-weight:600;padding:.6rem 1.15rem;border:1px solid var(--link);border-radius:3px;color:var(--link);background:var(--raise);transition:background .15s,color .15s,border-color .15s}
 .listen-btn:hover{border-color:var(--link-hi);color:var(--link-hi)}
@@ -655,12 +666,13 @@ function imageFrame(item,large=false){
  *  `list.map(poster)` yaziliyor ve Array.map ikinci arguman olarak DIZIN'i
  *  gecirir; kontrol olmazsa her kartin altina "0","1","2" yazardi.
  *  (Bu hata gercekten oldu: /favs'ta 32 kartta goruldu.) */
-function poster(item,dateText){
+function poster(item,dateText,kindText){
   const name=displayName(item);
   const isPl=item.sec==='playlists';
+  const kind=(typeof kindText==='string'&&kindText)?`<span class="cap-kind">${esc(kindText)}</span>`:'';
   const cap=isPl
-    ?`<span class="pl-name" title="${esc(name)}">${esc(name)}</span>${item.tracks?`<span class="pc">${esc(item.tracks.toLocaleString('tr-TR'))} şarkı</span>`:''}`
-    :(item.score!=null?`<span class="st">${esc(stars(item.score))}</span>`:'');
+    ?`${kind}<span class="pl-name" title="${esc(name)}">${esc(name)}</span>${item.tracks?`<span class="pc">${esc(item.tracks.toLocaleString('tr-TR'))} şarkı</span>`:''}`
+    :`${kind}`+(item.score!=null?`<span class="st">${esc(stars(item.score))}</span>`:'');
   const when=(typeof dateText==='string'&&dateText)?`<span class="cap-date">${esc(dateText)}</span>`:'';
   return `<article class="poster-card${isPl?' pl-card':''}"><a class="poster" href="${esc(hrefFor(item.route))}" data-route="${esc(item.route)}" title="${esc(name)}" aria-label="${esc(name)}${item.score==null?'':', '+esc(stars(item.score))+' puan'}">${imageFrame(item)}</a><div class="cap">${cap}${when}</div></article>`;
 }
@@ -726,6 +738,95 @@ function recentRows(){
   return recentRow('Son okunanlar','books','books','firstReadSort','firstReadLabel','firstReadPrecision','Henüz tarih girilmiş kitap yok.')
     + recentRow('Son izlenenler','films','films','watchSort','watchLabel','watchPrecision','Henüz tarih girilmiş film yok.');
 }
+/* ------------------------------------------------------------------ *
+ * Anasayfadaki "Rastgele" satiri
+ * ------------------------------------------------------------------ */
+/* Sheet puanlari 10 UZERINDENDIR; site 5 yildiza cevirir. Burada YILDIZ
+   sayisina degil HAM puana gore filtrelenir: >=7 ham puan yani 3,5 yildiz ve
+   uzeri (4 yildiz = 8/10, 4,5 yildiz = 9/10). */
+const RANDOM_MIN_SCORE=7;
+const RANDOM_COUNT=4;
+/* Secici sirasi ve etiketleri. Ilk secim: Dizi. */
+const RANDOM_KINDS=[['series','Dizi'],['films','Film'],['books','Kitap'],['mixed','Karışık']];
+/* Sayfa basinda "Dizi"; secici degisince ve "Yeniden cek"e basilinca
+   guncellenir. home() her cagrildiginda sifirlanir (sayfa yenilenince yeni
+   rastgele secim olur). */
+let randomState={kind:'series',picks:[],poolSize:0};
+
+/** Secilen turun havuzu. Karisik modda film+dizi+kitap TEK havuzda birlesir;
+ *  listeler birlestirilip her kayit esit olasilikla secildigi icin hicbir
+ *  ture oncelik verilmez. */
+function randomPool(kind){
+  const list=(kind==='mixed')?[...(D.films||[]),...(D.series||[]),...(D.books||[])]:(D[kind]||[]);
+  /* Puan bos ya da sayiya cevrilemeyen kayitlar havuza GIRMEZ (sessizce).
+     score null ise typeof 'object' -> elenir; string de elenir. */
+  return list.filter(item=>typeof item.score==='number'&&isFinite(item.score)&&item.score>=RANDOM_MIN_SCORE);
+}
+/** Tek cekilis: ayni kayit iki kez cikmaz. Onceki 4 kayit havuz yeterince
+ *  buyukse havuzdan tamamen cikarilir, boylece yeni cekilis onlarla ayni
+ *  olmaz; havuz kucukse (4'ten az) elenen yoksa olanin tamami gosterilir. */
+function drawRandom(kind,previous){
+  const pool=randomPool(kind);
+  if(pool.length<=RANDOM_COUNT)return pool.slice();
+  const prevIds=new Set((previous||[]).map(item=>item.id||item.route));
+  const fresh=pool.filter(item=>!prevIds.has(item.id||item.route));
+  const src=fresh.length>=RANDOM_COUNT?fresh:pool;
+  const out=[],used=new Set();
+  /* Klasik "kismi Fisher-Yates": src'i karistir, ilk 4'unu al. Ayni kayit
+     iki kez cikmaz ( Fisher-Yates her elemanı bir kez konumlandirir ). */
+  const bag=src.slice();
+  for(let i=bag.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    const tmp=bag[i];bag[i]=bag[j];bag[j]=tmp;
+  }
+  for(const item of bag){ out.push(item); if(out.length>=RANDOM_COUNT)break; }
+  return out;
+}
+/** Rastgele kartinin altindaki tarih metni.
+ *  - Film  : watchLabel, tam bicim ("27 Eylül 2026"). Tarih yoksa bos.
+ *  - Dizi  : Sheet'teki tarih sutunu "başladığım yıl" ve 142 kaydın hepsi 4
+ *            haneli yıl; etiket/sıralama alanı üretilmediği için yılın kendisi
+ *            yazılır ("2015").
+ *  - Kitap : firstReadLabel. ANCAK sadece yıl yazılmışsa firstReadLabel o yılın
+ *            en yeni ayını uydurur ("Ocak 2005") — geçen turda "gün uydurma"
+ *            kararıyla aynı gerekçeyle burada da yalnızca yıl yazılır.
+ *  Tarih boşsa hicbir sey yazilmaz (bos <span> bile konmaz). */
+function randomDateText(item){
+  if(item.sec==='films')return item.watchLabel||'';
+  if(item.sec==='series')return /^\d{4}$/.test(clean(item.watchDate))?clean(item.watchDate):'';
+  if(item.sec==='books'){
+    if(item.firstReadPrecision==='year')return item.firstReadSort?item.firstReadSort.slice(0,4):'';
+    return item.firstReadLabel||'';
+  }
+  return '';
+}
+const randomKindLabel=(item)=>({films:'Film',series:'Dizi',books:'Kitap'}[item.sec]||'');
+/** Sadece 4 kartlik izgara yeniden bas (sayfa kaymasin diye). Icerik
+ *  drawRandomMarkup() ile ayni — tek kaynak, iki kopyasi bakim yapmaz. */
+function renderRandom(){
+  const box=$('#random-grid');
+  if(box)box.innerHTML=drawRandomMarkup();
+}
+/** Basligin sag tarafi: secici + Yeniden cek. */
+function randomControls(){
+  const seg=RANDOM_KINDS.map(([kind,label])=>
+    `<button type="button" data-rand-kind="${kind}" aria-pressed="${randomState.kind===kind}">${esc(label)}</button>`).join('');
+  return `<span class="seg">${seg}<button type="button" class="seg-redraw" data-rand-redraw="1">Yeniden çek</button></span>`;
+}
+/** Bolumun tamami: baslik + kontroller + tek satirda 4 kart. .sh ve .grid
+ *  aynen yeniden kullanilir (yeni tasarim yok). */
+function randomSection(){
+  randomState.picks=drawRandom(randomState.kind,randomState.picks);
+  randomState.poolSize=randomPool(randomState.kind).length;
+  return `<div class="sh"><h2>Rastgele</h2>${randomControls()}</div><div class="niche"><div class="grid" id="random-grid">${drawRandomMarkup()}</div></div>`;
+}
+function drawRandomMarkup(){
+  const isMixed=randomState.kind==='mixed';
+  const picks=randomState.picks;
+  return picks.length
+    ?picks.map(item=>poster(item,randomDateText(item),isMixed?randomKindLabel(item):'')).join('')
+    :'<p class="empty">Bu türde 7 puan ve üzeri kayıt yok.</p>';
+}
 /** Favoriler sayfasi (/favs): anasayfadan tasinan dort favori bolumu.
  *  İçerik ve gosterim aynen: favRow / playlistFavRow yeniden kullanildi. */
 function favoritesView(){
@@ -734,7 +835,7 @@ function favoritesView(){
 function home(){
   /* Görünüm anahtarı ile veri anahtarı aynı değil ('lists' -> 'playlists'), dataType() gerekir. */
   const index=['films','series','books','lists'].map(kind=>{const type=dataType(kind);return `<li><a href="${esc(hrefFor('/'+kind))}" data-route="/${kind}"><span>${CFG[kind].label}</span><span>${(D[type]||[]).length}</span></a></li>`}).join('');
-  main.innerHTML=`<section class="welcome"><p class="eyebrow">Kişisel versucher</p><h1>Film, dizi, kitap ve playlist</h1><p class="sub">Sheets kayıtlarından üretilmiş versucher; her kutu kendi kişisel sayfasına bağlanır.</p></section>${recentRows()}<div class="sh"><h2>Raflar</h2></div><ul class="shelf">${index}</ul><div class="sh"><h2>Yakında</h2></div><div class="placeholder">Konserler için ayrı bir veri tablosa eklendiğinde burada görünecek.</div>`;
+  main.innerHTML=`<section class="welcome"><p class="eyebrow">Kişisel versucher</p><h1>Film, dizi, kitap ve playlist</h1><p class="sub">Sheets kayıtlarından üretilmiş versucher; her kutu kendi kişisel sayfasına bağlanır.</p></section>${recentRows()}${randomSection()}<div class="sh"><h2>Raflar</h2></div><ul class="shelf">${index}</ul><div class="sh"><h2>Yakında</h2></div><div class="placeholder">Konserler için ayrı bir veri tablosa eklendiğinde burada görünecek.</div>`;
 }
 function sortItems(list,how){
   const a=[...list];
@@ -1390,6 +1491,23 @@ themeLabel();
 document.addEventListener('click',event=>{
   const route=event.target.closest('[data-route]');
   if(route&&!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&!event.altKey){event.preventDefault();navigate(route.dataset.route);return}
+  /* "Rastgele" bolumu: tur secici ve "Yeniden cek". Diger butonlardan
+     bagimsiz; sadece bu iki siniftir. */
+  const pick=event.target.closest('[data-rand-kind]');
+  if(pick){
+    randomState.kind=pick.dataset.randKind;
+    randomState.picks=[];
+    randomState.picks=drawRandom(randomState.kind,[]);
+    /* secili dugmenin isaretini tazele (aria-pressed) */
+    [].forEach.call(document.querySelectorAll('[data-rand-kind]'),b=>{b.setAttribute('aria-pressed',String(b.dataset.randKind===randomState.kind))});
+    renderRandom();
+    return;
+  }
+  if(event.target.closest('[data-rand-redraw]')){
+    randomState.picks=drawRandom(randomState.kind,randomState.picks);
+    renderRandom();
+    return;
+  }
 });
 document.addEventListener('input',event=>{
   if(event.target.id==='q'){state.q=event.target.value;state.page=1;fillGrid(state.route.view);return}
