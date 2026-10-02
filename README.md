@@ -766,6 +766,92 @@ nav'ınki 15 px (oran **1.73**). Bu taban çizgisi hizasından gelmiyor, başlı
 gerçekten daha büyük olmasından. Logo/nav oranını değiştirmek istersen
 `.mark` font-size'u düşürmek yeterli (şu an `1.75rem`).
 
+### Sheets damga kontrolü: saatlik koşuda veri değişmediyse hiçbir şey yapılmıyor
+
+Sheet'lerin A1 hücresine otomasyon `Son güncelleme tarihi` yazıyor. Bu
+damga **CSV'nin içinde zaten var** (ilk satır) — ek istek gerekmiyor. Artık
+dört damga da `data/sheet-stamps.json` ile karşılaştırılıyor; aynılarsa
+saatlik koşunun **tamamı** atlanıyor.
+
+**Daha önce ne oluyordu:** her saat 4 CSV indiriliyor, 944 kayıt dönüştürülüyor,
+`check-data` çalışıyor, 21 rotalık tarayıcı denemesi yapılıyor ve Pages
+deploy ediliyordu. JSON'un kendisi zaten korunuyordu (`fingerprint` eşitse
+yeniden yazılmıyor, commit atlanıyor) — yani asıl kaybeden **build + rota
+denemesi + deploy** idi.
+
+**Yapı: workflow'a yeni bir iş, `stamp`.**
+
+```yaml
+stamp:  # 4 CSV'nin A1'i + data/sheet-stamps.json karşılaştırması
+  outputs: { skip: ... }
+build:
+  needs: stamp
+  if: needs.stamp.outputs.skip != 'true'
+deploy:
+  needs: build        # build atlandıysa o da OTOMATİK atlanır
+```
+
+`build` işinin içine **tek bir koşul bile girmedi** — unutulma riski yok.
+`deploy` zaten `build`'e bağlıydı, ayrı koşul yazılmadı.
+
+**Dosyalar:**
+
+| Dosya | İş |
+|---|---|
+| `scripts/sheet-stamps.mjs` **(yeni)** | `--check` modunda damgaları karşılaştırır, `skip=true/false` yazar. **Hiçbir şey yazmaz.** |
+| `data/sheet-stamps.json` **(yeni, üretilir)** | Son görülen dört damga + `checkedAt`. `data/` altında olduğu için veriyle aynı commit'te gider (`git add data` zaten var). |
+| `scripts/build-data.mjs` | CSV'leri zaten indirdiği için damgayı **ek indirme yapmadan** o dosyadan alır ve `sheet-stamps.json`'u yazar. |
+
+**Damga tek tek neden `data/sheet-stamps.json`?** Tek yer, görünür, elle
+düzeltilebilir. `data/` dışına koysaydım `git add data` onu almazdı, ek adım
+gerekirdi. Her JSON'un içine gömmeyi de seçmedim: `index.html`'nin okuduğu JSON
+şemasını değiştirmiş olurdu.
+
+#### Dört güvenlik kuralı
+
+1. **Yalnızca `schedule` koşusunda atlama.** Push'ta kod ya da veri
+   değişmiş olabilir, `workflow_dispatch`'te kullanıcı elle istemiş olabilir;
+   ikisi de **daima** tam koşudur. (Script bunu `GITHUB_EVENT_NAME`'den
+   denetliyor, workflow'a ek koşul yazılmadı.)
+2. **Damga okunamazsa "değişti" sayılır.** Eksik bilgiyle **asla** atlama
+   yapılmaz — yanlışlıkla "değişiklik yok" demektense boşuna bir tam koşu
+   çekmek yeğdir.
+3. **Karşılaştırma ham metinle.** Tarih ayrıştırılmıyor; saat dilimi /
+   yerel ayar / 12-24 saat biçimi tuzağı olamaz.
+4. **Bu script hiçbir şey yazmaz.** Damga dosyasını yalnızca `build-data.mjs`
+   yazar — ve **dördü de okunabildiyse**. Hatalıysa eski dosya korunur ki
+   sonraki saatte yanlış "değişiklik yok" denmesin.
+
+> **Playlists notu:** Bu sheet'te A1 otomasyonu **yoktu** (6 gündür
+> `29.09.2026` yazıyordu). O durumda playlist'e elle eklenen bir şey
+> yakalanmazdı — damga aynı kalır, akış "değişiklik yok" deyip geçerdi.
+> Kullanıcı otomasyonu playlistlere de ekledi; şu an dördü de taze
+> (`books 06:11`, `films 03:00`, `series 05:49`, `playlists 06:36`).
+
+#### A1 metni neden virgülden önce kesiliyor
+
+CSV'de tablo 36 sütuna kadar boş hücrelerle doldurulduğu için ilk satır
+`Son güncellenme tarihi: ...,,,,,,,,` biçiminde geliyor. İlk denemede damga
+virgülleri de içeriyordu — sütun sayısı bir gün değişse "damga değişmiş"
+görünür ve her saat boşuna tam koşu çekilirdi. Artık virgülden önceki kısım
+alınıyor. `sheet-stamps.mjs` ve `build-data.mjs` **aynı kuralı** uygular —
+iki tarafın ayrışması durumunda kontrol yanlış negatif verirdi.
+
+#### Yedi senaryoyla sınandı (ayrı klasörde, gerçek dosyalara dokunmadan)
+
+| Senaryo | Karar | Beklenen |
+|---|---|---|
+| `schedule`, dört damga aynı | `skip=true` | ✅ |
+| `schedule`, bir damga değişmiş | `skip=false` | ✅ |
+| `schedule`, damga dosyasında bir tür eksik | `skip=false` | ✅ |
+| `schedule`, damga dosyası bozuk JSON | `skip=false` | ✅ |
+| `schedule`, damga dosyası yok (ilk koşu) | `skip=false` | ✅ |
+| `schedule`, bir sheet URL'i bozuk | `skip=false` | ✅ |
+| `schedule`, URL düzeltilmiş | `skip=true` | ✅ |
+
+Ayrıca `push` ve `workflow_dispatch` koşuları damgalar aynı olsa bile
+`skip=false` dönüyor (kod elenek sürülseydi site hiç yayınlanmazdı).
+
 ### Detay sayfasındaki veri notu kaldırıldı + "Türkiye Yayın Yılı" sütun kayması düzeltildi
 
 **1) `detail-note` metni silindi.** Her detay sayfasının sonunda çıkan

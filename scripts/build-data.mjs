@@ -23,6 +23,10 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SOURCES_FILE = path.join(ROOT, 'scripts', 'sources.json');
+/* Sheet'lerin A1 "son guncelleme" damgalari. Saatlik akis (sheet-stamps.mjs)
+ * bunu okuyup damgalar ayniysa bu betigi HIC CALISTIRMAZ. Damgalari bu
+ * betik yazar, cunku CSV'leri zaten o indiriyor. */
+const STAMPS_FILE = path.join(ROOT, 'data', 'sheet-stamps.json');
 const TIMEOUT_MS = 30000;
 const MIN_ROWS = 1;
 /** Yeni kayıt sayısı, önceki sürümün bu oranının altına düşerse reddedilir. */
@@ -666,6 +670,15 @@ async function download(url) {
   }
 }
 
+/** CSV'nin ilk satırının ilk hücresi: "Son güncelleme tarihi: ...".
+ *  Tablo boş hücrelerle doldurulduğu için satır "…,,,,,,," biçiminde gelir;
+ *  virgülden önceki kısım alınır ki sütun sayısı değişse bile damga sabit
+ *  kalsın. sheet-stamps.mjs ile AYNI kural ve AYNI biçim kullanılır. */
+function sheetStamp(body) {
+  const first = (String(body ?? '').replace(/^﻿/, '').split(/\r?\n/)[0] || '');
+  return first.split(',')[0].replace(/^"|"$/g, '').trim();
+}
+
 /** İndirilen şey gerçekten CSV mi? */
 function assertCsv(type, body, contentType) {
   const head = body.slice(0, 400).trimStart();
@@ -702,12 +715,17 @@ const unchanged = [];
 
 log('· Kaynaklar indiriliyor…');
 
+/* Bu kosudaki damgalar. Her sheet basarili indirildikce doldurulur; hata
+ * olan sheet'in damgasi YAZILMAZ (eksik bilgiyle "degisiklik yok" demeyelim). */
+const stamps = {};
+
 for (const [type, source] of Object.entries(SOURCES)) {
   try {
     log(`\n[${type}] ${source.file}`);
     const url = csvUrl(source.url);
     const { body, contentType } = await download(url);
     assertCsv(type, body, contentType);
+    stamps[type] = sheetStamp(body);
 
     const rows = parseCSV(body);
     const headerIndex = findHeaderRow(rows, SCHEMAS[type]);
@@ -761,6 +779,24 @@ for (const [type, source] of Object.entries(SOURCES)) {
     failures.push({ type, message: error.message });
     log(`   ✗ HATA: ${error.message}`);
   }
+}
+
+/* Damga dosyasını yaz. data/ altında olduğu için veriyle aynı commit'te
+ * gider ("git add data"). İçerik değişmese bile damga tazelenir: kullanıcı
+ * bir hücreyi düzeltip geri almışsa A1 değişmiş olabilir, bir sonraki saat
+ * boşuna tam koşu çekmesin diye damga burada güncellenir.
+ * ÖNEMLİ: HATALI OLDUĞU HALDE YAZILMAZ — yalnızca dördü de doluysa. */
+if (Object.keys(stamps).length === Object.keys(SOURCES).length) {
+  const payload = {
+    note: 'Sheets A1 son-guncelleme damgalari. Saatlik akis (scripts/sheet-stamps.mjs) bunu okuyup ayniysa tam kosuyu atlar. Elle duzenlenmemeli.',
+    checkedAt: new Date().toISOString(),
+    stamps
+  };
+  await writeFile(STAMPS_FILE, JSON.stringify(payload, null, 2) + '\n', 'utf8');
+  log(`\n· Damga dosyasi yazildi (data/sheet-stamps.json)`);
+  for (const [type, value] of Object.entries(stamps)) log(`    ${type.padEnd(10)} ${value}`);
+} else {
+  log(`\n· Damga dosyasi YAZILMADI (${Object.keys(stamps).length}/${Object.keys(SOURCES).length} sheet okunabildi)`);
 }
 
 log('\n--- Özet ---');

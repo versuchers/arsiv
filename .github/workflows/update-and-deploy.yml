@@ -13,6 +13,9 @@ on:
       - 'data/**'
       - 'scripts/**'
       - '.github/workflows/update-and-deploy.yml'
+  # Not: data/sheet-stamps.json da data/** kapsaminda, yani damga dosyasi
+  # degistiginde de push tetiklenir. Bu istenen: damga degismesi verinin
+  # degistigi anlamina gelir ve veri deploy edilmelidir.
   # Sheets verisi saatte bir kendiliğinden tazelensin.
   schedule:
     # Her saat, saatin 23. dakikasında (tam saatte GitHub zamanlayıcısı yoğun olur).
@@ -31,8 +34,44 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # ---------------------------------------------------------------------
+  # Sheets damgasi: saatlik kosuda veri degismisse mi?
+  # ---------------------------------------------------------------------
+  # Sheet'lerin A1 hucresine otomasyon "Son guncelleme tarihi" yaziyor. Dort
+  # damga da data/sheet-stamps.json'daki kopyalarla ayniysa bu is "skip=true"
+  # doner ve build HIC CALISMAZ. Boylece her saat ucretsizce tam bir kosu
+  # (944 kaydin donusturulmesi, 21 rotalik tarayici denemesi ve Pages
+  # deploy'u) cekilmez.
+  #
+  # GUVENLIK: atlama YALNIZCA zamanlanmis (schedule) kosuda olur. Push'ta
+  # kod ya da veri degismis olabilir, workflow_dispatch'ta kullanici elle
+  # istemis olabilir; ikisi de daima tam kosudur (bunu script kendisi
+  # denetler). Damga okunamazsa da "degisti" sayilir — eksik bilgiyle
+  # atlama yapilmaz.
+  stamp:
+    name: Sheets değişti mi
+    runs-on: ubuntu-latest
+    outputs:
+      skip: ${{ steps.check.outputs.skip }}
+    steps:
+      - name: Depoyu getir
+        uses: actions/checkout@v4
+
+      - name: Node.js kur
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Damgaları karşılaştır
+        id: check
+        run: node scripts/sheet-stamps.mjs --check
+
   build:
     name: Veriyi üret
+    needs: stamp
+    # Damga aynıysa bu iş hiç başlamaz. `deploy` zaten `needs: build` olduğu
+    # için o da otomatik atlanır — ayrı bir koşul yazmaya gerek yok.
+    if: needs.stamp.outputs.skip != 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Depoyu getir
