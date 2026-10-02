@@ -157,6 +157,35 @@ if (!existsSync(build)) {
     } else {
       log(`   ${type}: ${fields.length} alanin hepsi eslesti`);
     }
+    /* İki alan aynı sutuna baglanmis mi? Sutun eslestirme iki gecislidir ve
+       bulanik gecis tam eslesmeyle kapilan sutunu goremez; yine de bir alan
+       iki yere baglanirsa veri sessizce karisir ve HICBIR kontrol bunu
+       yakalamazdi. Bu hatayi yakalayan denetim:
+       sheet'te "Turkiye Yayin Yili" basligi degistiginde turkishPublishDate
+       tam eslesemedi, bulanik eslesme onu "Tur" sutununa bagladi
+       ('turkiyeyayintarihi'.includes('tur') dogru) -> detayda
+       "Turkiye yayin tarihi: Roman" cikiyordu.
+       genreMain KASITLI olarak genre ile ayni sutunu ister (ana tur), o yuzden
+       bu tek cift muaf tutulur. */
+    const ALLOWED_SHARED = new Set(['genre|genreMain']);
+    const owners = new Map();
+    for (const field of fields) {
+      const header = columns[field];
+      if (header === '' || header === undefined || header === null) continue;
+      if (!owners.has(header)) owners.set(header, []);
+      owners.get(header).push(field);
+    }
+    for (const [header, list] of owners) {
+      if (list.length < 2) continue;
+      const sorted = [...list].sort();
+      const pairKey = [sorted[0], sorted[1]].sort().join('|');
+      const shown = sorted.map((x) => `${x} -> "${header}"`).join('  ve  ');
+      if (sorted.length === 2 && ALLOWED_SHARED.has(pairKey)) {
+        log(`   ${type}: ${shown}  (kasitli ayni sutun)`);
+      } else {
+        fail(`${type}: ${sorted.length} alan ayni sutuna bagli -> ${shown}`);
+      }
+    }
   }
 }
 

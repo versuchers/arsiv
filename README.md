@@ -766,6 +766,82 @@ nav'ınki 15 px (oran **1.73**). Bu taban çizgisi hizasından gelmiyor, başlı
 gerçekten daha büyük olmasından. Logo/nav oranını değiştirmek istersen
 `.mark` font-size'u düşürmek yeterli (şu an `1.75rem`).
 
+### Detay sayfasındaki veri notu kaldırıldı + "Türkiye Yayın Yılı" sütun kayması düzeltildi
+
+**1) `detail-note` metni silindi.** Her detay sayfasının sonunda çıkan
+*"Bu kayıt `data/` klasöründeki veriden gelir; veri GitHub Actions tarafından
+saatte bir yeniden üretilir."* notu kaldırıldı. Üç parça birlikte silindi:
+`<p class="detail-note">…</p>` (detay şablonu), `.detail-note{…}` CSS kuralı
+ve detay sayfası 15 px font kuralındaki `.detail-page .detail-note` girdisi.
+Artık dosyada `detail-note` ve bu metin **0** kez geçiyor. (Dosyanın başında
+`build-data.mjs`'i anlatan yorumlarda benzer cümleler var — onlar kod yorumu,
+kullanıcıya görünmüyor.)
+
+**2) Kitap detayında "Türkiye yayın tarihi: Roman" — neden oldu.**
+
+Sheet'te sütun başlığını `Türkiye Yayın Yılı` yaptığın an hat başladı. İki
+neden birleşti:
+
+1. `SCHEMAS.books.turkishPublishDate` alias listesi hâlâ yalnızca
+   `türkiye yayın tarihi` / `türkiye yayın. tarihi` idi → yeni başlıkla **tam
+   eşleşme** olmadı.
+2. `columnMap` tam eşleşme bulamayınca **bulanık** (alt dizi) eşleşmeye
+   düşüyordu. Kural şuydu: `alias.includes(key) || key.includes(alias)`.
+   `headerKey('türkiye yayın tarihi')` = `turkiyeyayintarihi`, ve
+   **`'turkiyeyayintarihi'.includes('tur')` doğru** → alan, sheet'teki
+   **"Tür"** sütununa bağlandı. O sütun zaten `genre` tarafından tam
+   eşleşmeyle kapılmıştı, yani **21. sütun iki alana birden bağlıydı**.
+   Kitapların türü çoğunlukla "Roman" olduğu için de "Roman" yazıyordu.
+
+Yani senin tahminin doğruydu: sütun başlığını değiştirmek tetikleyiciydi.
+Ama asıl kırılganlık `columnMap`'in bulanık geçişindeydi.
+
+**Düzeltme iki parçadan:**
+
+- `SCHEMAS.books.turkishPublishDate` artık `['türkiye yayın yılı',
+  'türkiye yayın yili', 'türkiye yayın tarihi', 'türkiye yayın. tarihi']`.
+  Yeni başlık önce, eski yazımlar sonra — başlığı bir daha değiştirirsen
+  eşleşme kırılmasın.
+- **`columnMap` iki geçişli oldu:** önce bütün tam eşleşmeler çözülüp kapılan
+  sütunlar işaretleniyor, *sonra* bulanık eşleşme yalnızca **serbest**
+  sütunlara bakıyor. Artık bir alan, başka bir alanın tam eşleşmeyle kapmış
+  olduğu sütunu bulanık geçişle çalamıyor.
+
+Değişikliğin güvenli olduğu **önce ölçüldü**: dört tipin dördünde eski ve
+yeni `columnMap` karşılaştırıldı; tek fark `turkishPublishDate` (yeni =
+eşleşmiyor, eski = "Tür"). Başka hiçbir alan etkilenmedi.
+
+Sonuç (tarayıcıda ölçüldü): `columns.turkishPublishDate` = `"Türkiye Yayın Yılı"`,
+Metal Fırtına `Yayın tarihi = 2004`, Kızıl Vaiz `Yayın tarihi = 2007`,
+Şeker Portakalı `1988`. `genres` bozulmadı (Roman / Ağıt / Deneme).
+
+> **Satır etiketine dokunmadım.** Detay sayfasındaki etiketler hâlâ
+> `Yayın tarihi` / `Orijinal yayın tarihi` / `Türkiye yayın tarihi`
+> (`publishDateRows()`, `index.html:1244`). Orijinal ve Türkiye yılı eşitse
+> tek satırda birleşiyor — Metal Fırtına'da bu yüzden "Türkiye yayın tarihi"
+> değil "Yayın tarihi" görünüyor. Sheet'teki yeni adla ("Türkiye Yayın Yılı")
+> eşleştirmek istersen `publishDateRows()` fonksiyonu tek yer.
+
+### Yeni denetim: iki alan aynı sütuna bağlanamaz
+
+`check-data.mjs` bölüm 5'e eklendi: her tip için `columns` eşlemesinde
+**aynı başlığa bağlanan iki alan** varsa `fail()` atar. Bu hatayı yakalayan
+tek şey buydu — `columnMap` iki alanı aynı sütuna bağlasa bile `check-data`
+"hepsi eşleşti" deyip geçiyordu.
+
+Denetimin çalıştığı, üç senaryoyla ayrı bir klasörde sınandı (gerçek
+dosyalara dokunmadan):
+
+| Senaryo | Sonuç |
+|---|---|
+| Normal durum | çıkış kodu **0**, temiz |
+| `subgenre` alias'ı bilerek `"tür"` yapıldı → `genre` ile çakışma | çıkış kodu **1**: `books: 2 alan ayni sutuna bagli -> genre -> "Tür" ve subgenre -> "Tür"` |
+| `turkishPublishDate` alias'ı eski halde (yeni başlık olmadan) | çıkış kodu 0, alan **eşleşmiyor** (`eslesmeyen 3/36`) — iki geçişli `columnMap` yüzünden "Tür"ü kapamıyor, yani uydurma veri yerine **boş** kalıyor |
+
+`genre` + `genreMain` aynı sütunu istediği için **kasıtlı çift** olarak
+muaf tutuldu; raporda da öyle işaretleniyor:
+`films: genre -> "Tür"  ve  genreMain -> "Tür"  (kasitli ayni sutun)`.
+
 ### Anasayfaya "Rastgele" satırı (7/10 üstü, dört tür seçiciyle)
 
 Son iki satırın altına üçüncü satır eklendi:

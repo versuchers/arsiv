@@ -76,7 +76,11 @@ const SCHEMAS = {
     readCount: ['kaç kez okudum', 'kaç kez okundu'],
     authorBirth: ['yazar doğum tarihi'],
     originalDate: ['orijinal yayın yılı', 'orijinal yayın tarihi'],
-    turkishPublishDate: ['türkiye yayın tarihi', 'türkiye yayın. tarihi'],
+    /* Sheet basligi "Türkiye Yayın Yılı" olarak degistirildi; eski "tarihi"
+       yazimi da alias'ta duruyor ki baslik tekrar degisse kirilmasin.
+       DİKKAT: eski tek ad, bulanık eslesmeyle "Tür" sütununu kapiyordu
+       (bkz. columnMap notu) — o yuzden yeni baslik MUTLAKA alias'ta olmali. */
+    turkishPublishDate: ['türkiye yayın yılı', 'türkiye yayın yili', 'türkiye yayın tarihi', 'türkiye yayın. tarihi'],
     firstReadDate: ['ilk okuduğum yıl', 'ilk kez okunan tarihi', 'ilk kez okunduğu tarih'],
     density: ['yoğunluk']
   },
@@ -354,20 +358,36 @@ function findHeaderRow(rows, schema) {
  * baslik tabloda tek sutun olarak yoksa, bulanik eslestirme onu "nasil
  * kefettim" sutununa dusuruyor ve iki farkli alan ayni sutuna biniyordu.
  */
+/* ÖNCE bütün tam eşleşmeler çözülür ve kapılan sütunlar işaretlenir; SONRA
+ * bulanık eşleşme yalnızca serbest sütunlara bakar.
+ *
+ * Sebep somut bir hata (2026-10-02): sheet'te "Türkiye Yayın Yılı" başlığı
+ * değişince `turkishPublishDate` tam eşleşemedi, bulanık eşleşme de onu
+ * "Tür" sütununa bağladı — çünkü 'turkiyeyayintarihi'.includes('tur') doğru.
+ * Böylece kitap detayında "Türkiye yayın tarihi: Roman" görünüyor ve 21. sütun
+ * iki alana birden bağlanmıştı (genre + turkishPublishDate).
+ * Artık alan eşleşmezse BOŞ kalır (check-data "eşleşmeyen" diye raporlar);
+ * yanlış sütundan veri göstermekten iyidir. */
 function columnMap(headers, schema) {
   const keys = headers.map(headerKey);
   const map = {};
+  const taken = new Set();
+  const pending = [];
   for (const [field, aliases] of Object.entries(schema)) {
     const exact = [], loose = [];
     for (const alias of aliases) (alias.startsWith('=') ? exact : loose).push(alias.replace(/^=/, ''));
     const exactKeys = exact.map(headerKey);
     const looseKeys = loose.map(headerKey);
-    let index = keys.findIndex((key) => exactKeys.includes(key) || looseKeys.includes(key));
-    if (index < 0 && looseKeys.length) {
-      index = keys.findIndex((key) =>
-        looseKeys.some((alias) => alias.length >= 3 && key.length >= 3 && (key.includes(alias) || alias.includes(key))));
-    }
-    if (index >= 0) map[field] = index;
+    const index = keys.findIndex((key) => exactKeys.includes(key) || looseKeys.includes(key));
+    if (index >= 0) { map[field] = index; taken.add(index); }
+    else pending.push([field, looseKeys]);
+  }
+  for (const [field, looseKeys] of pending) {
+    if (!looseKeys.length) continue;
+    const index = keys.findIndex((key, at) =>
+      !taken.has(at) &&
+      looseKeys.some((alias) => alias.length >= 3 && key.length >= 3 && (key.includes(alias) || alias.includes(key))));
+    if (index >= 0) { map[field] = index; taken.add(index); }
   }
   return map;
 }
