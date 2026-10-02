@@ -766,6 +766,118 @@ nav'ınki 15 px (oran **1.73**). Bu taban çizgisi hizasından gelmiyor, başlı
 gerçekten daha büyük olmasından. Logo/nav oranını değiştirmek istersen
 `.mark` font-size'u düşürmek yeterli (şu an `1.75rem`).
 
+### Kod denetimi turu: 3 bulgu düzeltildi
+
+Genel bir kod incelemesi yapıldı (index.html + 4 betik + workflow) ve üç
+bulgu düzeltildi. Kalan bulgular not olarak aşağıda duruyor; hepsi **düşük**
+etkili, ayrı turda temizlenecek.
+
+#### 1) Damga dosyası her saat değişiyordu → saatte bir boş commit (benim hatam)
+
+Bu, damga kontrolünü eklediğim turun kendi hatasıydı ve istediğin şeyin
+**tam tersini** yapıyordu.
+
+```
+build-data.mjs:792  checkedAt: new Date().toISOString()   ← her koşuda yeni
+build-data.mjs:795  await writeFile(STAMPS_FILE, ...)      ← koşulsuz
+workflow:94   if [ -z "$(git status --porcelain -- data)" ]
+```
+
+`data/` altındaki tek değişen şey `checkedAt` olduğu için dizin her saat
+"değişmiş" görünüyor, commit atılıyordu. Veri değişmese bile 24 kez/gün.
+
+**Düzeltme:** `build-data.mjs` artık önce depodaki damgaları okuyor
+(`readStamps()`); dördü de birebir aynıysa **dosyayı hiç yazmıyor** —
+`checkedAt` korunuyor çünkü o "son ne zaman *değişti*" bilgisidir, "son ne
+zaman baktık" değil. `data/{books,films,...}.json` için zaten var olan
+parmak izi korumasının damga dosyasına da uygulanması.
+
+> Sonsuz döngü **zaten yoktu**: `GITHUB_TOKEN` ile yapılan push yeni koşu
+> tetiklemez. Yine de bir gün PAT'ye geçilirse döngü olurdu.
+
+**Altı senaryoyla sınandı** (izole kopya, `test1.mjs`):
+
+| Senaryo | Sonuç |
+|---|---|
+| İlk koşu (damga değişti) | yazıldı |
+| **İkinci koşu, damgalar aynı** | **yazılmadı — dosya bayt bayt aynı** |
+| Üçüncü koşu | yine yazılmadı, stabil |
+| Bir damga değişti | yazıldı, `checkedAt` yenilendi |
+| Damga dosyası bozuk JSON | yeniden yazıldı (geçerli JSON) |
+| Damga dosyası yok | oluşturuldu |
+
+#### 2) `.shelf a:hover` kendini öldürüyordu
+
+```
+.shelf a       { ... color:var(--link); ... }
+.shelf a:hover { color:var(--link-hi); border-bottom-color:var(--link-hi) }
+.shelf a:hover { color:var(--link) }     ← bunu eziyordu
+```
+
+Aynı özgüllük, sonraki kazanıyor. **Anasayfadaki "Raflar" listesinde fare
+üstüne gelince yazının rengi hiç değişmiyordu**, sadece alt çizgi parlıyordu.
+İkinci `:hover` kuralı silindi.
+
+Gerçek `:hover` ile ölçüldü (Chrome DevTools Protocol,
+`CSS.forcePseudoState`): normal `#d4b98c` → hover `#f3dfb4` → geri
+`#d4b98c`. Değişiyor.
+
+#### 3) Playlist kartı başlığının hover rengi hiç çalışmıyordu
+
+```
+.poster:hover .cover-name, .poster:hover .pl-name{color:var(--link-hi)}
+```
+
+`.pl-name`, `<a class="poster">` kapsayıcısının **dışında** duruyor
+(`poster()` şablonu: `<article class="poster-card"><a class="poster">kapak</a>
+<div class="cap">başlık</div></article>`), yani seçici hiç eşleşmiyordu.
+`.cover-name` sınıfı ise sitede **hiç yoktu**.
+
+Kapsayıcı `.poster-card` yapıldı, `.cover-name` silindi:
+
+```css
+.poster-card:hover .pl-name{color:var(--link-hi)}
+```
+
+Artık kartın **herhangi bir yerine** gelince başlık öne çıkıyor (kapak ya da
+yazı üstüne). `/lists` (30 kart) ve `/favs` (12 kart) üzerinde gerçek hover
+ölçüldü: `#e3dec3` → `#f3dfb4` → `#e3dec3`.
+
+> Anasayfada playlist kartı yok (`home()` yalnızca kitap/film/dizi
+> favorilerini ve rastgele satırını koyar), dolayısıyla bu değişiklik
+> anasayfayı etkilemiyor.
+
+#### Yol üstünde bulunan tuzaklar
+
+- **`404.html` bayat kaldı.** `index.html`'ı düzeltip `404.html`'ı
+  unutursan, test sunucusu bilinmeyen yollarda `404.html`'ı servis ettiği
+  için **eski CSS'i ölçersin** ve düzeltme çalışmıyormuş gibi görünür.
+  (`cp index.html 404.html` zaten workflow'da var; yerelde de yapılmalı.)
+- **`--dump-dom` bu makinede ölü.** Edge `...\Microsoft\EdgeCore\154.0.4258.48\`
+  altında kurulu; `check-site.mjs` onu bulup `--dump-dom` ile açıyor ama
+  komut 0 bayt döndürüp zaman aşımına uğruyor (`ETIMEDOUT`). Rota denemesi
+  bu yüzden **yerelde çalışmıyor** — `check-site.mjs` bunu "ortam sorunu"
+  diye ayırmış, CI'da `continue-on-error` ile geçiyor. Elle doğrulama için
+  CDP üzerinden `Runtime.evaluate` kullanıldı; `Node 22+` global `WebSocket`
+  ile bağlanılabiliyor (`cdp2.mjs`).
+- **Test ölçüm tuzağı:** `.poster-card:hover .pl-name` kuralı için hover'u
+  `.pl-name`'in **kendisine** vermek yanlış — kural **üstteki** kartı
+  hedefliyor. Doğrusu `.poster-card:has(.pl-name)`. `/favs`'ta ayrıca ilk
+  `.poster-card` bir **kitap** kartı (sıra: kitap→film→playlist→dizi), yani
+  ilk karta hover vermek de yanlış sonuç veriyor.
+
+#### Denetimde kalan diğer bulgular (düzeltilmedi)
+
+| Bulgu | Satır | Etki |
+|---|---|---|
+| `prefers-reduced-motion` `.sk` animasyonunu susturmuyor (kural 160, media 106'dan sonra geliyor) | `index.html:106,160` | orta |
+| `.ext-link:hover{border-bottom-style:solid}` — `border-bottom-width` tanımlı değil, hover'da ~3px çizgi çıkıyor. Sitedeki "altı çizgi yok" kuralının gözden kaçmış istisnası | `index.html:251` | orta |
+| `parseReadDate` geçersiz tarihi doğrulamıyor: `30.02.2026` kabul ediliyor, `Date.UTC` sessizce 2 Mart'a kaydırıyor; ay 13 → bir sonraki yıl Ocak | `build-data.mjs:225` | orta |
+| `stars()` negatif puanda `RangeError` → tüm liste düşer | `index.html:411` | düşük |
+| `item.reason` alanı 944 kaydın **hiçbirinde** yok → `/filtre/reason/...` ölü rota. Dolu olan: `reasonFound` (102), `reasonWhy` (164) | `index.html:512,338,1100` | düşük |
+| Ölü kod: `$$`, `integerValue`, `trFormat`, `go(view)`, `randomState.poolSize`, `CFG.*.dateLabel`, `CFG.concerts.recent`, `.badge`, `.compact-link(s)`, `detailSection` içindeki `\|\|` bölme | çeşitli | düşük |
+| `.detail-subline{font-size:30px}` ölü — `.detail-page .detail-subline{font-size:15px}` eziyor | `index.html:218,297` | düşük |
+
 ### Sheets damga kontrolü: saatlik koşuda veri değişmediyse hiçbir şey yapılmıyor
 
 Sheet'lerin A1 hücresine otomasyon `Son güncelleme tarihi` yazıyor. Bu

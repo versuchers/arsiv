@@ -704,6 +704,20 @@ async function readPrevious(file) {
   }
 }
 
+/** Depodaki damga dosyasındaki dört damga (yoksa null).
+ *  sheet-stamps.mjs ile AYNI okuma kuralı: {stamps:{...}} ya da düz nesne. */
+async function readStamps() {
+  if (!existsSync(STAMPS_FILE)) return null;
+  try {
+    const parsed = JSON.parse(await readFile(STAMPS_FILE, 'utf8'));
+    if (!parsed || typeof parsed !== 'object') return null;
+    return parsed.stamps && typeof parsed.stamps === 'object' ? parsed.stamps : parsed;
+  } catch (error) {
+    console.log(`   ! data/sheet-stamps.json okunamadı (${error.message}); yeniden yazılacak`);
+    return null;
+  }
+}
+
 /* ------------------------------------------------------------------ *
  * Ana akış
  * ------------------------------------------------------------------ */
@@ -787,14 +801,35 @@ for (const [type, source] of Object.entries(SOURCES)) {
  * boşuna tam koşu çekmesin diye damga burada güncellenir.
  * ÖNEMLİ: HATALI OLDUĞU HALDE YAZILMAZ — yalnızca dördü de doluysa. */
 if (Object.keys(stamps).length === Object.keys(SOURCES).length) {
-  const payload = {
-    note: 'Sheets A1 son-guncelleme damgalari. Saatlik akis (scripts/sheet-stamps.mjs) bunu okuyup ayniysa tam kosuyu atlar. Elle duzenlenmemeli.',
-    checkedAt: new Date().toISOString(),
-    stamps
-  };
-  await writeFile(STAMPS_FILE, JSON.stringify(payload, null, 2) + '\n', 'utf8');
-  log(`\n· Damga dosyasi yazildi (data/sheet-stamps.json)`);
-  for (const [type, value] of Object.entries(stamps)) log(`    ${type.padEnd(10)} ${value}`);
+  /* DIKKAT: yalnizca damgalar GERCEKTEN degistiginde yaz.
+   *
+   * checkedAt her kosuda yenilenseydi data/ dizini saatte bir "degismis"
+   * gorunurdu; workflow'daki "git status --porcelain -- data" kirli
+   * bulunur ve veri hic degismemesine ragmen her saat commit + push
+   * atilirdi — damga kontrolunun varlik nedeni olan seyi iptal etmek.
+   * (data/{books,films,series,playlists}.json zaten parmak iziyle
+   * korunuyor; ayni koruma burada da gecerli.)
+   *
+   * Damgalar ayniyse checkedAt de korunur, cunku "son ne zaman degisti"
+   * bilgisidir, "son ne zaman baktik" degil. */
+  const previousStamps = await readStamps();
+  const types = Object.keys(SOURCES);
+  const unchanged = previousStamps !== null
+    && Object.keys(previousStamps).length === types.length
+    && types.every((type) => previousStamps[type] === stamps[type]);
+
+  if (unchanged) {
+    log('\n· Damga dosyasi degismedi — yazilmadi (data/ temiz kalir)');
+  } else {
+    const payload = {
+      note: 'Sheets A1 son-guncelleme damgalari. Saatlik akis (scripts/sheet-stamps.mjs) bunu okuyup ayniysa tam kosuyu atlar. Elle duzenlenmemeli.',
+      checkedAt: new Date().toISOString(),
+      stamps
+    };
+    await writeFile(STAMPS_FILE, JSON.stringify(payload, null, 2) + '\n', 'utf8');
+    log(`\n· Damga dosyasi yazildi (data/sheet-stamps.json)`);
+    for (const [type, value] of Object.entries(stamps)) log(`    ${type.padEnd(10)} ${value}`);
+  }
 } else {
   log(`\n· Damga dosyasi YAZILMADI (${Object.keys(stamps).length}/${Object.keys(SOURCES).length} sheet okunabildi)`);
 }
