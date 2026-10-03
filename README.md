@@ -54,9 +54,23 @@ Bu yüzden her saat çalışması, veri değişmese bile commit üretmez.
 3. Actions sekmesinden iş akışını **elle tetikleyin** (`workflow_dispatch`) ve
    "Allow" verin. Saatlik çalışma için depo etkin olmalı.
 
-Yayın `https://<kullanıcı>.github.io/<depo>/` adresine yapılır. Derleme adımı
-başarısız olursa (örneğin Sheets geçici olarak hata sayfası dönerse) yayın da
-yapılmaz; eski JSON'lar ve eski site yerinde kalır.
+**Bu deponun adı `versuchers.github.io` (03.10.2026).** GitHub'da kök adres
+(https://versuchers.github.io/) yalnızca ada `<kullanici>.github.io` olan
+depoya verir; bu yüzden depo `arsiv` adından `versuchers.github.io` adına
+**yeniden adlandırıldı**. Adresler buna göre:
+
+| | adres |
+|---|---|
+| eski (artık yok) | https://versuchers.github.io/arsiv/… |
+| yeni | https://versuchers.github.io/… |
+
+Kodda hiçbir adres sabitlenmemiştir: `detectAppBase()` yolu tarayıcıdan
+ayırıyor, bu yüzden site hem kökte hem de depo altında (`/arsiv/`) aynı çalışır
+(İKİ MOD testiyle doğrulandı). `scripts/check-site.mjs` içindeki `PREFIX`
+değeri köke alındı.
+
+Derleme adımı başarısız olursa (örneğin Sheets geçici olarak hata sayfası
+dönerse) yayın da yapılmaz; eski JSON'lar ve eski site yerinde kalır.
 
 ## Yerelde çalıştırma
 
@@ -2067,4 +2081,40 @@ kapak %100 (375px'te 314×471px), sticky kapalı — taşma yok.
   kişi / arama rotası, 5 filtre sayfası (416 / 412 / 29 / 9 / 147 kart —
   veriden beklenenle birebir), 404 davranışı, 375px mobil 5 rota. Konsol
   hatası yok.
+## v1.24 değişiklikleri
+
+### Site kök adrese taşınıyor (depo yeniden adlandırıldı)
+
+İstek: site `https://versuchers.github.io/arsiv/` yerine
+`https://versuchers.github.io/` adresinde açılsın.
+
+GitHub kuralı: kök adres yalnızca `<kullanıcı>.github.io` adlı depoya verilir.
+Bu yüzden **depo yeniden adlandırılmalı**: `arsiv` → `versuchers.github.io`.
+Kullanıcı kararı: tek adres kalacak, eski `/arsiv/` adresi kapanacak
+(ayna kopya/yönlendirme yapılmayacak).
+
+**Kodda değişen:** `scripts/check-site.mjs` → `PREFIX = ''` (yani kök).
+Bu değişken sunucuyu daha önce `/arsiv` altında kuruyordu; rota denemesi
+yayının gerçek adresini taklit etmeli. Adres birleştirmesi de
+`[PREFIX, path].filter(Boolean).join('/')` yapıldı, boş önek `//films`
+yaratıyordu.
+
+**Kodda değişmeyen:** `index.html`. Adres hiçbir yerde sabitlenmiyor;
+`detectAppBase()` yolu çalışma anında ayırıyor. Bu yüzden site hem kökte hem
+depo altında çalışır — iki mod da gerçek tarayıcıda ölçüldü:
+
+| kontrol | KÖK (`/`) | DEPO (`/arsiv/`) |
+|---|---|---|
+| `APP_BASE` | `/` | `/arsiv/` |
+| ana sayfa | 12 kart, yeni başlık | 12 kart, yeni başlık |
+| `/films` → ilk link | `/film/lift-2024` | `/arsiv/film/lift-2024` |
+| derin adres yenileme (`/kitap/adam-fawer-empati`) | "Empati" açıldı | "Empati" açıldı |
+| veri dosyası (`/film/filtre/language/ingilizce`) | 416 kart | 416 kart |
+| `/kisi/brad-pitt` | 15 kart | 15 kart |
+| yatay taşma / ağ hatası | 0 / yok | 0 / yok |
+
+**Yapılacak (kullanıcı, GitHub arayüzünden):** depo → Settings → General →
+Name = `versuchers.github.io`. Sonra `git remote set-url` ile yerel adres
+yeni depoya çevrilir ve ilk deploy doğrulanır. Depo altı modü de silinmediği
+için ileride geri dönüş tek satır.
 

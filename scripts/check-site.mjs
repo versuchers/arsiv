@@ -25,7 +25,10 @@ import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const PREFIX = '/arsiv';
+/* 03.10.2026: depo "arsiv" -> "versuchers.github.io" olarak yeniden
+   adlandirildi; site artik KOKTE yayinlaniyor. Bos string = kok. Depo altinda
+   yayinlamak gerekirse buraya '/arsiv' gibi bir onek yazilir. */
+const PREFIX = '';
 const TYPES = ['books', 'films', 'series', 'playlists'];
 const log = (message) => console.log(message);
 
@@ -255,7 +258,7 @@ const MIME = {
 
 const server = createServer((req, res) => {
   let path = decodeURIComponent(req.url.split('?')[0]);
-  if (path.startsWith(PREFIX)) path = path.slice(PREFIX.length);
+  if (PREFIX && path.startsWith(PREFIX)) path = path.slice(PREFIX.length);
   if (!path.startsWith('/')) path = '/' + path;
   if (path === '/' || path === '') path = '/index.html';
   const file = join(ROOT, path.replace(/^\/+/, ''));
@@ -280,7 +283,7 @@ const server = createServer((req, res) => {
 const port = await new Promise((resolve) => {
   server.listen(0, '127.0.0.1', () => resolve(server.address().port));
 });
-log(`   Sunucu: http://127.0.0.1:${port}${PREFIX}/  (bilinmeyen yol -> 404.html, 404 kodu)`);
+log(`   Sunucu: http://127.0.0.1:${port}/${PREFIX}  (bilinmeyen yol -> 404.html, 404 kodu)`);
 
 const profile = mkdtempSync(join(tmpdir(), 'check-site-'));
 const failures = [];
@@ -302,7 +305,8 @@ const MAX_LAUNCH_FAIL = 3;
 let launchFails = 0;
 
 async function check(route) {
-  const url = `http://127.0.0.1:${port}${PREFIX}/${route.path}`;
+  /* PREFIX bos olabilecegi icin dogrudan birlestirilir ("//films" olmasin). */
+  const url = `http://127.0.0.1:${port}/${[PREFIX, route.path].filter(Boolean).join('/')}`;
   /* DOM dogrudan okunmaz; bir dosyaya yazdirilir.
      Bunun nedeni somut bir hata: stdout bir PIPE oldugunda, tarayici ana
      sureci bitse bile alt surecler (crashpad vb.) taniticida acik tuttugu icin

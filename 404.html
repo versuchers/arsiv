@@ -394,7 +394,10 @@ function detectAppBase(){
   if(isLocal)return '';
   const parts=location.pathname.split('/').filter(Boolean);
   /* Bu liste, depo adini (orn. /arsiv) rotanin basindan ayirmak icin gereklidir.
-     ROUTE_PREFIX ve sayfa adlari tutulmali; aksi halde /arsiv/playlist/... 404 sonrasi bozulur. */
+     ROUTE_PREFIX ve sayfa adlari tutulmali; aksi halde /arsiv/playlist/... 404 sonrasi bozulur.
+     03.10.2026: depo "versuchers.github.io" olarak yeniden adlandirildi ve site
+     KOKTE yayinlaniyor; o durumda routeIndex 0 olur ve APP_ADDRESS "/"
+     olur. Depo altinda yayinlamak gerekirse ayni kod calisir. */
   /* 'kisi' KISI SAYFALARI icin (/kisi/atlas-jeneric). Depo adi ayriminda
      taninmazsa "/arsiv/kisi/..." adresi "/kisi" sayfasi sanilir ve 404 doner. */
   const known=[...Object.values(ROUTE_PREFIX),'films','series','books','favs','lists','etiket','tur','ara','yazarlar','yonetenler','kisi']
@@ -404,7 +407,9 @@ function detectAppBase(){
   if(routeIndex>0)return '/'+parts.slice(0,routeIndex).join('/')+'/';
   const last=parts[parts.length-1]||'';
   if(last.includes('.'))return '/'+parts.slice(0,-1).join('/')+(parts.length>1?'/':'');
-  /* Depo altinda yayin (orn. https://<kullanici>.github.io/arsiv/): ilk segment depo adidir. */
+  /* Depo altinda yayin (orn. https://<kullanici>.github.io/arsiv/): ilk segment depo adidir.
+     Site artik kokte (https://versuchers.github.io/) yayinlaniyor; bu dal
+     yalnizca depo adi bir bas segment oldugunda devreye girer. */
   return parts.length?'/'+parts.join('/')+'/':'/';
 }
 const APP_BASE=detectAppBase();
