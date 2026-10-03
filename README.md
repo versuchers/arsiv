@@ -2159,3 +2159,44 @@ sitemap.xml (955 adres) · robots.txt             200
 Eski `https://versuchers.github.io/arsiv/` **404** (kullanıcı kararı: tek adres).
 Depo altı modü kodda duruyor; `check-site.mjs` içindeki `PREFIX` değeri
 `'/arsiv'` yapılırsa geri alınabilir.
+## v1.25 değişiklikleri
+
+### Kare/dikdörtgen kenarları yumuşatıldı
+
+İstek: "görsellerin kenarları dâhil her türlü kare-dikdörtgen şeklin kenarlarını
+yumuşat, çok sert". Sitede 20 yerde border-radius vardı ve neredeyse tamamı
+**2-4px** idi; kapaklar 2px, paneller 6px.
+
+Tek bir ölçek belirlendi:
+
+| ölçek | değer | nerede |
+|---|---|---|
+| en büyük | **16px** | ana panel (main) |
+| büyük | **12px** | kapak/afiş (.cover), detay kutuları, karşılama kutusu, favori blokları, önceki/sonraki okları, boş durum kutuları, raf dolgusu |
+| orta | **10px** | main label kutusu (.tag-chip.ml) |
+| küçük | **9px** | etiket çipleri, "devamını gör", sayfa düğmeleri, dizin bağlantıları, "Playlisti dinle" |
+| küçük | **8px** | arama/sıralama kutuları, "Ara" ve tema düğmesi, rastgele tür seçici |
+| en küçük | **6px** | kbd, rozet (ölü CSS) |
+| daire | 50% | spinner (değişmedi) |
+
+Kapak görselleri: .cover 12px + overflow:hidden olduğu için görselin dört köşesi
+de otomatik yuvarlanıyor (görsel mutlak konumlu, ana kutu kırpıyor). Kapağın
+içindeki ince çerçeve de (.cover::before) yumuşatıldı: iç boşluk 8px → 10px,
+yarıçap 6px.
+
+Alt çizgi/çizgi olan öğeler (.link-chip, .ext-link, raf satırları, menü
+bağlantıları) **dokunulmadı** — onlarda zaten kenar değil çizgi var ve "alt
+çizgi yok" kuralı geçerli.
+
+### Doğrulama
+
+- Tarayıcıda (CDP) ölçüldü: main 16px · .cover 12px · .welcome/.niche/
+  .detail-section/.placeholder/.nav-arrow 12px · .tag-chip 9px · .tag-chip.ml
+  10px · arama ve sıralama kutuları 8px · sayfa düğmeleri 9px · kbd 6px.
+  Kapak içi çerçeve: radius 6px, inset 10px.
+- Görsel kırpma doğrulandı: kapak overflow:hidden, görsel kutu içinde.
+- Koyu temada da aynı yarıçaplar. Yatay taşma 0px.
+- Tam regresyon: **30 kontrol geçti** (anasayfa, 4 detay sayfası, 6 grid
+  rotası sayfalama dâhil, 6 dizin/kişi/arama rotası, 2 filtre sayfası 416 ve 29
+  kart, 404 davranışı, 375px mobil 5 rota). Konsol hatası yok.
+- check-data.mjs: 945 kayıt, TAMAM.
