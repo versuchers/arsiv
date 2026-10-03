@@ -211,7 +211,12 @@ p{margin-top:.55rem}
 .empty{font-family:var(--ui);color:var(--muted);padding:2rem 0}
 .loading:not(:has(.spinner)){font-family:var(--ui);color:var(--muted);padding:2rem 0}
 .back{font-family:var(--ui);font-size:.85rem;color:var(--link)}
-.detail-page{--gap:25px;font-size:15px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;row-gap:1.25rem}
+/* Sol sutun SABIT 220px: kapak ~208x311px olur (Goodreads olcusu ~205px)
+   ve icerikten kisik olup sayfa kayarken yerinde kaliir (sticky). Onceden
+   iki esit sutun vardi (repeat(2,minmax(0,1fr))): kapak %100'e yayilip
+   1440p ekranda 477x715px'e cikiyor, sol sutun icerik kadar uzun oldugu icin
+   yapisan konumun kayacak alani kalmiyordu. */
+.detail-page{--gap:25px;font-size:15px;display:grid;grid-template-columns:220px minmax(0,1fr);align-items:start;row-gap:1.25rem}
 /* Detay sayfasinda onceki/sonraki oklari: ekranin sol ve sag kenarinda,
    dikeyde ortada. Sag ok sonraki kayda, sol ok onceki kayda gider. */
 .nav-arrow{position:fixed;top:50%;transform:translateY(-50%);z-index:3;width:44px;height:66px;display:flex;align-items:center;justify-content:center;font-size:2.3rem;line-height:1;text-decoration:none;color:var(--muted);background:var(--raise);border:1px solid var(--line);border-radius:4px;box-shadow:0 2px 4px var(--sh1),0 10px 20px -8px var(--sh1);transition:border-color .15s,color .15s}
@@ -227,7 +232,9 @@ p{margin-top:.55rem}
 .detail-subline .link-chip:hover{color:var(--text);border-bottom-color:var(--line)}
 .detail-split{display:contents}
 .detail-art-column{grid-column:1;position:sticky;top:1rem;align-self:start;min-width:0;padding:0 calc(var(--gap) / 2) 25px 0}
-.detail-content{grid-column:2;position:relative;min-width:0;padding:0 0 0 calc(var(--gap) / 2)}
+/* 82ch: eski iki esit sutunda metin ~525px (~70 karakter) idi; sabit
+   220px'lik sol sutun sonrasi genis ekranda 850px+ olurdu, okunabilir degil. */
+.detail-content{grid-column:2;position:relative;min-width:0;max-width:82ch;padding:0 0 0 calc(var(--gap) / 2)}
 .detail-content::before{content:"";position:absolute;left:0;top:0;bottom:0;width:1px;background:var(--line)}
 .detail-top-info{min-width:0;margin-top:1rem}
 .detail-art-column .cover{width:100%;max-width:none;box-shadow:0 2px 5px rgba(0,0,0,.55),0 20px 34px -10px rgba(0,0,0,.55)}

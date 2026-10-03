@@ -2015,4 +2015,56 @@ daha altta olan daha yeni") bu yeni sıraya göre çalışır. `films`, `series`
 - v1.19 denetiminde kalan düşük etkili bulgular (prefers-reduced-motion,
   `.ext-link:hover`, `parseReadDate`, `stars()` negatif puan, `item.reason`
   ölü rota) bu turda ele alınmadı.
+## v1.23 değişiklikleri
+
+### Detay sayfasında kapak/afiş sabit (sticky) ve sabit boyutta
+
+İstek: kitap/film/dizi detayında kapak solda, sayfa aşağı kaydırılınca yerinde
+kalsın; Goodreads ölçüsünde olsun; kapağın altındaki öğeler aynen dursun.
+
+**Neden yapışmıyordu (ölçüm).** `.detail-art-column` kuralında `position:sticky;
+top:1rem` zaten vardı, ama:
+
+| viewport | sol sütun | kapak | sonuç |
+|---|---|---|---|
+| 1440×900 | 489px | **477×715px** | neredeyse hiç kaymıyor |
+| 390×844 | — | 329×493px | mobil kuralı (sticky kapalı) |
+
+İki sebep birleşiyordu:
+1. `.detail-page` **iki eşit sütun** kullanıyordu (`repeat(2,minmax(0,1fr))`),
+   yani kapak sütuna %100 yayılıyordu.
+2. `main:has(.detail-page)` genişliği ekran yüksekliğine göre kısıtlanıyordu
+   (`calc((100vh - 185px) * 1.3334 + 75px)`) — 900px yükseklikte 1028px'e
+   düşüyor, kapak 477×715'e büyüyordu.
+
+Kapak 715px + altındaki bilgiler ~865px'e çıkınca sol sütun, içerik sütunu
+kadardaydı; yapışkan konumun "kayacak alanı" kalmadığı için kapak sayfayla
+birlikte kayıp gidiyordu.
+
+**Değişiklik** (2 CSS kuralı):
+- `.detail-page{grid-template-columns:220px minmax(0,1fr)}` — sol sütun sabit
+  220px → kapak **208×311px** (Goodreads ~205px).
+- `.detail-content{max-width:82ch}` — eski iki eşit sütunda metin ~525px
+  idi; sabit sol sütun sonrası geniş ekranda 850px+ olurdu, okunabilir değil.
+
+**Ölçüm (sonra).** 1920 / 1440 / 1280 / 1024 / 820 px genişliklerinde kapak
+208×311px, sol sütun 220px, yatay taşma **0**. Yapışma 1024×768'de açıkça
+görülüyor (kapak tepesi): `270 → 175 → 80 → 16 → 16 → 16 → 16`, yani
+16px'de (`top:1rem`) sabitleniyor ve içerik bitince serbest kalıyor.
+
+**Korunanlar.** Kapağın altındakiler aynen duruyor: puan yıldızları, main
+label çipleri, harici bağlantılar (goodreads / letterboxd+tmdb+imdb /
+tmdb+tvmaze+imdb). Mobil (`≤700px`) kuralına **dokunulmadı**: tek sütun,
+kapak %100 (375px'te 314×471px), sticky kapalı — taşma yok.
+
+### Doğrulama
+
+- `build-data.mjs` iki kez: 5/5 veri dosyası değişmedi. `check-data.mjs`:
+  **945 kayıt**, "TAMAM". `404.html` yeniden üretildi (byte-byte aynı).
+- Tarayıcı (CDP) regresyonu: **28 kontrol geçti** — 4 detay sayfası (kitap,
+  film, dizi, playlist: başlık + kapak ölçüsü + taşma), 6 grid rotası
+  (sayfalama dahil: `/books/7` 19 kart, `/series/5` 23 kart), 6 dizin /
+  kişi / arama rotası, 5 filtre sayfası (416 / 412 / 29 / 9 / 147 kart —
+  veriden beklenenle birebir), 404 davranışı, 375px mobil 5 rota. Konsol
+  hatası yok.
 
