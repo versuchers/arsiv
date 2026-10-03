@@ -351,7 +351,9 @@ kbd{font-family:var(--ui);font-size:.72rem;background:var(--well);border:1px sol
    Tarayıcı Google Sheets'e hiç bağlanmaz; yalnızca data/*.json okunur.
    no-store ile istenir: önbellekten eski veri gelmesin. */
 const DATA_FILES={books:'data/books.json',films:'data/films.json',series:'data/series.json',playlists:'data/playlists.json'};
-/* Veri dosyalari her zaman uygulama kokunden okunur (detay sayfasi yenilemesi). */
+/* Veri dosyalari her zaman uygulama kokunden okunur (detay sayfasi yenilemesi).
+   03.10.2026: site KOKTE yayinlaniyor (https://versuchers.github.io/); depo adi
+   onek olarak kullanilmiyor, ama depo altinda yayinlama da ayni kodla calisir. */
 function dataUrl(file){return isLocal?file:APP_BASE+file}
 
 const CFG={

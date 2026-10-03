@@ -40,8 +40,12 @@ jobs:
   # Sheet'lerin A1 hucresine otomasyon "Son guncelleme tarihi" yaziyor. Dort
   # damga da data/sheet-stamps.json'daki kopyalarla ayniysa bu is "skip=true"
   # doner ve build HIC CALISMAZ. Boylece her saat ucretsizce tam bir kosu
-  # (944 kaydin donusturulmesi, 21 rotalik tarayici denemesi ve Pages
+  # (945 kaydin donusturulmesi, 29 rotalik tarayici denemesi ve Pages
   # deploy'u) cekilmez.
+  #
+  # 03.10.2026: depo "arsiv" -> "versuchers.github.io" olarak yeniden
+  # adlandirildi; site artik KOKTE (https://versuchers.github.io/) yayinlaniyor.
+  # Adres kodu degil, ortam degiskeni: bu is akisi her iki bicimde de ayni.
   #
   # GUVENLIK: atlama YALNIZCA zamanlanmis (schedule) kosuda olur. Push'ta
   # kod ya da veri degismis olabilir, workflow_dispatch'ta kullanici elle
