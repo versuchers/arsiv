@@ -10,6 +10,8 @@ ile okur.
 index.html                  site — tek dosya (HTML + CSS + JS, ~1180 satır)
 404.html                    doğrudan detay adresi yenilendiğinde fallback
                             ⚠ ÜRETİLİR: workflow her koşuda index.html'den kopyalar
+sitemap.xml                    Google adres listesi (üretilir)
+robots.txt                     tarama kuralı (üretilir)
 data/
   books.json                Kitaplar  (üretilir)
   films.json                Filmler   (üretilir)
@@ -18,6 +20,7 @@ scripts/
   build-data.mjs            CSV -> JSON dönüştürücü + doğrulamalar
   sources.json              kaynak CSV adresleri ve zorunlu başlıklar
   check-data.mjs            veri + adres + HTML tutarlılık kontrolleri (tarayıcı gerektirmez)
+  build-sitemap.mjs        sitemap.xml + robots.txt üretir
   check-site.mjs            29 rotayı GitHub Pages benzeri sunumda başsız tarayıcıda açar
 .github/workflows/
   update-and-deploy.yml     saatlik veri üretimi + Pages yayını
@@ -2113,8 +2116,46 @@ depo altında çalışır — iki mod da gerçek tarayıcıda ölçüldü:
 | `/kisi/brad-pitt` | 15 kart | 15 kart |
 | yatay taşma / ağ hatası | 0 / yok | 0 / yok |
 
-**Yapılacak (kullanıcı, GitHub arayüzünden):** depo → Settings → General →
-Name = `versuchers.github.io`. Sonra `git remote set-url` ile yerel adres
-yeni depoya çevrilir ve ilk deploy doğrulanır. Depo altı modü de silinmediği
-için ileride geri dönüş tek satır.
+**Yapıldı:** kullanıcı depoyu Settings → General ile yeniden adlandırdı
+(`versuchers/arsiv` → `versuchers/versuchers.github.io`); yerel remote güncellendi
+(`.../versuchers.github.io.git`). İlk kök deploy'u `0d4616c` ile başarıyla
+yayınlandı.
 
+### Kök adresle birlikte kapatılan eksikler
+
+Bunlar aynı commit'le geldi; içlerinden biri workflow'u tetiklediği için ilk
+kök deploy'unu da başlattı.
+
+- **`sitemap.xml` + `robots.txt` yoktu** (üçü de 404 dönüyordu).
+  `scripts/build-sitemap.mjs` ikisini de üretir: **955 adres** (kök + 4 liste +
+  4 dizin + 945 detay), `lastmod` veri damgasından gelir. Filtre/etiket/tür/kişi
+  sayfaları bilinçli olarak dışarıda — binlerce URL, her veri değişiminde
+  değişiyor. `robots.txt`: `/data/`, `/scripts/`, `/.github/` taramaya kapalı.
+  Kök adres `SITE_ORIGIN` ortam değişkeniyle değiştirilebilir.
+  Workflow'a adım eklendi; `paths` filtresine `sitemap.xml` ve `robots.txt`
+  girdi, "çalışma ağacı temiz mi" kontrolünden de çıkarıldı.
+- **favicon yoktu** → her sayfa açılışında `/favicon.ico` isteği 404 veriyordu.
+  Artık satır içi SVG (kahve zemin + krem "v"), ek dosya/istek yok.
+- **`prefers-reduced-motion` hatası** (v1.19 denetiminden kalan): `.sk`
+  (iskelet) animasyonunu durduran media sorgusu, `.sk` kuralından **önce**
+  geliyordu; aynı özgünlükte sonraki kural kazanıp hareket-azaltma tercihi olan
+  kullanıcıda parlamayı sürdürüyordu. Sorgu `.sk` kuralından sonraya alındı.
+  Tarayıcıda `prefers-reduced-motion: reduce` ile ölçüldü: `animation-name:
+  none`, `background-image: none`.
+
+### Canlı doğrulama (gerçek tarayıcı, `https://versuchers.github.io/`)
+
+```
+/                              h1 "versucher'in kişisel log arşivi", APP_BASE="/", alt bilgi "945 kayıt"
+/films · /books/7 · /series/5 · /lists · /favs    30 / 19 / 23 / 30 / 36 kart, taşma 0
+/film/filtre/language/ingilizce                  416 kart
+/dizi/filtre/network/netflix                      29 kart
+/ara?q=dune · /kisi/brad-pitt · /tur · /yazarlar  6 / 15 kart, başlıklar doğru
+/kitap/… · /film/… · /dizi/… · /playlist/…       4 detay sayfası, kapak 208x311
+kapak görselleri                                  30/30 yüklendi, 0 bozuk
+sitemap.xml (955 adres) · robots.txt             200
+```
+
+Eski `https://versuchers.github.io/arsiv/` **404** (kullanıcı kararı: tek adres).
+Depo altı modü kodda duruyor; `check-site.mjs` içindeki `PREFIX` değeri
+`'/arsiv'` yapılırsa geri alınabilir.
