@@ -229,7 +229,12 @@ p{margin-top:.55rem}
    iki esit sutun vardi (repeat(2,minmax(0,1fr))): kapak %100'e yayilip
    1440p ekranda 477x715px'e cikiyor, sol sutun icerik kadar uzun oldugu icin
    yapisan konumun kayacak alani kalmiyordu. */
-.detail-page{--gap:25px;font-size:15px;display:grid;grid-template-columns:220px minmax(0,1fr);align-items:start;row-gap:1.25rem}
+/* max-width: 220px kapak sutunu + 788px icerik (≈82 karakter) = 1008px.
+   Artan bosluk margin:0 auto ile iki yana esit paylasilir; boylece kapagin
+   solu ile son kutunun sagi ayni bosluga sahip olur. Once sadece icerik
+   sutununda (max-width:82ch) sinir vardi; genis ekranda artan alan sadece
+   saga birikiyor ve iki kenar esit degildi. */
+.detail-page{--gap:25px;font-size:15px;display:grid;grid-template-columns:220px minmax(0,1fr);max-width:1008px;margin:0 auto;align-items:start;row-gap:1.25rem}
 /* Detay sayfasinda onceki/sonraki oklari: ekranin sol ve sag kenarinda,
    dikeyde ortada. Sag ok sonraki kayda, sol ok onceki kayda gider. */
 .nav-arrow{position:fixed;top:50%;transform:translateY(-50%);z-index:3;width:44px;height:66px;display:flex;align-items:center;justify-content:center;font-size:2.3rem;line-height:1;text-decoration:none;color:var(--muted);background:var(--raise);border:1px solid var(--line);border-radius:12px;box-shadow:0 2px 4px var(--sh1),0 10px 20px -8px var(--sh1);transition:border-color .15s,color .15s}
@@ -245,9 +250,10 @@ p{margin-top:.55rem}
 .detail-subline .link-chip:hover{color:var(--text);border-bottom-color:var(--line)}
 .detail-split{display:contents}
 .detail-art-column{grid-column:1;position:sticky;top:1rem;align-self:start;min-width:0;padding:0 calc(var(--gap) / 2) 25px 0}
-/* 82ch: eski iki esit sutunda metin ~525px (~70 karakter) idi; sabit
-   220px'lik sol sutun sonrasi genis ekranda 850px+ olurdu, okunabilir degil. */
-.detail-content{grid-column:2;position:relative;min-width:0;max-width:82ch;padding:0 0 0 calc(var(--gap) / 2)}
+/* Genislik siniri YOK: icerik sutunu .detail-page'in 1008px'lik
+   siniriyla zaten ~788px (~82 karakter) kalir. Burada sinir olsaydi genis
+   ekranda artan alan saga yigilir, iki kenar esit olmazdi. */
+.detail-content{grid-column:2;position:relative;min-width:0;padding:0 0 0 calc(var(--gap) / 2)}
 .detail-content::before{content:"";position:absolute;left:0;top:0;bottom:0;width:1px;background:var(--line)}
 .detail-top-info{min-width:0;margin-top:1rem}
 .detail-art-column .cover{width:100%;max-width:none;box-shadow:0 2px 5px rgba(0,0,0,.55),0 20px 34px -10px rgba(0,0,0,.55)}

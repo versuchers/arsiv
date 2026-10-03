@@ -2200,3 +2200,45 @@ bağlantıları) **dokunulmadı** — onlarda zaten kenar değil çizgi var ve "
   rotası sayfalama dâhil, 6 dizin/kişi/arama rotası, 2 filtre sayfası 416 ve 29
   kart, 404 davranışı, 375px mobil 5 rota). Konsol hatası yok.
 - check-data.mjs: 945 kayıt, TAMAM.
+## v1.26 değişiklikleri
+
+### Detay sayfasında sol/sağ kenar boşlukları eşitlendi
+
+İstek: kitap sayfasında "kapak kapağının sol kısmındaki boşluk" ile "Okuma
+bilgileri kutusunun sağ çizgisinin sağındaki boşluk" eşit değil.
+
+**Sebep (v1.23'teki bir düzeltmenin yan etkisi).** Okunabilirlik için
+.detail-content öğesine max-width:82ch konulmuştu. Geniş ve yüksek ekranlarda
+bu sınır tutuyor: 220px kapak sütunu + 788px içerik = 1008px gerekirken alan
+1050px oluyor. Artan ~42px, içerik sola yaslı olduğu için **sadece sağa**
+yığıldı. Ölçüm (1920×1080): sol 25px, sağ 67px → **42px fark**.
+
+Aynı asimetri kitap, film ve dizi detay sayfalarının üçünde de vardı (hepsi aynı
+sayıda), çünkü düzen ortak.
+
+**Çözüm.** Sınır içerik sütunundan kaldırılıp tüm detay ızgarasına taşındı:
+.detail-page → max-width:1008px; margin:0 auto. Artan boşluk iki yana eşit
+paylaşılıyor. Okunabilirlik korunuyor: içerik sütunu yine 788px (~82
+karakter) kalıyor.
+
+**Ölçüm (önce → sonra, "sol" = panel dış kenarı → kapak solu, "sağ" = son
+kutunun sağ kenarı → panel dış kenarı):**
+
+| ekran | v1.25 | v1.26 |
+|---|---|---|
+| 1920×1080 | sol 25 · sağ 67 (**fark 42**) | sol 46 · sağ 46 (**fark 0**) |
+| 1600×1000 | sol 25 · sağ 67 (**fark 42**) | sol 46 · sağ 46 (**fark 0**) |
+| 1440×950 | sol 25 · sağ 62 (**fark 37**) | sol 44 · sağ 44 (**fark 0**) |
+| 1280×900 | sol 25 · sağ 25 (fark 0) | sol 25 · sağ 25 (fark 0) |
+
+1280×900'de zaten eşitti: o boyda main, ekran yüksekliğine bağlı kural
+(main:has(.detail-page)) tarafından 1028px'e kilitleniyor ve alan doluyor.
+
+### Doğrulama
+
+- Tam regresyon: **30 kontrol geçti** (anasayfa, 4 detay sayfası kapak
+  208x311 ile, 6 grid rotası sayfalama dâhil, 6 dizin/kişi/arama rotası, 2
+  filtre sayfası 416 ve 29 kart, 404 davranışı, 375px mobil 5 rota). Yatay
+  taşma yok, konsol hatası yok.
+- check-data.mjs: 945 kayıt, TAMAM.
+- 1920×1080 ekran görüntüsüyle gözden geçirildi (kitap detay).
