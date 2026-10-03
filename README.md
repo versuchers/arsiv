@@ -2242,3 +2242,59 @@ kutunun sağ kenarı → panel dış kenarı):**
   taşma yok, konsol hatası yok.
 - check-data.mjs: 945 kayıt, TAMAM.
 - 1920×1080 ekran görüntüsüyle gözden geçirildi (kitap detay).
+## v1.27 değişiklikleri
+
+### Sayfa başına kart sayısı artık satır başına kapak sayısının katı
+
+Sorun: sayfa 30 kart gösteriyordu ama ızgara 4 sütun olduğu için 30 kart
+7,5 satıra bölünüyor, son satırda 2 kart boşta kalıyordu.
+
+Kural (kullanıcı): bir sayfada 20-30 arasında (20 ve 30 dâhil) kart olsun ve
+sayı **her zaman satır başına kapak sayısının katı** olsun. Yani:
+
+| satırda kaç kapak | sayfa başına |
+|---|---|
+| 2 | 30 (2×15) |
+| 3 | 30 (3×10) |
+| 4 | 28 (4×7) |
+| 5 | 30 (5×6) |
+| 6 | 30 (6×5) |
+| 7 | 28 (7×4) |
+
+**Uygulama.** Satır başına kapak sayısı kullanıcıdan seçilmiyor; CSS’te
+tanımlı ve pencere genişliğine göre değişiyor:
+`.grid` = 4 (masaüstü) / 3 (≤900px) / 2 (≤700px), `.grid-3` (playlist) = 3 / 2.
+Bu yüzden sayı sabit yazılmadı: her çizimde o anki gerçek sütun sayısı
+ölçülüyor (`columnCount()` → `getComputedStyle(#grid).gridTemplateColumns`,
+yani "212px 212px 212px 212px" dizesinden 4), sonra `pageSizeFor()` ile
+20-30 aralığındaki en büyük katı seçiliyor. Pencere yeniden boyutlandığında
+bir sonraki listelemede yeniden hesaplanır.
+
+`PAGE_SIZE = 30` sabiti kaldırıldı; yerine `PAGE_MIN = 20`, `PAGE_MAX = 30`
+ve ölçülen `pageSize` var. `totalPages()` ve `fillGrid()` bu değeri kullanıyor.
+20-30 aralığına denk gelen kat yoksa (ör. 17 sütun) üst sınıra (30) dönülüyor.
+
+Sayfalanmayan ızgaralar (filtre sayfaları, arama sonuçları, anasayfa satırları)
+**değiştirilmedi** — kullanıcı kararı.
+
+**Ölçülen (gerçek tarayıcı):**
+
+| ekran | sütun | sayfa başına | son satır | sayfa sayısı |
+|---|---|---|---|---|
+| 1440×900 film/kitap/dizi | 4 | 28 (7 dolu satır) | 4 kart | film 18 · kitap 8 · dizi 6 |
+| 1440×900 playlist | 3 | 30 (10 dolu satır) | 3 kart | 4 |
+| 880×900 | 3 | 30 | 3 kart | film 17 · kitap 7 · dizi 5 |
+| 390×844 | 2 | 30 | 2 kart | film 17 · kitap 7 · dizi 5 |
+
+Son sayfalar kısmi olabilir (kitap 8. sayfa 3 kart, dizi 6. sayfa 3 kart),
+ama **sayfa içindeki satırların hepsi dolu**. Sayfalar arası 0 ortak kart.
+
+### Doğrulama
+
+- Kat kuralı: 3 ekran boyutu × 4 liste rotası = **36 kontrol geçti** (sayfa
+  boyutu kat mı, 20-30 aralığında mı, son satır dolu mu, son sayfa doğru mu,
+  sayfalar arası kesisim var mı).
+- Regresyon: **22 kontrol geçti** (anasayfa, 4 detay sayfası kapak 208×311, 6
+  dizin/kişi/arama rotası, 2 filtre sayfası 416 ve 29 kart, 404, filtre
+  değişimi sayfayı 1’e çekiyor, 375px mobil 4 rota).
+- check-data.mjs: 945 kayıt, TAMAM. Konsol hatası yok.

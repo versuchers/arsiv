@@ -505,10 +505,34 @@ function dateSort(value){
 const D={films:[],series:[],books:[],playlists:[]};
 let REG=new Map();
 const state={route:parseRoute(),q:'',sort:'date',min:0,genre:'',status:'',cat:'',page:1};
-/* Bir sayfada gosterilen kayit sayisi. */
-const PAGE_SIZE=30;
-
-function totalPages(total){return Math.max(1,Math.ceil(total/PAGE_SIZE))}
+/* Sayfa basina kart sayisi SABIT degil: satir basina kapak sayisinin
+   KATI olur ve 20-30 araliginda kalir. Boylece son satir hep dolu olur
+   (4 sutun -> 28, 3 sutun -> 30, 2 sutun -> 30).
+   Satir sayisi CSS'te media query'ye gore degistigi icin her cizimde O AN
+   olculur; sayfa yeniden boyutlandiginda ilk listeleme yeniden hesaplar. */
+const PAGE_MIN=20;
+const PAGE_MAX=30;
+let pageSize=PAGE_MAX;
+/** Izgaranin O ANKI sutun sayisi. getComputedStyle, repeat(...) ifadesini
+ *  olculu piksel listesine acar: "212px 212px 212px 212px" -> 4. */
+function columnCount(){
+  const grid=$('#grid');
+  if(!grid)return 0;
+  const tracks=getComputedStyle(grid).gridTemplateColumns;
+  if(!tracks||tracks==='none')return 0;
+  return tracks.trim().split(/\s+/).length;
+}
+/** Sutun sayisindan sayfa boyutu: 20-30 araligindaki en buyuk kat.
+ *  Araliga denk gelen kat yoksa (or. 17 sutun) ust sinir (30) kullanilir. */
+function pageSizeFor(columns){
+  if(!columns||columns<1)return PAGE_MAX;
+  for(let k=Math.floor(PAGE_MAX/columns);k>=1;k--){
+    const size=k*columns;
+    if(size<=PAGE_MAX&&size>=PAGE_MIN)return size;
+  }
+  return PAGE_MAX;
+}
+function totalPages(total){return Math.max(1,Math.ceil(total/pageSize))}
 function pagerHtml(total,view,current){
   const pages=totalPages(total);
   if(pages<2)return '';
@@ -519,7 +543,7 @@ function pagerHtml(total,view,current){
   for(let p=1;p<=pages;p++)add(p);
   return `<nav class="pager" aria-label="Sayfalar">${parts.join('')}</nav>`;
 }
-/* Sonsuz kaydirma kaldirildi: asagi indikce sonraki 30 kayit otomatik
+/* Sonsuz kaydirma kaldirildi: asagi indikce sonraki sayfa kayitlari otomatik
    eklenmiyor. Sayfalama yalnizca #pager (pagerHtml) ile yapiliyor; o zaten
    her zaman vardi ve state.page'i dogrudan adresten okuyor (/kitap/2). */
 let dataMeta={generatedAt:'',error:''};
@@ -944,13 +968,15 @@ function fillGrid(kind){
   const type=dataType(kind),cfg=cfgOf(kind);
   let list=(D[type]||[]).filter(item=>(!q||item.searchText.includes(q))&&(!state.genre||item.genres.includes(state.genre))&&(!state.cat||item.category===state.cat)&&(!state.min||item.score>=state.min)&&(!state.status||(state.status==='done'?item.done:state.status==='ongoing'?item.ongoing:!item.done)));
   list=sortItems(list,state.sort);
+  /* Satir basina kapak sayisi her cizimde yeniden olculur; sayfa boyutu
+     onun 20-30 araligindaki en buyuk katidir (3.10.2026 kullanci kurali).
+     03.10.2026 sayfalama duzeltmesi: sayfa N yalnizca kendi kayitlarini
+     gosterir -> slice((N-1)*pageSize, N*pageSize). Onceki kod slice(0,N*30)
+     idi; 2. sayfaya basinca 1. sayfa da ustte kaliyordu. */
+  pageSize=pageSizeFor(columnCount());
   const total=list.length,pages=totalPages(total);
   if(state.page>pages)state.page=pages;
-  /* SAYFALAMA (03.10.2026 duzeltmesi): sayfa N yalnizca kendi 30 kaydini
-     gosterir -> slice((N-1)*30, N*30). Onceki kod slice(0,N*30) idi; bu
-     yuzden 2. sayfaya basinca 1. sayfa da ustte kaliyor, "2. sayfa 1.
-     sayfanin en ustunden basliyor" gibi gorunuyordu. */
-  const shown=list.slice((state.page-1)*PAGE_SIZE,state.page*PAGE_SIZE);
+  const shown=list.slice((state.page-1)*pageSize,state.page*pageSize);
   $('#count').textContent=`${total.toLocaleString('tr-TR')} ${cfgOf(kind).unit}`;
   $('#grid').innerHTML=shown.length?shown.map(poster).join(''):'<p class="empty">Bu filtreyle eşleşen kayıt yok.</p>';
   const pager=$('#pager');
