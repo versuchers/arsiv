@@ -103,7 +103,9 @@ nav a[aria-current="page"]{border-bottom-color:var(--accent)}
 .note{font-family:var(--ui);width:min(1100px,calc(100% - 1.5rem));margin:1.1rem auto 0;color:var(--muted);font-size:.8rem;line-height:1.5}
 .note.is-error{color:#e0a3a3}
 .note[hidden]{display:none}
-.site-foot{width:min(1100px,calc(100% - 1.5rem));margin:0 auto;padding:.9rem 0 2.5rem;font-family:var(--ui);font-size:.76rem;line-height:1.5;color:var(--muted);border-top:1px solid var(--line)}
+/* 03.10.2026: alt bilgi metni ortalandi ( blok zaten margin:0 auto ile
+   ortaliydi, metin sola yasliydi). */
+.site-foot{width:min(1100px,calc(100% - 1.5rem));margin:0 auto;padding:.9rem 0 2.5rem;font-family:var(--ui);font-size:.76rem;line-height:1.5;color:var(--muted);border-top:1px solid var(--line);text-align:center}
 .spinner{width:15px;height:15px;flex:none;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 /* DIKKAT: .sk burada olmamali. Bu media sorgusu .sk kuralindAN ONCE
@@ -805,8 +807,8 @@ function recentRow(title,view,sec,sortKey,labelKey,precisionKey,emptyText){
 }
 /** Anasayfanin yeni ana icerigi: once okunanlar, sonra izlenenler. */
 function recentRows(){
-  return recentRow('Son okunanlar','books','books','firstReadSort','firstReadLabel','firstReadPrecision','Henüz tarih girilmiş kitap yok.')
-    + recentRow('Son izlenenler','films','films','watchSort','watchLabel','watchPrecision','Henüz tarih girilmiş film yok.');
+  return recentRow('Son okuduklarım','books','books','firstReadSort','firstReadLabel','firstReadPrecision','Henüz tarih girilmiş kitap yok.')
+    + recentRow('Son izlediklerim','films','films','watchSort','watchLabel','watchPrecision','Henüz tarih girilmiş film yok.');
 }
 /* ------------------------------------------------------------------ *
  * Anasayfadaki "Rastgele" satiri

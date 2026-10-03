@@ -2298,3 +2298,24 @@ ama **sayfa içindeki satırların hepsi dolu**. Sayfalar arası 0 ortak kart.
   dizin/kişi/arama rotası, 2 filtre sayfası 416 ve 29 kart, 404, filtre
   değişimi sayfayı 1’e çekiyor, 375px mobil 4 rota).
 - check-data.mjs: 945 kayıt, TAMAM. Konsol hatası yok.
+## v1.28 değişiklikleri
+
+### Anasayfa başlıkları
+
+- "Son okunanlar" → **"Son okuduklarım"**
+- "Son izlenenler" → **"Son izlediklerim"**
+
+Başlıklar `recentRows()` içindeki `recentRow(...)` çağrılarında; bölüm
+başlığının yanındaki "Tümünü gör" bağlantısı ve kart tarihleri değişmedi.
+
+### Alt bilgi (footer) ortalandı
+
+Blok zaten `margin:0 auto` ile yatayda ortadaydı ama **metin sola yaslıydı**.
+`.site-foot` içine `text-align:center` eklendi.
+
+### Doğrulama
+
+- Tarayıcıda ölçüldü: iki yeni başlık yerinde, eski başlıklar yok;
+  `text-align:center`; footer metninin kutu içindeki sol/sağ boşluğu
+  393px / 394px (1px fark, yani ortada).
+- Ekran görüntüsüyle gözden geçirildi.
