@@ -593,7 +593,10 @@ function hydrate(item){
     item.reasonFound,item.reasonWhy,
     item.watched,item.seriesOrder,item.creator,item.network,item.format,item.statusRaw,item.category,item.feeling,
     item.adaptation,
-    item.countries.join(' '),item.genres.join(' '),item.subgenres.join(' ')
+    item.countries.join(' '),item.genres.join(' '),item.subgenres.join(' '),
+    /* 03.10.2026 v1.30: kisi linkleri (Oyuncular/Senaryo/Hikaye) aranabilir;
+       /kisi/<slug> sayfasinin gosterdigi ogeleri genel arama da bulsun. */
+    item.cast.join(' '),item.screenplay.join(' '),item.story.join(' ')
   ].filter(Boolean).join(' ');
   item.searchText=foldText(item.searchText);
   return item;

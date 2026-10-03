@@ -2405,3 +2405,39 @@ renkler ve tipografi değişmedi.
 - Ekran görüntüsüyle gözden geçirildi (açık ve koyu tema): başlık ve kapak üstte
   sabit, sağdaki liste altlarından kayıyor; başlığın zemini panel rengiyle aynı
   (açık `rgb(242,238,224)`, koyu `rgb(24,24,26)`) → birleşme izi yok.
+## v1.30 değişiklikleri
+
+### Kişi linkleri aranabilir
+
+İstek: film/dizi detay sayfasındaki Oyuncular (ve kişi linki olan Senaryo/Hikaye)
+artık genel aramada da aranabilir olsun. Bir oyuncu arandığında, kişi linkine
+tıklandığında açılan /kisi/<slug> listesinin aynısı sonuç gelsin.
+
+### Yapılan değişiklik
+
+- `index.html` `hydrate()` içinde `item.searchText` alanına
+  `item.cast`, `item.screenplay`, `item.story` eklendi (03.10.2026).
+  searchText küçük harf + aksan indirgeme (foldText) ile saklandığı için
+  "Cem Yilmaz" / "Cem Yılmaz" / "brad pitt" aynı kayıtla eşleşir.
+- Yönlendirme ve arama sayfası (/ara) kodu değişmedi; yalnızca arama dizini
+  genişledi. Kişi sayfası (/kisi/<slug>) ve tıklama davranışı aynı kaldı.
+- Senaryo / Hikaye kişi alanları dahil edildi; Yönetmen alanı dahil edilmedi
+  (film sayfasında yönetmen kişi linki değil filtre cip'i olarak gösteriliyor;
+  "tüm kişi alanları" seçimi oyuncu/senaryo/hikaye kapsadı).
+
+### Doğrulama (gerçek tarayıcı — Firefox 157, WebDriver BiDi)
+
+- Ara "Brad Pitt": 15 sonuç — kişi sayfası `/kisi/brad-pitt` ile birebir
+  aynı sayı (beklenen 15, bulunan 15).
+- Ara "Cem Yilmaz" (şassız): 9 sonuç; "Cem Yılmaz" (yaşlı): 9 sonuç.
+- Senaryo yazarı adı ("David Birke") araması: 1 sonuç.
+- `/kisi/brad-pitt` sayfası hâlâ 15 kayıt listeliyor.
+- Konsol hata/uyarısı yok.
+- build-data.mjs 2. koşu: data/ dosyalarında değişiklik yok (945 kayıt).
+- check-data.mjs: TAMAM (945 kayıt).
+
+### Dokunulmayanlar
+
+Veri dosyaları (5 JSON), sitemap.xml, robots.txt, workflow, 404 üretimi,
+kisi sayfası mantığı, filtreler, tasarım — v1.29 ile aynı.
+
