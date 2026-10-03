@@ -351,43 +351,24 @@ const CFG={
   films:{label:'Filmler',unit:'film',fav:'Favori filmler',dateLabel:'İzlenme tarihi'},
   series:{label:'Diziler',unit:'dizi',fav:'Favori diziler',dateLabel:'İzlenme tarihi'},
   books:{label:'Kitaplar',unit:'kitap',fav:'Favori kitaplar',dateLabel:'İlk okunma tarihi'},
-  concerts:{label:'Konserler',unit:'konser',recent:'Konserler',dateLabel:'Tarih'},
-  enler:{label:'Enler',unit:'kayıt'},
   lists:{label:'Playlistler',unit:'playlist',fav:'Favori playlistler',dateLabel:''}
 };
 const ROUTE_PREFIX={books:'kitap',films:'film',series:'dizi',playlists:'playlist'};
-const FILTER_TITLES={author:'Yazar',genre:'Tür',subgenre:'Alt tür',authorOrigin:'Yazar köken',fiction:'Kurgu mu?',city:'İlk kez okuduğum şehir',acquisition:'İlk erişim / edinim şekli',formats:'Okuduğum medium',translator:'Çevirmen',publisher:'Yayınevi',platform:'İlk kez hangi platformda',writtenLanguage:'Yazıldığı dil',language:'Dil',director:'Yönetmen',firstCity:'İlk kez izlenen şehir',country:'Yapım ülkesi',directorOrigin:'Yönetmen nereli',reason:'Nasıl keşfettim / neden izledim',done:'Bitirildi mi?',category:'Kategori',feeling:'His',creator:'Creator / showrunner'};
+const FILTER_TITLES={author:'Yazar',genre:'Tür',subgenre:'Alt tür',authorOrigin:'Yazar köken',fiction:'Kurgu mu?',city:'İlk kez okuduğum şehir',acquisition:'İlk erişim / edinim şekli',formats:'Okuduğum medium',translator:'Çevirmen',publisher:'Yayınevi',platform:'İlk kez hangi platformda',writtenLanguage:'Yazıldığı dil',language:'Dil',director:'Yönetmen',firstCity:'İlk kez izlenen şehir',country:'Yapım ülkesi',directorOrigin:'Yönetmen nereli',reason:'Nasıl keşfettim / neden izledim',done:'Bitirildi mi?',category:'Kategori',feeling:'His',creator:'Creator / showrunner',network:'Network',format:'Format',medium:'Medium',reasonFound:'Nasıl keşfettim'};
 /* Navbar'da "Ana sayfa" YOK: site basligi zaten ana sayfaya gidiyor.
    Bu yuzden NAV icinde 'home' anahtari kalmadi. hrefForView()'in 'home'
    dalini (view==='home' ? '/' : ...) SILMEDIK: go('home') ile rota uretimi
    hala yapiliyor ve ileride NAV'a ana sayfa geri eklenirse calisir. */
-/* "Enler", onceki Favoriler sayfasinin adresidir (/favs -> /enler). Menude
-   Favoriler'in HEMEN YANINDA durur; Playlistler en sonda kalir. */
-const NAV=[['films','Filmler'],['series','Diziler'],['books','Kitaplar'],['concerts','Konserler'],['favs','Favoriler'],['enler','Enler'],['lists','Playlistler']];
+/* Menu sirasi: Filmler, Diziler, Kitaplar, Favoriler, Playlistler.
+   03.10.2026: "Konserler" ve "Enler" sekmeleri kaldirildi. /concerts ve
+   /enler artik parseRoute'ta gorunum adi uretmez, yani anasayfaya duser. */
+const NAV=[['films','Filmler'],['series','Diziler'],['books','Kitaplar'],['favs','Favoriler'],['lists','Playlistler']];
 /* Playlist siralama sirası: ana liste once, sonra versucher II, artist, genre. */
 const PLAYLIST_CATEGORY_ORDER=['main','versucher II','artist','genre'];
-/* Favoriler sayfasinda gosterilmeyecek yonetmenler (kullanici istegi). */
-const FAV_EXCLUDE_DIRECTORS=['hasan karacadağ'];
-/* Favoriler sayfasinda gosterilecek minimum film sayisi (yonetmen icin). */
-const FAV_MIN_DIRECTOR_FILMS=2;
-/* Favoriler sayfasinda gosterilecek miktarlar; tam listeler /etiket, /tur,
-   /yazarlar ve /yonetenler dizin sayfalarinda. */
-const FAV_LABEL_LIMIT=10;
-const FAV_GENRE_LIMIT=10;
-const FAV_GENRE_KIND_LIMIT=5;
-const FAV_MUSIC_LIMIT=10;
-/* Kullanici sirasi: yazarlar (1-10). */
-const FAV_AUTHORS_TOP=[
-  'Isaac Asimov','J.R.R. Tolkien','Marquis de Sade','George R.R. Martin','Edgar Allan Poe',
-  'H.P. Lovecraft','Orkun Uçar','Stephen King','Mary Shelley','Charlotte Dacre'
-];
-/* Kullanici sirasi: yonetmenler (1-10). */
-const FAV_DIRECTORS_TOP=[
-  'Gaspar Noé','Ridley Scott','Quentin Tarantino','Steven Spielberg','Tim Burton',
-  'Fatih Akın','Robert Eggers','Alfred Hitchcock','Takashi Miike','Park Chan-wook'
-];
-/* Coklu yazarli kitaplarda tek tek gosterilecek yazarlar; grubun digerleri gosterilmez. */
-const FAV_MULTI_AUTHORS=['Demokan Atasoy','Galip Dursun','İşın Beril Tetik'];
+/* 03.10.2026: /enler sayfasi kaldirildi; ona ait FAV_* siralamalari ve
+   pickNamed() yardimcisi da silindi. Tam listeler /tur, /etiket, /yazarlar
+   ve /yonetenler dizin sayfalarinda. */
+
 /* Anasayfadaki playlist sirasi elle secildi; "main" kategorisinden bu sirayla. */
 const HOME_PLAYLISTS=[
   'loşş salınım',"victoria's spell",'alice in angerland',"sade'ın kırbacı",
@@ -409,7 +390,7 @@ function detectAppBase(){
      ROUTE_PREFIX ve sayfa adlari tutulmali; aksi halde /arsiv/playlist/... 404 sonrasi bozulur. */
   /* 'kisi' KISI SAYFALARI icin (/kisi/atlas-jeneric). Depo adi ayriminda
      taninmazsa "/arsiv/kisi/..." adresi "/kisi" sayfasi sanilir ve 404 doner. */
-  const known=[...Object.values(ROUTE_PREFIX),'films','series','books','concerts','favs','enler','lists','etiket','tur','ara','yazarlar','yonetenler','kisi']
+  const known=[...Object.values(ROUTE_PREFIX),'films','series','books','favs','lists','etiket','tur','ara','yazarlar','yonetenler','kisi']
     .map(part=>part.toLocaleLowerCase('tr-TR'));
   const routeIndex=parts.findIndex(part=>known.includes(part.toLocaleLowerCase('tr-TR')));
   if(routeIndex===0)return '/';
@@ -654,18 +635,16 @@ function parseRoute(){
      adlarinin hepsi buraya gider. */
   if(first==='kisi'&&parts[1])return {kind:'person',slug:parts.slice(1).join('/')};
   if(first==='ara')return {kind:'search'};
-  if(['films','series','books','concerts','favs','enler','lists'].includes(first)){
+  if(['films','series','books','favs','lists'].includes(first)){
     const page=Number(parts[1]);
     return {kind:'view',view:first,page:Number.isInteger(page)&&page>0?page:1};
   }
   return {kind:'view',view:'home'};
 }
 function resetFilters(){state.q='';state.sort='date';state.min=0;state.genre='';state.status='';state.cat='';state.page=1}
-/* Enler, tur ve filtre sayfalari yuzlerce kayit isler; kullaniciya once
-   bilgi gosterilir, icerik bir sonraki karede basilir. Favoriler artik
-   yalnizca dort izgara satiri oldugu icin burada degil. */
+/* Tur ve filtre sayfalari yuzlerce kayit isler; kullaniciya once bilgi
+   gosterilir, icerik bir sonraki karede basilir. */
 function slowRoute(route){
-  if(route.kind==='view')return route.view==='enler';
   return route.kind==='tag'||route.kind==='genre'||route.kind==='filter';
 }
 function showLoading(){
@@ -869,7 +848,7 @@ function favoritesView(){
 function home(){
   /* Görünüm anahtarı ile veri anahtarı aynı değil ('lists' -> 'playlists'), dataType() gerekir. */
   const index=['films','series','books','lists'].map(kind=>{const type=dataType(kind);return `<li><a href="${esc(hrefFor('/'+kind))}" data-route="/${kind}"><span>${CFG[kind].label}</span><span>${(D[type]||[]).length}</span></a></li>`}).join('');
-  main.innerHTML=`<section class="welcome"><p class="eyebrow">Kişisel versucher</p><h1>Film, dizi, kitap ve playlist</h1><p class="sub">Sheets kayıtlarından üretilmiş versucher; her kutu kendi kişisel sayfasına bağlanır.</p></section>${recentRows()}${randomSection()}<div class="sh"><h2>Raflar</h2></div><ul class="shelf">${index}</ul><div class="sh"><h2>Yakında</h2></div><div class="placeholder">Konserler için ayrı bir veri tablosa eklendiğinde burada görünecek.</div>`;
+  main.innerHTML=`<section class="welcome"><h1>versucher'in kişisel log arşivi</h1></section>${recentRows()}${randomSection()}<div class="sh"><h2>Raflar</h2></div><ul class="shelf">${index}</ul>`;
 }
 function sortItems(list,how){
   const a=[...list];
@@ -934,7 +913,11 @@ function fillGrid(kind){
   list=sortItems(list,state.sort);
   const total=list.length,pages=totalPages(total);
   if(state.page>pages)state.page=pages;
-  const shown=list.slice(0,state.page*PAGE_SIZE);
+  /* SAYFALAMA (03.10.2026 duzeltmesi): sayfa N yalnizca kendi 30 kaydini
+     gosterir -> slice((N-1)*30, N*30). Onceki kod slice(0,N*30) idi; bu
+     yuzden 2. sayfaya basinca 1. sayfa da ustte kaliyor, "2. sayfa 1.
+     sayfanin en ustunden basliyor" gibi gorunuyordu. */
+  const shown=list.slice((state.page-1)*PAGE_SIZE,state.page*PAGE_SIZE);
   $('#count').textContent=`${total.toLocaleString('tr-TR')} ${cfgOf(kind).unit}`;
   $('#grid').innerHTML=shown.length?shown.map(poster).join(''):'<p class="empty">Bu filtreyle eşleşen kayıt yok.</p>';
   const pager=$('#pager');
@@ -1154,6 +1137,14 @@ function fieldValues(item,field){
     if(field==='creator')return splitList(item.creator);
     if(field==='country')return item.countries;
     if(field==='cast')return item.cast;
+    /* 03.10.2026: dizi detay sayfasinda bu alanlar da tiklanabilir oldu;
+       filtre adresleri (/dizi/filtre/<field>/<slug>) buradan uretilir. */
+    if(field==='network')return missing(item.network)?[]:[clean(item.network)];
+    if(field==='format')return missing(item.format)?[]:[clean(item.format)];
+    if(field==='language')return missing(item.language)?[]:[clean(item.language)];
+    /* "Medium" sutunu JSON'da category alaninda duruyor. */
+    if(field==='medium')return missing(item.category)?[]:[clean(item.category)];
+    if(field==='reasonFound')return missing(item.reasonFound)?[]:[clean(item.reasonFound)];
   }else if(item.sec==='playlists'){
     if(field==='genre')return item.genres;
     if(field==='category')return missing(item.category)?[]:[clean(item.category)];
@@ -1501,13 +1492,15 @@ function detailPage(item){
         row('Yapım yılı',item.year),
         chipRow('Yapım ülkesi',item,'country'),
         peopleRow('Oyuncular',item,'cast'),
-        row('Creator / showrunner',item.creator),
+        /* 03.10.2026: bu alti satir artik filtre sayfasina giden cip;
+           bos degerde chipRow null doner ve satir gizlenir. */
+        chipRow('Creator / showrunner',item,'creator'),
                 row('Durumu',item.statusRaw),
-        row('Format',item.format),
-        row('Dili',item.language),
-        row('Network',item.network),
-        row('Medium',item.category),
-        row('Nasıl keşfettim',item.reasonFound),
+        chipRow('Format',item,'format'),
+        chipRow('Dili',item,'language'),
+        chipRow('Network',item,'network'),
+        chipRow('Medium',item,'medium'),
+        chipRow('Nasıl keşfettim',item,'reasonFound'),
         row('Neden izledim',item.reasonWhy),
         row('Başladığım yıl',item.watchDate),
         chipRow('İlk izlediğim platform',item,'platform'),
@@ -1549,18 +1542,6 @@ function looseKey(value){
 /** Yazar/yonetmen adini bosluk ve aksan duyarsiz yapar: "J.R.R. Tolkien" = "J. R. R. Tolkien". */
 function nameKey(value){return looseKey(value).replace(/\s+/g,'')}
 
-/** Sabit listeye gore siralar, ama YAZIMI VERIDEN alir (slug ile eslesmesi icin).
- *  Bulunamayan isim varsa konsola yazar; sessizce kaybolmaz. */
-function pickNamed(list,names){
-  const byKey=new Map(list.map(entry=>[nameKey(entry.value),entry]));
-  const picked=[];const missing=[];
-  for(const wanted of names){
-    const hit=byKey.get(nameKey(wanted));
-    if(hit)picked.push(hit); else missing.push(wanted);
-  }
-  if(missing.length)console.warn('Favoriler: listede bulunamayan isimler ->',missing);
-  return picked;
-}
 function collectValues(values){
   const map=new Map();
   values.map(clean).filter(value=>!missing(value)).forEach(value=>{
@@ -1571,71 +1552,6 @@ function collectValues(values){
   });
   /* En cok kayda sahip olan basta; ayni sayida ise alfabetik. */
   return [...map.values()].sort((a,b)=>b.count-a.count||a.value.localeCompare(b.value,'tr'));
-}
-/** "Enler" (/enler): eski Favoriler sayfasinin icerigi ve davranisi AYNI.
- *  Sadece ad ve adres degisti (/favs -> /enler). Alt aciklama metnine
- *  dokunulmadi. */
-function enlerView(){
-  /* Yazarlar: coklu yazarli kitaplar haric; onlardan yalnizca istenen uc kisi. */
-  const authorValues=[];
-  for(const item of D.books||[]){
-    const names=fieldValues(item,'author');
-    if(names.length<=1)authorValues.push(...names);
-  }
-  for(const item of D.books||[]){
-    const names=fieldValues(item,'author');
-    if(names.length<=1)continue;
-    for(const wanted of FAV_MULTI_AUTHORS){
-      /* looseKey: Sheet'te "Işın" yaziyor, listede "İşın" - ikisi de ayni kabul edilsin. */
-      if(names.some(name=>looseKey(name)===looseKey(wanted)))authorValues.push(wanted);
-    }
-  }
-  const authorList=collectValues(authorValues);
-  const authors=pickNamed(authorList,FAV_AUTHORS_TOP);
-  /* Yonetmenler: tek filmi olanlar gosterilmez, ayrica liste disi birkac isim var. */
-  const directorList=collectValues((D.films||[]).flatMap(item=>item.directors||[]))
-    .filter(entry=>entry.count>=FAV_MIN_DIRECTOR_FILMS
-      &&!FAV_EXCLUDE_DIRECTORS.some(name=>valueKey(name)===valueKey(entry.value)));
-  const directors=pickNamed(directorList,FAV_DIRECTORS_TOP);
-  /* Türler tür tür ayrılır. DİKKAT: genreValues() tekilleştirdiği için burada KULLANILMAZ;
-     aksi halde her türün sayısı hep 1 çıkardı. */
-  const genresOf=kind=>collectValues((D[kind]||[]).flatMap(item=>fieldValues(item,'genre')));
-  const byKind={books:genresOf('books'),series:genresOf('series'),films:genresOf('films'),playlists:genresOf('playlists')};
-  const chips=(list,toPath)=>list.map(entry=>{
-    const path=toPath(entry.value);
-    if(!path)return `<li>${esc(entry.value)}</li>`;
-    return `<li><a class="fav-link" href="${esc(hrefFor(path))}" data-route="${esc(path)}">${esc(entry.value)}</a><span class="fav-count">${entry.count}</span></li>`;
-  }).join('');
-  const more=(href,label)=>`<p class="fav-more"><a class="link-chip" href="${esc(hrefFor(href))}" data-route="${esc(href)}">${esc(label)}</a></p>`;
-  const group=(title,list,toPath,tail='')=>list.length
-    ?`<section><h2>${esc(title)} <span class="sub">${list.length} kayıt</span></h2><ul>${chips(list,toPath)}</ul>${tail}</section>`
-    :'';
-  const subGroup=(title,list,toPath,tail='')=>list.length
-    ?`<div class="fav-sub"><h3>${esc(title)} <span class="sub">${list.length} tür</span></h3><ul>${chips(list,toPath)}</ul>${tail}</div>`
-    :'';
-  const typeRows=[['books','Kitap'],['series','Dizi'],['films','Film']]
-    .filter(pair=>byKind[pair[0]].length)
-    .map(pair=>subGroup(pair[1],byKind[pair[0]].slice(0,FAV_GENRE_KIND_LIMIT),value=>filterPath(pair[0],'genre',value)))
-    .join('');
-  /* "Türler tümü": bir türdeki film + dizi + kitaplar birlikte (/tur/<slug>). */
-  const allGenres=collectValues(['books','series','films'].flatMap(kind=>(D[kind]||[]).flatMap(item=>fieldValues(item,'genre'))));
-  const allRow=(subGroup('Türler tümü',allGenres.slice(0,FAV_GENRE_LIMIT),value=>{const slug=globalGenreSlug(value);return slug?'/tur/'+slug:''})
-    +more('/tur',`Tüm ${allGenres.length} türü gör`));
-  /* Main label olarak işaretlenenler (/etiket/<slug>). */
-  /* 400+ etiket favoriler sayfasinda tek tek basilirdi; en agir sayfa buydu.
-     Ilk 10 gosterilir, tamami /etiket dizininde. */
-  const labelValues=['books','series','films'].flatMap(kind=>(D[kind]||[]).flatMap(item=>fieldValues(item,'mainLabel')));
-  const labelList=collectValues(labelValues);
-  const labelRow=(labelList.length?subGroup('Main label',labelList.slice(0,FAV_LABEL_LIMIT),value=>{const slug=globalTagSlug(value);return slug?'/etiket/'+slug:''}):'')+more('/etiket',`Tüm ${labelList.length.toLocaleString('tr-TR')} etiketi gör`);
-  const turler=(typeRows+allRow+labelRow)?`<section><h2>Türler</h2>${typeRows}${allRow}${labelRow}</section>`:'';
-  const muzik=subGroup('Müzik türleri',byKind.playlists.slice(0,FAV_MUSIC_LIMIT),value=>filterPath('playlists','genre',value));
-  const authorTail=more('/yazarlar',`Tüm ${authorList.length} yazarı gör`);
-  const directorTail=more('/yonetenler',`Tüm ${directorList.length} yönetmeni gör`);
-  main.innerHTML=`<h1>Enler</h1><p class="sub">Yazarlar ve yönetmenler elle seçilmiş sırayı, türler ve etiketler sayıya göre sıralanır. Sayı o değeri taşıyan gerçek kayıt adedidir; bağlantıya tıklayınca o kişinin ya da türün kayıtları listelenir.</p><div class="favs" style="margin-top:1.5rem">${group('Yazarlar',authors,value=>filterPath('books','author',value),authorTail)}${group('Yönetmenler',directors,value=>filterPath('films','director',value),directorTail)}${turler}${muzik}</div>`;
-}
-function placeholderView(kind){
-  const isConcerts=kind==='concerts';
-  main.innerHTML=`<h1>${CFG[kind].label}</h1><div class="placeholder" style="margin-top:1.5rem"><h2>${isConcerts?'Konserler yakında':'Playlistler yakında'}</h2><p>${isConcerts?'Konser veri tablosu eklenince afişler ve kişisel konser sayfaları burada açılacak.':'Playlist veri tablosu eklenince liste sayfaları burada açılacak.'}</p></div>`;
 }
 function viewKey(type){return type==='playlists'?'lists':type}
 function cfgOf(type){return CFG[viewKey(type)]||CFG[type]||{label:type,unit:type}}
@@ -1670,8 +1586,9 @@ function renderPage(){
   if(state.route.view==='home')home();
   else if(['films','series','books','lists'].includes(state.route.view))gridView(state.route.view);
   else if(state.route.view==='favs')favoritesView();
-  else if(state.route.view==='enler')enlerView();
-  else placeholderView(state.route.view);
+  /* parseRoute yalnizca yukaridaki gorunumleri uretir; eski /concerts ve
+     /enler adresleri buraya dusmez. Yine de guvenli dal: anasayfa. */
+  else home();
 }
 
 const root=document.documentElement;

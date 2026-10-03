@@ -100,6 +100,20 @@ function pick(type, index = 0) { return data[type].items[index]; }
 const firstGenre = data.films.items.flatMap((i) => i.genres || [])[0] || 'drama';
 const firstLabel = data.books.items.map((i) => i.mainLabel).filter(Boolean)[0];
 
+/* 03.10.2026: dizi detay sayfasinda yeni tiklanabilir alanlar
+   (network / medium / format / language / creator / reasonFound).
+   Rota degeri veriden secilir; "medium" JSON'da category sutununda. */
+function firstSeriesSlug(field) {
+  for (const item of data.series.items) {
+    const value = item[field];
+    if (!value || !String(value).trim() || String(value).trim() === '-') continue;
+    const slug = slugPart(value);
+    if (slug) return slug;
+  }
+  return '';
+}
+const SERIES_FILTERS = [['network', /^Network:/], ['category', /^Medium:/], ['reasonFound', /^Nasıl keşfettim:/]];
+
 /* ---- 03.10.2026: /kisi/ ve film dili filtresi ----
    Kisi sayfalari ve "Dil" filtresi eklendigi icin rota listesine iki yeni
    denetim giriyor. Kisi adi veriden SECILIR (sabit yazilirsa Sheet degisince
@@ -157,18 +171,21 @@ const firstActor = topActor();
 const firstLang = topLanguage();
 
 const ROUTES = [
-  { path: '', h1: /Film, dizi, kitap ve playlist/i, minCards: 1 },
+  { path: '', h1: /kişisel log arşivi/i, minCards: 1 },
   { path: 'films', h1: /^Filmler$/, minCards: 30 },
   { path: 'series', h1: /^Diziler$/, minCards: 30 },
   { path: 'books', h1: /^Kitaplar$/, minCards: 30 },
+  /* Sayfalama (03.10.2026 duzeltmesi): 2. sayfa YALNIZCA kendi 30
+     kaydini gostermeli. Hatali kod sayfalari biriktiriyordu (2. sayfada
+     60 kart) ve 1. sayfa en ustte kaliyordu. Iki denetim: en fazla 30
+     kart + sayfa numarasi .pager-cur'da. */
+  { path: 'books/2', h1: /^Kitaplar$/, minCards: 30, maxCards: 30, wantPager: 2 },
+  { path: 'series/2', h1: /^Diziler$/, minCards: 30, maxCards: 30, wantPager: 2 },
   { path: 'lists', h1: /^Playlistler$/, minCards: 30 },
-  { path: 'concerts', h1: /^Konserler$/, minCards: 0 },
-  /* /favs artik Favoriler: anasayfadan tasinan dort favori bolumu (olculen:
-     40 baglanti, 33 kart). /enler ise ONCEKI Favoriler sayfasinin tamami
-     (olculen: 69 baglanti). Eski /favs adresi kirilmadi; yeni icerigi
-     gosteriyor, ayri bir yonlendirme gerekmiyor. */
+  /* 03.10.2026: /concerts ve /enler rotalari kaldirildi (sekme ve icerik
+     silindi); iki adres de anasayfaya duser. /favs = anasayfadaki dort
+     favori bolumu (olculen: 40 baglanti, 33 kart). */
   { path: 'favs', h1: /^Favoriler$/, minLinks: 30 },
-  { path: 'enler', h1: /^Enler$/, minLinks: 60 },
   { path: 'tur', h1: /^Türler$/, minLinks: 50 },
   { path: 'etiket', h1: /^Main label$/, minLinks: 50 },
   { path: 'yazarlar', h1: /^Yazarlar$/, minLinks: 50 },
@@ -190,6 +207,10 @@ const ROUTES = [
   { path: `kisi/${firstActor ? firstActor.slug : 'keanu-reeves'}`, h1: null, mustContain: firstActor ? firstActor.name : 'Keanu Reeves', kind: 'person', minCards: 1 },
   /* Film dili filtresi (/film/filtre/language/<slug>). */
   { path: `film/filtre/language/${firstLang ? slugPart(firstLang[0]) : 'ingilizce'}`, h1: /^Dil:/, minCards: 1 },
+  /* Dizi detayindaki yeni filtreler. Bos slug gelirse rota hic eklenmez
+     (sessiz bir "404 bekleniyordu" hatasini onler). */
+  ...SERIES_FILTERS.filter(([field]) => firstSeriesSlug(field))
+    .map(([field, re]) => ({ path: `dizi/filtre/${field}/${firstSeriesSlug(field)}`, h1: re, minCards: 1 })),
   /* Bilinmeyen kisi adresi 404 vermeli. */
   { path: 'kisi/boyle-bir-kisi-yok-12345', expectMissing: true }
 ];
@@ -215,6 +236,7 @@ addEventListener('unhandledrejection',function(e){try{window.__E.push('REJ '+(e.
       cards:document.querySelectorAll('a.poster').length,
       links:document.querySelectorAll('main a').length,
       detail:!!document.querySelector('.detail-page'),
+      pagerCur:(document.querySelector('.pager-cur')||{}).textContent||'',
       missing:/Kayıt bulunamadı/.test(m.innerText),
       dataError:/yüklenemedi|ulaşılamadı|okunamadı|Veri dosyaları/i.test(m.innerText),
       text:m.innerText.replace(/\\s+/g,' ').slice(0,1200),
@@ -333,6 +355,7 @@ async function check(route) {
   if (route.minCards && probe.cards < route.minCards) failures.push(`${route.path}: ${probe.cards} kart, en az ${route.minCards} bekleniyordu`);
   if (route.maxCards != null && probe.cards > route.maxCards) failures.push(`${route.path}: ${probe.cards} kart, en fazla ${route.maxCards} bekleniyordu`);
   if (route.minLinks && probe.links < route.minLinks) failures.push(`${route.path}: ${probe.links} baglanti, en az ${route.minLinks} bekleniyordu`);
+  if (route.wantPager && String(probe.pagerCur).trim() !== String(route.wantPager)) failures.push(`${route.path}: sayfalama "gecerli sayfa" ${probe.pagerCur} gosteriyor, ${route.wantPager} bekleniyordu`);
 }
 
 log('');

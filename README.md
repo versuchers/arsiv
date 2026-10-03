@@ -18,7 +18,7 @@ scripts/
   build-data.mjs            CSV -> JSON dönüştürücü + doğrulamalar
   sources.json              kaynak CSV adresleri ve zorunlu başlıklar
   check-data.mjs            veri + adres + HTML tutarlılık kontrolleri (tarayıcı gerektirmez)
-  check-site.mjs            18 rotayı GitHub Pages benzeri sunumda başsız tarayıcıda açar
+  check-site.mjs            29 rotayı GitHub Pages benzeri sunumda başsız tarayıcıda açar
 .github/workflows/
   update-and-deploy.yml     saatlik veri üretimi + Pages yayını
 ```
@@ -1910,3 +1910,109 @@ here-string içinde **doğrudan yazılmalı**.
 `scripts/sources.json` içindeki `required` listesine ekleyin. Alan JSON'a otomatik
 düşer; sitede göstermek için `index.html` içindeki `detailSection(...)`
 çağrısına bir satır ekleyin.
+
+## v1.21 değişiklikleri
+
+### Sayfalama hatası düzeltildi (2. sayfa 1. sayfanın en üstünden başlıyordu)
+
+`fillGrid()` içinde `list.slice(0, state.page * PAGE_SIZE)` yazıyordu; yani
+sayfalar **birikiyordu**. Tarayıcıda ölçüldü:
+
+| adres | v1.20 | v1.21 |
+|---|---|---|
+| `/books` | 30 kart | 30 kart |
+| `/books/2` | **60 kart** (1. sayfa en üstte) | 30 kart |
+| `/books/3` | **90 kart** | 30 kart |
+| `/books/7` (son sayfa) | 199 kart (hepsi) | 19 kart |
+| `/series/2` | 60 kart | 30 kart |
+| `/series/5` (son sayfa) | 143 kart (hepsi) | 23 kart |
+
+Düzeltme: `list.slice((state.page-1)*PAGE_SIZE, state.page*PAGE_SIZE)`.
+Kitaplar 199 kayıt → 7 sayfa (30+30+30+30+30+30+19), diziler 143 kayıt → 5 sayfa
+(30+30+30+30+23). Aynı hata `/films`, `/series`, `/lists` ve filtreli listede
+de vardı; hepsi düzeldi (tek yerden `fillGrid`). Tarayıcıda sayfa sayfa
+denetim: her sayfada 30 (son sayfada 19/23) kart, sayfalar arası **0** ortak
+kart, `.pager-cur` doğru sayfayı işaretliyor.
+
+### Dizi detay sayfası: 6 alan tıklanabilir
+
+`Nasıl keşfettim`, `Creator / showrunner`, `Medium`, `Network`, `Dili`,
+`Format` satırları `row()` yerine `chipRow()` kullanıyor; her değer
+`<type>/filtre/<field>/<slug>` adresine gidiyor. `fieldValues()` içine beş
+yeni alan eklendi (`network`, `format`, `language`, `medium`,
+`reasonFound`), `FILTER_TITLES`'a karşılık gelen başlıklar girildi.
+
+| alan | filtre adresi | dolu kayıt | tekil değer |
+|---|---|---|---|
+| Creator / showrunner | `/dizi/filtre/creator/<slug>` | 143/143 | 129 |
+| Network | `/dizi/filtre/network/<slug>` | 143/143 | 45 |
+| Dili | `/dizi/filtre/language/<slug>` | 143/143 | 11 |
+| Format | `/dizi/filtre/format/<slug>` | 142/143 | 5 |
+| Medium | `/dizi/filtre/medium/<slug>` | 143/143 | 3 |
+| Nasıl keşfettim | `/dizi/filtre/reasonFound/<slug>` | 20/143 | 9 |
+
+Not: `Medium` değeri JSON'da `category` sütununda duruyor; sitede `medium`
+alan adıyla filtreleniyor (playlist'lerin `category` filtresiyle karışmasın
+diye). `Nasıl keşfettim` çok az dizide dolu (20/143), boş olanlarda satır
+gizleniyor. Film sayfalarındaki alanlar **dokunulmadı**.
+
+### Konserler ve Enler sekmeleri kaldırıldı
+
+Menü 7 → 5 sekme: Filmler · Diziler · Kitaplar · Favoriler · Playlistler.
+Silinenler: `CFG.concerts`/`CFG.enler`, `NAV` girdileri, `detectAppBase()`
+known listesi, `parseRoute()` görünüm listesi, `slowRoute()`'un enler dalı,
+anasayfadaki "Yakında" bloğu, `enlerView()`, `placeholderView()`,
+`pickNamed()` ve 9 `FAV_*` sabiti (~110 satır). `/concerts` ve `/enler`
+adresleri artık anasayfaya düşüyor (kullanıcı isteği).
+
+### Anasayfa giriş metni
+
+Üç satırlık blok ("Kişisel versucher" / "Film, dizi, kitap ve playlist" /
+"Sheets kayıtlarından üretilmiş…") tek başlıkla değiştirildi:
+**versucher'in kişisel log arşivi**.
+
+### `check-site.mjs`
+
+- `/concerts` ve `/enler` rotaları silindi.
+- Anasayfa başlık beklentisi yeni metne güncellendi.
+- `/books/2` ve `/series/2` eklendi: `maxCards: 30` + `wantPager: 2`
+  (sayfa birikmesi ve yanlış sayfa işaretlenmesi bu ikisiyle yakalanır).
+- Dizi filtreleri için 3 yeni rota (network / medium / reasonFound); değer
+  veriden seçilir, slug boşsa rota hiç eklenmez.
+- Probe'a `pagerCur` alanı, kontroller arasına `wantPager` denetimi eklendi.
+- 21 → **29 rota**.
+
+### Doğrulama (v1.21)
+
+- `build-data.mjs` → çıkış 0. İkinci koşu 5/5 `data/*.json` dosyasını
+  değiştirmedi (parmak izi aynı).
+- `check-data.mjs` → çıkış 0, **945 kayıt**, "TAMAM: tum kontroller gecti".
+- `index.html` 1799 → **1716 satır**, 105.668 bayt; `404.html` yeniden
+  üretildi (byte-byte aynı).
+- Gerçek tarayıcı (CDP, yerel sunucu): **40 kontrol, 40 geçti**, konsol hatası
+  yok. Kapsam: anasayfa metni + menü, `/concerts`-`/enler` yönlendirmesi,
+  `/books` 7 sayfa + `/series` 5 sayfa (kart sayısı, sayfa çakışmaması,
+  `.pager-cur`), dizi detayında 6 alanın çipi + 6 filtre sayfasının içeriği
+  (kart sayısı veriden beklenenle aynı), bir çipin **gerçek tıklaması**
+  (SPA geçişi), 12 kontrol rotası regresyonu.
+
+### Veri: `data/books.json` yeniden üretildi (Sheet değişmiş)
+
+Bu turun `build-data` koşusu `books` JSON'unu güncelledi: **199 kayıt→199
+kayıt**, eklenen/silinen yok. Sheet'te books **alfabetik sıralanmış**, bu
+yüzden 199 kaydın `rowIndex` değeri değişti; ayrıca 2 `originalTitle`
+düzeltildi (`L'etranger` → `L'Étranger`, `Le Mythe De Sisyphe` → `Le Mythe
+de Sisyphe`). Aynı güne düşen kayıtlarda sıralama tie-break kuralı ("Sheet'te
+daha altta olan daha yeni") bu yeni sıraya göre çalışır. `films`, `series`,
+`playlists` değişmedi.
+
+### Dokunulmayanlar / açık kalanlar
+
+- `/favs`, `/kisi/<slug>`, dizin sayfaları, arama, film/kitap detay alanları,
+  Sheet yazım hataları (Isveç, Guadeleope, Bosna Hersek) aynen bırakıldı.
+- Enler sayfasıyla birlikte kullanılmayan CSS (.fav-more, .fav-sub)
+  silinmedi; zararsız, ama artık ölü.
+- v1.19 denetiminde kalan düşük etkili bulgular (prefers-reduced-motion,
+  `.ext-link:hover`, `parseReadDate`, `stars()` negatif puan, `item.reason`
+  ölü rota) bu turda ele alınmadı.
+
