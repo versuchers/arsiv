@@ -82,7 +82,7 @@ header{position:relative;z-index:2;background:var(--panel);border-bottom:1px sol
 /* Arama dugmesi ve tema dugmesi ayni boyda olsun: ikisi de .ghost. Once
    yukseklikleri farkliydi (line-height 1.1 / 1.65). Sabit yukseklik +
    flex ortalama ikisini de birebir esitler. */
-.ghost{font-family:var(--ui);font-size:.82rem;line-height:1;background:var(--well);border:1px solid var(--line-ctl);color:var(--muted);height:2.15rem;padding:0 .8rem;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;border-radius:3px;box-shadow:inset 0 2px 3px var(--sh2);transition:color .15s,border-color .15s}
+.ghost{font-family:var(--ui);font-size:.82rem;line-height:1;background:var(--well);border:1px solid var(--line-ctl);color:var(--muted);height:2.15rem;padding:0 .8rem;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;border-radius:8px;box-shadow:inset 0 2px 3px var(--sh2);transition:color .15s,border-color .15s}
 .ghost:hover{color:var(--text)}
 nav{display:flex;gap:1.15rem;flex:1 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
 nav::-webkit-scrollbar{display:none}
@@ -111,7 +111,7 @@ nav a[aria-current="page"]{border-bottom-color:var(--accent)}
    parlamasini durdurmuyordu. .sk'yi kendi kuralindan SONRA, asagida
    tekrar bir media sorgusuyla durduruyoruz. */
 @media (prefers-reduced-motion:reduce){.spinner{animation:none}}
-main{width:min(1100px,calc(100% - 1.5rem));margin:1rem auto 3rem;padding:1.5rem;background:var(--panel);border:1px solid var(--line);border-radius:6px;box-shadow:inset 0 1px 0 var(--hi),0 2px 4px var(--sh1),0 22px 44px -8px var(--sh1)}
+main{width:min(1100px,calc(100% - 1.5rem));margin:1rem auto 3rem;padding:1.5rem;background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:inset 0 1px 0 var(--hi),0 2px 4px var(--sh1),0 22px 44px -8px var(--sh1)}
 main:has(.detail-page){width:min(1100px,calc(100% - 1.5rem))}
 /* Yukseklikten hesaplanan daraltma yalnizca genis ekranda: kisa/kucuk ekranda
    sayfayi sikistirip kenarlarda buyuk bosluk birakiyordu. */
@@ -127,10 +127,10 @@ p{margin-top:.55rem}
 .sh{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;margin:2.2rem 0 .9rem}
 .sh:first-child{margin-top:0}
 .link{font-family:var(--ui);font-weight:600;font-size:.85rem;color:var(--link);cursor:pointer;padding:0}
-.welcome{background:var(--raise);border:1px solid var(--line);border-radius:4px;padding:1.2rem 1.35rem;box-shadow:inset 0 1px 0 var(--hi)}
+.welcome{background:var(--raise);border:1px solid var(--line);border-radius:12px;padding:1.2rem 1.35rem;box-shadow:inset 0 1px 0 var(--hi)}
 .welcome p{max-width:62ch}
 .ctl{display:flex;flex-wrap:wrap;gap:.7rem;margin:1.1rem 0 1.6rem}
-.ctl input,.ctl select{font-family:var(--ui);font-size:.88rem;background:var(--well);border:1px solid var(--line-ctl);color:var(--text);padding:.5rem .7rem;border-radius:3px;box-shadow:inset 0 2px 5px var(--sh1)}
+.ctl input,.ctl select{font-family:var(--ui);font-size:.88rem;background:var(--well);border:1px solid var(--line-ctl);color:var(--text);padding:.5rem .7rem;border-radius:8px;box-shadow:inset 0 2px 5px var(--sh1)}
 .ctl input{flex:1 1 200px;max-width:320px}
 /* Tek izgara sistemi. Once 6 sutundu; kartlar kucuk kaldigi icin 4'e
    indirildi. Playlist kartlari kare (aspect-ratio:1/1) ve daha genis
@@ -139,7 +139,7 @@ p{margin-top:.55rem}
 .grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
 @media (max-width:900px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media (max-width:700px){.grid,.grid-3{grid-template-columns:repeat(2,minmax(0,1fr));gap:1.2rem .7rem}}
-.niche{background:var(--well);border-radius:4px;padding:1.2rem 1.1rem;overflow:hidden;box-shadow:inset 0 10px 18px -6px var(--sh1),inset 0 -1px 0 var(--hi)}
+.niche{background:var(--well);border-radius:12px;padding:1.2rem 1.1rem;overflow:hidden;box-shadow:inset 0 10px 18px -6px var(--sh1),inset 0 -1px 0 var(--hi)}
 
 /* Buyuk kartin yazilari da buyusun; afis yokken gosterilen baslik dahil. */
 .niche .cap{font-size:.95rem}
@@ -162,9 +162,11 @@ p{margin-top:.55rem}
 
    (.cover-name diye bir sinif sitede hic yok; kesilmis bir secikti, silindi.) */
 .poster-card:hover .pl-name{color:var(--link-hi)}
-.cover{position:relative;aspect-ratio:2/3;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:1.1rem .9rem;color:#E9E4D8;border-radius:2px;overflow:hidden;background:var(--cover);box-shadow:0 1px 2px rgba(0,0,0,.6),0 10px 18px -4px rgba(0,0,0,.5);transition:box-shadow .15s}
+.cover{position:relative;aspect-ratio:2/3;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:1.1rem .9rem;color:#E9E4D8;border-radius:12px;overflow:hidden;background:var(--cover);box-shadow:0 1px 2px rgba(0,0,0,.6),0 10px 18px -4px rgba(0,0,0,.5);transition:box-shadow .15s}
 .poster:hover .cover{box-shadow:0 2px 4px rgba(0,0,0,.6),0 18px 26px -4px rgba(0,0,0,.55)}
-.cover::before{content:"";position:absolute;inset:8px;border:1px solid var(--cover-frame);pointer-events:none;z-index:2}
+/* Kenar yumusatma olcegi (03.10.2026): kapak/afis 12px, ana panel
+   16px, orta kutular 10-12px, kucuk cip/dugme 8-9px, kbd 6px, daire 50%. */
+.cover::before{content:"";position:absolute;inset:10px;border:1px solid var(--cover-frame);border-radius:6px;pointer-events:none;z-index:2}
 .cover::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,255,255,.15),rgba(255,255,255,0) 7%,rgba(0,0,0,.2));pointer-events:none;z-index:2}
 .cover img{position:absolute;inset:0;z-index:1;display:block;width:100%;height:100%;object-fit:contain;object-position:center;background:var(--well)}
 .cover-fallback{position:relative;z-index:0;max-width:100%;overflow-wrap:anywhere}
@@ -187,7 +189,7 @@ p{margin-top:.55rem}
 .pal3{background:linear-gradient(#4a3a28,#241a10)}
 .pal4{background:linear-gradient(#2c4237,#122019)}
 .pal5{background:linear-gradient(#43303a,#20141b)}
-.badge{position:absolute;top:14px;left:14px;z-index:4;font-family:var(--ui);font-weight:600;font-size:.65rem;padding:.1rem .45rem;background:rgba(0,0,0,.55);border:1px solid rgba(233,228,216,.35);color:#E9E4D8;border-radius:2px}
+.badge{position:absolute;top:14px;left:14px;z-index:4;font-family:var(--ui);font-weight:600;font-size:.65rem;padding:.1rem .45rem;background:rgba(0,0,0,.55);border:1px solid rgba(233,228,216,.35);color:#E9E4D8;border-radius:6px}
 .cap{font-family:var(--ui);margin-top:.55rem;font-size:.9rem;color:var(--muted);text-align:center}
 .st{color:var(--star);letter-spacing:.05em;white-space:nowrap}
 /* "Son okunanlar" / "Son izlenenler" kartlarinda tarih satiri. Yildiz
@@ -199,18 +201,18 @@ p{margin-top:.55rem}
 /* "Rastgele" secici + Yeniden cek dugmesi. secili olan dolu arka planla
    belirgin; hover GEREKMEZ, yani dokunmatik/mobilde de secim gorunur. */
 .seg{display:inline-flex;flex-wrap:wrap;gap:.3rem;align-items:center}
-.seg button{font-family:var(--ui);font-size:.76rem;line-height:1.4;color:var(--link);background:var(--raise);border:1px solid var(--line);border-radius:3px;padding:.24rem .55rem;cursor:pointer;box-shadow:inset 0 1px 0 var(--hi);transition:color .15s,border-color .15s,background .15s}
+.seg button{font-family:var(--ui);font-size:.76rem;line-height:1.4;color:var(--link);background:var(--raise);border:1px solid var(--line);border-radius:8px;padding:.24rem .55rem;cursor:pointer;box-shadow:inset 0 1px 0 var(--hi);transition:color .15s,border-color .15s,background .15s}
 .seg button:hover{border-color:var(--link-hi);color:var(--link-hi)}
 .seg button[aria-pressed="true"]{background:var(--link);border-color:var(--link);color:var(--text);font-weight:700}
 .seg .seg-redraw{margin-left:.2rem;color:var(--muted)}
 .seg .seg-redraw:hover{color:var(--link-hi)}
 .pc{display:block;color:var(--muted);white-space:nowrap;letter-spacing:.02em;font-size:.85rem;margin-top:.2rem}
-.listen-btn{display:inline-block;font-family:var(--ui);font-size:.92rem;font-weight:600;padding:.6rem 1.15rem;border:1px solid var(--link);border-radius:3px;color:var(--link);background:var(--raise);transition:background .15s,color .15s,border-color .15s}
+.listen-btn{display:inline-block;font-family:var(--ui);font-size:.92rem;font-weight:600;padding:.6rem 1.15rem;border:1px solid var(--link);border-radius:9px;color:var(--link);background:var(--raise);transition:background .15s,color .15s,border-color .15s}
 .listen-btn:hover{border-color:var(--link-hi);color:var(--link-hi)}
 .listen-btn:hover{background:var(--link);color:var(--text)}
 @media (prefers-reduced-motion:reduce){.poster,.cover{transition:none}.poster:hover{transform:none}}
 .favs{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:1.4rem}
-.favs section{background:var(--raise);border-radius:4px;padding:1rem 1.2rem 1.1rem;box-shadow:inset 0 1px 0 var(--hi),0 1px 2px var(--sh1),0 10px 20px -6px var(--sh1)}
+.favs section{background:var(--raise);border-radius:12px;padding:1rem 1.2rem 1.1rem;box-shadow:inset 0 1px 0 var(--hi),0 1px 2px var(--sh1),0 10px 20px -6px var(--sh1)}
 .favs h2{font-size:1.2rem;border-bottom:1px solid var(--line);padding-bottom:.35rem;margin-bottom:.6rem}
 .favs ul{list-style:none;margin:0;padding:0}
 .favs li{padding:.2rem 0}
@@ -230,7 +232,7 @@ p{margin-top:.55rem}
 .detail-page{--gap:25px;font-size:15px;display:grid;grid-template-columns:220px minmax(0,1fr);align-items:start;row-gap:1.25rem}
 /* Detay sayfasinda onceki/sonraki oklari: ekranin sol ve sag kenarinda,
    dikeyde ortada. Sag ok sonraki kayda, sol ok onceki kayda gider. */
-.nav-arrow{position:fixed;top:50%;transform:translateY(-50%);z-index:3;width:44px;height:66px;display:flex;align-items:center;justify-content:center;font-size:2.3rem;line-height:1;text-decoration:none;color:var(--muted);background:var(--raise);border:1px solid var(--line);border-radius:4px;box-shadow:0 2px 4px var(--sh1),0 10px 20px -8px var(--sh1);transition:border-color .15s,color .15s}
+.nav-arrow{position:fixed;top:50%;transform:translateY(-50%);z-index:3;width:44px;height:66px;display:flex;align-items:center;justify-content:center;font-size:2.3rem;line-height:1;text-decoration:none;color:var(--muted);background:var(--raise);border:1px solid var(--line);border-radius:12px;box-shadow:0 2px 4px var(--sh1),0 10px 20px -8px var(--sh1);transition:border-color .15s,color .15s}
 .nav-arrow.prev{left:10px}
 .nav-arrow.next{right:10px}
 .nav-arrow:hover{border-color:var(--link-hi);color:var(--link-hi)}
@@ -257,13 +259,13 @@ p{margin-top:.55rem}
 .detail-score .stars{font-size:1.35rem;color:var(--star);letter-spacing:.08em}
 .main-label-row,.compact-links,.detail-value-chips{display:flex;flex-wrap:wrap;align-items:flex-start;gap:.4rem;margin-top:.9rem}
 .compact-links{margin-top:.75rem}
-.tag-chip,.compact-link{display:inline-flex;align-items:center;align-self:flex-start;width:fit-content;max-width:100%;font-family:var(--ui);font-size:.76rem;line-height:1.3;color:var(--link);background:var(--raise);border:1px solid var(--line);border-radius:3px;padding:.22rem .5rem;text-decoration:none;overflow-wrap:anywhere;box-shadow:inset 0 1px 0 var(--hi)}
+.tag-chip,.compact-link{display:inline-flex;align-items:center;align-self:flex-start;width:fit-content;max-width:100%;font-family:var(--ui);font-size:.76rem;line-height:1.3;color:var(--link);background:var(--raise);border:1px solid var(--line);border-radius:9px;padding:.22rem .5rem;text-decoration:none;overflow-wrap:anywhere;box-shadow:inset 0 1px 0 var(--hi)}
 /* Afişin altındaki main label kutusu: sitenin en belirgin vurgusu olmalı. */
 .main-label-row{gap:.45rem;margin-top:.9rem}
 .tag-chip.ml{
   font-size:.8rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
   color:var(--accent);background:var(--raise);
-  border:1px solid var(--accent);border-radius:4px;
+  border:1px solid var(--accent);border-radius:10px;
   padding:.45rem .85rem;
   box-shadow:0 1px 0 var(--hi),0 6px 18px -8px rgba(0,0,0,.65);
 }
@@ -285,14 +287,14 @@ p{margin-top:.55rem}
    gorunur kalirdi. */
 .people-rest{display:contents}
 .people-rest[hidden]{display:none}
-.people-more{align-self:center;font-family:var(--ui);font-size:.74rem;line-height:1.3;color:var(--link);background:none;border:1px dashed var(--line-ctl);border-radius:3px;padding:.22rem .5rem;cursor:pointer}
+.people-more{align-self:center;font-family:var(--ui);font-size:.74rem;line-height:1.3;color:var(--link);background:none;border:1px dashed var(--line-ctl);border-radius:9px;padding:.22rem .5rem;cursor:pointer}
 .people-more:hover{color:var(--link-hi);border-color:var(--link-hi)}
 /* Adres uretilemeyen kisi (Kiril isimler): kirik link yerine duz cip. */
 .tag-chip.is-plain{cursor:default;color:var(--muted);border-style:dashed}
 .pl-name{display:block;font-family:var(--ui);font-size:.95rem;font-weight:600;line-height:1.3;color:var(--text);text-align:center;margin-top:.55rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pl-card .cover{aspect-ratio:1/1}
 .pager{display:flex;flex-wrap:wrap;gap:.3rem;justify-content:center;margin-top:2.2rem;font-family:var(--ui)}
-.pager a,.pager span{display:inline-flex;align-items:center;justify-content:center;min-width:2.1rem;height:2.1rem;padding:0 .5rem;border:1px solid var(--line);border-radius:3px;color:var(--link);text-decoration:none;font-size:.82rem;background:var(--raise)}
+.pager a,.pager span{display:inline-flex;align-items:center;justify-content:center;min-width:2.1rem;height:2.1rem;padding:0 .5rem;border:1px solid var(--line);border-radius:9px;color:var(--link);text-decoration:none;font-size:.82rem;background:var(--raise)}
 .pager a:hover{border-color:var(--link-hi);color:var(--link-hi)}
 .pager .pager-cur{background:var(--link);color:var(--text);border-color:var(--link);font-weight:700}
 
@@ -301,7 +303,7 @@ p{margin-top:.55rem}
 .search-btn svg{display:block;flex:none}
 .search-ctl input{flex:1 1 100%;max-width:none}
 .search-ctl{margin:1.1rem 0 .4rem}
-kbd{font-family:var(--ui);font-size:.72rem;background:var(--well);border:1px solid var(--line-ctl);border-radius:3px;padding:.05rem .3rem}
+kbd{font-family:var(--ui);font-size:.72rem;background:var(--well);border:1px solid var(--line-ctl);border-radius:6px;padding:.05rem .3rem}
 .favs ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:.4rem}
 /* Dizin sayfalari: uzun etiket listesi icin siki, okunabilir izgara. */
 .idx-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.35rem .7rem}
@@ -310,7 +312,7 @@ kbd{font-family:var(--ui);font-size:.72rem;background:var(--well);border:1px sol
 .favs li{display:inline-flex;align-items:baseline;gap:.3rem}
 .fav-more{margin:.7rem 0 .1rem}
 .dizin-nav{display:flex;flex-wrap:wrap;gap:.4rem;margin:.9rem 0 .2rem}
-.fav-link{font-family:var(--ui);font-size:.82rem;line-height:1.6;color:var(--link);background:var(--raise);border:1px solid var(--line);border-radius:3px;padding:.22rem .5rem;text-decoration:none;overflow-wrap:anywhere;box-shadow:inset 0 1px 0 var(--hi)}
+.fav-link{font-family:var(--ui);font-size:.82rem;line-height:1.6;color:var(--link);background:var(--raise);border:1px solid var(--line);border-radius:9px;padding:.22rem .5rem;text-decoration:none;overflow-wrap:anywhere;box-shadow:inset 0 1px 0 var(--hi)}
 .fav-link:hover{border-color:var(--link-hi);color:var(--link-hi)}
 .fav-count{font-family:var(--ui);font-size:.68rem;color:var(--muted)}
 .fav-sub{margin-top:1.1rem}
@@ -324,7 +326,7 @@ kbd{font-family:var(--ui);font-size:.72rem;background:var(--well);border:1px sol
 
 .tag-result-section{margin-top:1.6rem}
 .detail-sections{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.4rem;margin-top:2rem}
-.detail-section{background:var(--raise);border:1px solid var(--line);border-radius:4px;padding:1rem 1.15rem 1.1rem;box-shadow:inset 0 1px 0 var(--hi)}
+.detail-section{background:var(--raise);border:1px solid var(--line);border-radius:12px;padding:1rem 1.15rem 1.1rem;box-shadow:inset 0 1px 0 var(--hi)}
 .detail-section h2{font-size:1.25rem;border-bottom:1px solid var(--line);padding-bottom:.45rem;margin-bottom:.45rem}
 .detail-list{margin:0}
 .detail-row{display:grid;grid-template-columns:minmax(115px,38%) 1fr;gap:.75rem;padding:.42rem 0;border-bottom:1px solid var(--line);font-size:.88rem;line-height:1.5}
@@ -334,7 +336,7 @@ kbd{font-family:var(--ui);font-size:.72rem;background:var(--well);border:1px sol
 .detail-row .stars{color:var(--star);letter-spacing:.05em}
 
 .detail-page .detail-subline,.detail-page .detail-score,.detail-page .detail-section,.detail-page .detail-row,.detail-page .detail-row dt,.detail-page .detail-row dd,.detail-page .back,.detail-page .tag-chip,.detail-page .compact-link{font-size:15px}
-.placeholder{background:var(--raise);border:1px dashed var(--line);border-radius:4px;padding:2rem 1.2rem;text-align:center;color:var(--muted);font-family:var(--ui)}
+.placeholder{background:var(--raise);border:1px dashed var(--line);border-radius:12px;padding:2rem 1.2rem;text-align:center;color:var(--muted);font-family:var(--ui)}
 @media (max-width:700px){.detail-page{grid-template-columns:minmax(0,1fr);row-gap:0}.detail-heading{grid-column:1;padding:0 0 1.25rem}.detail-art-column{grid-column:1;position:relative;top:auto;max-width:none;padding:0 0 1.2rem}.detail-content{grid-column:1;border-top:1px solid var(--line);padding:1.2rem 0 0}.detail-content::before{display:none}.detail-heading h1{font-size:2rem}}
 @media (max-width:650px){.detail-row{grid-template-columns:1fr;gap:.1rem}.detail-row dt{font-size:15px}.shelf{columns:1}}
 @media (max-width:430px){.detail-sections{grid-template-columns:1fr}}
