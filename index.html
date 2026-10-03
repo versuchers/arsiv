@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="Film, dizi ve kitap versucheri">
 <title>versucher</title>
+<!-- 03.10.2026: favicon. Satir ici SVG: /favicon.ico istegi olusmuyor,
+     dosya da eklenmiyor (paletten kahve zemin + krem harf). -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Crect%20width='64'%20height='64'%20rx='12'%20fill='%232b2118'/%3E%3Ctext%20x='32'%20y='46'%20font-family='Georgia,serif'%20font-size='40'%20font-weight='700'%20text-anchor='middle'%20fill='%23E9E4D3'%3Ev%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- Alegreya ve Bitter'in italik kesimleri istenmedi: sitede italik kullanilmiyor
@@ -103,7 +106,11 @@ nav a[aria-current="page"]{border-bottom-color:var(--accent)}
 .site-foot{width:min(1100px,calc(100% - 1.5rem));margin:0 auto;padding:.9rem 0 2.5rem;font-family:var(--ui);font-size:.76rem;line-height:1.5;color:var(--muted);border-top:1px solid var(--line)}
 .spinner{width:15px;height:15px;flex:none;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-@media (prefers-reduced-motion:reduce){.spinner{animation:none}.sk{animation:none;background:none}}
+/* DIKKAT: .sk burada olmamali. Bu media sorgusu .sk kuralindAN ONCE
+   geliyordu; ayni ozgunlukte daha sonraki .sk kurali kazanip iskelet
+   parlamasini durdurmuyordu. .sk'yi kendi kuralindan SONRA, asagida
+   tekrar bir media sorgusuyla durduruyoruz. */
+@media (prefers-reduced-motion:reduce){.spinner{animation:none}}
 main{width:min(1100px,calc(100% - 1.5rem));margin:1rem auto 3rem;padding:1.5rem;background:var(--panel);border:1px solid var(--line);border-radius:6px;box-shadow:inset 0 1px 0 var(--hi),0 2px 4px var(--sh1),0 22px 44px -8px var(--sh1)}
 main:has(.detail-page){width:min(1100px,calc(100% - 1.5rem))}
 /* Yukseklikten hesaplanan daraltma yalnizca genis ekranda: kisa/kucuk ekranda
@@ -169,6 +176,10 @@ p{margin-top:.55rem}
 @keyframes sk{from{background-position:170% 0}to{background-position:-70% 0}}
 .cover:not(.has-image) .sk{display:none}
 .cover.has-image.is-loaded .sk{display:none}
+/* .sk kuralindan SONRA gelmeli: onceki yerdeki media sorgusu .sk'yi
+   durdurmuyordu. Hareket azaltma tercihi olan kullanicida iskelet
+   donmez, duz bir zemin gorunur. */
+@media (prefers-reduced-motion:reduce){.sk{animation:none;background:none}}
 .cover.has-image::before{border-color:rgba(255,255,255,.32)}
 .pal0{background:linear-gradient(#4a1b28,#25101a)}
 .pal1{background:linear-gradient(#1f3a44,#0f1e26)}

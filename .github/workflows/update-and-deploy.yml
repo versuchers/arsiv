@@ -12,6 +12,8 @@ on:
       - '404.html'
       - 'data/**'
       - 'scripts/**'
+      - 'sitemap.xml'
+      - 'robots.txt'
       - '.github/workflows/update-and-deploy.yml'
   # Not: data/sheet-stamps.json da data/** kapsaminda, yani damga dosyasi
   # degistiginde de push tetiklenir. Bu istenen: damga degismesi verinin
@@ -134,7 +136,8 @@ jobs:
         run: |
           set -e
           # 404.html bir adim once uretildi; bu yuzden kirli sayilmayacak.
-          if [ -n "$(git status --porcelain -- . ':(exclude)404.html')" ]; then
+          # 404.html, sitemap.xml ve robots.txt bu is adiminda uretilir; kirli sayilmaz.
+          if [ -n "$(git status --porcelain -- . ':(exclude)404.html' ':(exclude)sitemap.xml' ':(exclude)robots.txt')" ]; then
             echo "::error::Çalışma ağacı temiz değil; yayınlamak yerine duruluyor."
             git status --short
             exit 1
@@ -164,6 +167,12 @@ jobs:
             exit 1
           fi
           echo "404.html index.html ile ayni ($(wc -c < index.html) bayt)."
+
+      # 03.10.2026: kok adrese gecis ile Google'in tarayacagi net adres
+      # listesi (sitemap) ve tarama kurali (robots) uretiliyor. Veri her
+      # degistiginde lastmod otomatik guncellenir.
+      - name: Sitemap ve robots.txt uret
+        run: node scripts/build-sitemap.mjs
 
       - name: Yerel tutarlilik kontrolleri
         run: node scripts/check-data.mjs

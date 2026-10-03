@@ -1,0 +1,9 @@
+# scripts/build-sitemap.mjs tarafindan uretilir; elle duzenlenmemeli.
+# Tum sayfalar acik; yalnizca veri dosyalari ve arac dosyalar tarama disi.
+User-agent: *
+Allow: /
+Disallow: /data/
+Disallow: /scripts/
+Disallow: /.github/
+
+Sitemap: https://versuchers.github.io/sitemap.xml
