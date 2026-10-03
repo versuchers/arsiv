@@ -208,6 +208,61 @@ for (const [type, field, label] of expect) {
 }
 
 log('');
+log('== 6b. Kisi alanlari (03.10.2026) ==');
+/* Oyuncular / Senaryo / Hikaye sutunlari 03.10.2026'da geldi. Sheet basligi
+   bir gun degisirse (ornek "Oyuncular" -> "Oyuncu Isimleri") columnMap o
+   alani sessizce bos birakir ve /kisi/ sayfalari bos kalir. Bu yuzden
+   yuzde esigiyle denetleniyor; 0'dan buyuk herhangi bir doluluk kabul edilir.
+
+   ESIK DEGERLERI:
+     films.cast   494'te 493 dolu (1 filmde "Oyuncu bulunamadı" yaziyor)
+     series.cast  143'te 134 dolu
+     films.screenplay / story serbest; Hikaye'de 429/494 "-" yaziyor. */
+const peopleRules = [
+  ['films', 'cast', 0.95, 'film oyunculari'],
+  ['series', 'cast', 0.85, 'dizi oyunculari'],
+  ['films', 'screenplay', 0.90, 'film senaryo yazarlari'],
+  ['films', 'story', 0.05, 'film hikaye yazarlari'],
+  ['films', 'languages', 0.99, 'film dilleri']
+];
+for (const [type, field, minRatio, label] of peopleRules) {
+  const items = data[type]?.items;
+  if (!items) { warn(`${type}: veri yok, ${field} kontrolu atlandi`); continue; }
+  const filled = items.filter((item) => Array.isArray(item[field]) && item[field].length > 0).length;
+  const ratio = filled / items.length;
+  if (ratio < minRatio) {
+    fail(`${type}.${field} (${label}) ${filled}/${items.length} dolu = %${(ratio * 100).toFixed(0)}; esik %${(minRatio * 100).toFixed(0)} — sutun adi degismis olabilir`);
+  } else {
+    log(`   ${type}.${field} (${label}) ${filled}/${items.length} = %${(ratio * 100).toFixed(0)}`);
+  }
+}
+/* Yer tutucu sizmamis olmali: "Oyuncu bulunamadı" gibi bir metin asla
+   kisi olarak uretilmemeli. */
+let leaked = 0;
+for (const type of ['films', 'series']) {
+  for (const item of data[type]?.items || []) {
+    for (const field of ['cast', 'screenplay', 'story']) {
+      for (const name of item[field] || []) {
+        if (/bulunam/i.test(name) || /^-+$/.test(name)) leaked++;
+      }
+    }
+  }
+}
+if (leaked) fail(`${leaked} adet yer tutucu ("Oyuncu bulunamadı", "Yazar bulunamadı", "-") kisi olarak JSON'a girmis`);
+else log('   yer tutucu sizmamasi: temiz');
+
+/* Yapim ulkesi ceviri tablosu 03.10.2026'da kaldirildi; degerler oldugu gibi
+   gecmeli. Bu yuzden "united states" gibi Ingilizce bir deger kalmamalI.
+   DIKKAT: DIZI sheet'ini kullanici Turkceye cevirecek; o tarihe kadar
+   dizilerde Ingilizce deger normaldir, bu denetlemeye sadece FILM girer. */
+const engCountry = (data.films?.items || []).flatMap((item) => item.countries || [])
+  .filter((c) => /^(united states|united kingdom|france|germany|japan|italy|canada|australia|spain|india)$/i.test(String(c)));
+if (engCountry.length) {
+  const uniq = [...new Set(engCountry)];
+  warn(`films: ${engCountry.length} yapim ulkesi degeri hala Ingilizce: ${uniq.join(', ')} — Sheet'te Turkceye cevrilmeli (cift: "Bosna Hersek, Bulgarisyan, ...", "Isveç")`);
+} else log('   films yapim ulkesi: tamami Turkce');
+
+log('');
 log('== 7. Tarih cozumleme degismezleri (anasayfa "Son ..." satirlari) ==');
 /* Anasayfadaki "Son okunanlar" / "Son izlenenler" satirlari SU ALANLARA bakar:
    books.firstReadSort+firstReadLabel, films.watchSort+watchLabel. Tarihi bos ya

@@ -257,6 +257,20 @@ p{margin-top:.55rem}
 .ext-link:hover{color:var(--link-hi)}
 .ext-link:hover{border-bottom-style:solid}
 .ext-link::after{content:" ↗";font-size:.8em;opacity:.65}
+/* --- Kisi listeleri (03.10.2026) ---
+   .people-rest display:contents ile flex cocugu oluyor; boylece gizli
+   isimler "devamını gör"e basilinca AYNI izgarada, araya girerek degil
+   devam ediyor.
+   DIKKAT: [hidden] icin ayri kural sart. Tarayici varsayilani
+   `[hidden]{display:none}` dir; ama sinif secicisi (0,1,0) onu yener.
+   .people-rest{display:contents} yalniz yazilsa gizli isimler HIZIR
+   gorunur kalirdi. */
+.people-rest{display:contents}
+.people-rest[hidden]{display:none}
+.people-more{align-self:center;font-family:var(--ui);font-size:.74rem;line-height:1.3;color:var(--link);background:none;border:1px dashed var(--line-ctl);border-radius:3px;padding:.22rem .5rem;cursor:pointer}
+.people-more:hover{color:var(--link-hi);border-color:var(--link-hi)}
+/* Adres uretilemeyen kisi (Kiril isimler): kirik link yerine duz cip. */
+.tag-chip.is-plain{cursor:default;color:var(--muted);border-style:dashed}
 .pl-name{display:block;font-family:var(--ui);font-size:.95rem;font-weight:600;line-height:1.3;color:var(--text);text-align:center;margin-top:.55rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pl-card .cover{aspect-ratio:1/1}
 .pager{display:flex;flex-wrap:wrap;gap:.3rem;justify-content:center;margin-top:2.2rem;font-family:var(--ui)}
@@ -342,7 +356,7 @@ const CFG={
   lists:{label:'Playlistler',unit:'playlist',fav:'Favori playlistler',dateLabel:''}
 };
 const ROUTE_PREFIX={books:'kitap',films:'film',series:'dizi',playlists:'playlist'};
-const FILTER_TITLES={author:'Yazar',genre:'Tür',subgenre:'Alt tür',authorOrigin:'Yazar köken',fiction:'Kurgu mu?',city:'İlk kez okuduğum şehir',acquisition:'İlk erişim / edinim şekli',formats:'Okuduğum medium',translator:'Çevirmen',publisher:'Yayınevi',platform:'İlk kez hangi platformda',writtenLanguage:'Yazıldığı dil',director:'Yönetmen',firstCity:'İlk kez izlenen şehir',country:'Yapım ülkesi',directorOrigin:'Yönetmen nereli',reason:'Nasıl keşfettim / neden izledim',done:'Bitirildi mi?',category:'Kategori',feeling:'His',creator:'Creator / showrunner'};
+const FILTER_TITLES={author:'Yazar',genre:'Tür',subgenre:'Alt tür',authorOrigin:'Yazar köken',fiction:'Kurgu mu?',city:'İlk kez okuduğum şehir',acquisition:'İlk erişim / edinim şekli',formats:'Okuduğum medium',translator:'Çevirmen',publisher:'Yayınevi',platform:'İlk kez hangi platformda',writtenLanguage:'Yazıldığı dil',language:'Dil',director:'Yönetmen',firstCity:'İlk kez izlenen şehir',country:'Yapım ülkesi',directorOrigin:'Yönetmen nereli',reason:'Nasıl keşfettim / neden izledim',done:'Bitirildi mi?',category:'Kategori',feeling:'His',creator:'Creator / showrunner'};
 /* Navbar'da "Ana sayfa" YOK: site basligi zaten ana sayfaya gidiyor.
    Bu yuzden NAV icinde 'home' anahtari kalmadi. hrefForView()'in 'home'
    dalini (view==='home' ? '/' : ...) SILMEDIK: go('home') ile rota uretimi
@@ -393,7 +407,9 @@ function detectAppBase(){
   const parts=location.pathname.split('/').filter(Boolean);
   /* Bu liste, depo adini (orn. /arsiv) rotanin basindan ayirmak icin gereklidir.
      ROUTE_PREFIX ve sayfa adlari tutulmali; aksi halde /arsiv/playlist/... 404 sonrasi bozulur. */
-  const known=[...Object.values(ROUTE_PREFIX),'films','series','books','concerts','favs','enler','lists','etiket','tur','ara','yazarlar','yonetenler']
+  /* 'kisi' KISI SAYFALARI icin (/kisi/atlas-jeneric). Depo adi ayriminda
+     taninmazsa "/arsiv/kisi/..." adresi "/kisi" sayfasi sanilir ve 404 doner. */
+  const known=[...Object.values(ROUTE_PREFIX),'films','series','books','concerts','favs','enler','lists','etiket','tur','ara','yazarlar','yonetenler','kisi']
     .map(part=>part.toLocaleLowerCase('tr-TR'));
   const routeIndex=parts.findIndex(part=>known.includes(part.toLocaleLowerCase('tr-TR')));
   if(routeIndex===0)return '/';
@@ -514,6 +530,12 @@ function hydrate(item){
   item.subgenres=Array.isArray(item.subgenres)?item.subgenres:[];
   item.directors=Array.isArray(item.directors)?item.directors:[];
   item.countries=Array.isArray(item.countries)?item.countries:[];
+  /* 03.10.2026: Oyuncular / Senaryo / Hikaye / Dil sutunlari. Diziler ucu
+     (cast/screenplay/story) ve film dili. */
+  item.cast=Array.isArray(item.cast)?item.cast:[];
+  item.screenplay=Array.isArray(item.screenplay)?item.screenplay:[];
+  item.story=Array.isArray(item.story)?item.story:[];
+  item.languages=Array.isArray(item.languages)?item.languages:[];
   item.displayTitle=displayName(item);
   item.searchText=[
     item.displayTitle,item.author,item.originalTitle,item.seriesName,item.mainLabel,item.reason,item.platform,
@@ -535,6 +557,8 @@ function applyData(next,meta){
   REG=new Map(all.map(item=>[item.id,item]));
   dataMeta=meta||{generatedAt:'',error:''};
   _genreCache=null;_siblingCache=new Map();
+  /* Kisi sayfalari icin isim -> slug haritasi (5.299 kisi). */
+  buildPeople();
   render();
 }
 function totalCount(){return Object.values(D).reduce((sum,list)=>sum+list.length,0)}
@@ -626,6 +650,9 @@ function parseRoute(){
   if(first==='tur')return {kind:'genreIndex'};
   if(first==='yazarlar')return {kind:'authorsIndex'};
   if(first==='yonetenler')return {kind:'directorsIndex'};
+  /* Kisi sayfasi: /kisi/<slug>. Oyuncu, yonetmen, senaryo ve hikaye yazari
+     adlarinin hepsi buraya gider. */
+  if(first==='kisi'&&parts[1])return {kind:'person',slug:parts.slice(1).join('/')};
   if(first==='ara')return {kind:'search'};
   if(['films','series','books','concerts','favs','enler','lists'].includes(first)){
     const page=Number(parts[1]);
@@ -1108,6 +1135,11 @@ function fieldValues(item,field){
   }else if(item.sec==='films'){
     if(field==='genre')return item.genres;
     if(field==='platform')return splitList(item.platform);
+    /* 03.10.2026 yeni film sutunlari. */
+    if(field==='language')return item.languages;
+    if(field==='cast')return item.cast;
+    if(field==='screenplay')return item.screenplay;
+    if(field==='story')return item.story;
     if(field==='director')return splitMulti(item.directorRaw);
     if(field==='firstCity')return splitList(item.firstCity);
     if(field==='creator')return splitList(item.creator);
@@ -1121,6 +1153,7 @@ function fieldValues(item,field){
     if(field==='firstCity')return splitList(item.firstCity);
     if(field==='creator')return splitList(item.creator);
     if(field==='country')return item.countries;
+    if(field==='cast')return item.cast;
   }else if(item.sec==='playlists'){
     if(field==='genre')return item.genres;
     if(field==='category')return missing(item.category)?[]:[clean(item.category)];
@@ -1169,6 +1202,151 @@ function fieldChips(item,field){
     const path=filterPath(item.sec,field,value);
     return path?`<a class="link-chip" href="${esc(hrefFor(path))}" data-route="${esc(path)}">${esc(value)}</a>`:'';
   }).join('');
+}
+/* ------------------------------------------------------------------ *
+ * Kisi sayfalari (/kisi/<slug>) — 03.10.2026
+ * ------------------------------------------------------------------ *
+ * Oyuncular / senaryo / hikaye sutunlarindaki her kisi tiklanabilir. Tiklanan
+ * kisinin sayfasinda oynadigi filmler VE diziler, yonetmenligini yaptigi
+ * filmler, senaryo yazdigi filmler ve hikaye yazdigi filmler rol etiketiyle
+ * listelenir.
+ *
+ * ESLEME KURALI: nameKey() kullanilir ("J.R.R. Tolkien" = "J. R. R. Tolkien",
+ * "Adam McKay" = "Adam Mckay"). Sheet'te ayni kisi 10 farkli yazimla geciyor;
+ * looseKey tek basina yetmezdi, bu yuzden Mevcut nameKey'e dayaniliyor.
+ * Boylece "Adam McKay" filmlerde, "Adam Mckay" dizide yazilsa ayni kisi sayfasina gider.
+ *
+ * Slug cakismasi: ayni slug'i isteyen 5 kisi var ("Thomas Brodie-Sangster" /
+ * "Thomas Brodie Sangster"). routeValueSlug ile AYNI kural uygulanir:
+ * cakisma varsa valueHash son ekine gelir. Bos slug (Kiril isimler) link
+ * verilmez, cip oyle gorunur — kirilen kisi sayfasina gidilemez ama
+ * veri kaybolmaz. */
+
+/* nameKey her yerde kullaniliyor ama burada 5.299 kez cagrilir; onbellek. */
+const _nameKeyCache=new Map();
+function personKey(name){
+  const k=String(name);
+  if(_nameKeyCache.has(k))return _nameKeyCache.get(k);
+  const out=nameKey(k);
+  _nameKeyCache.set(k,out);
+  return out;
+}
+let _personSlugs=new Map();   /* nameKey -> slug ("" ise link verilmez) */
+let _personNames=new Map();   /* nameKey -> gorunen ilk isim */
+let _personBySlug=new Map();  /* slug -> gorunen isim (ADRES KARSILAMA) */
+function buildPeople(){
+  _personSlugs=new Map();
+  _personNames=new Map();
+  _personBySlug=new Map();
+  /* once tum isimleri topla: yazim varyantlari tek anahtarda birlessin */
+  const byKey=new Map();
+  const take=name=>{
+    const k=personKey(name);
+    if(!byKey.has(k))byKey.set(k,new Set());
+    byKey.get(k).add(name);
+  };
+  for(const item of D.films||[]){
+    for(const name of item.cast||[])take(name);
+    for(const name of item.screenplay||[])take(name);
+    for(const name of item.story||[])take(name);
+    for(const name of item.directors||[])take(name);
+  }
+  for(const item of D.series||[]){
+    for(const name of item.cast||[])take(name);
+  }
+  /* slug cakismalarini tek turda hesapla: once her anahtarin temel slug'i,
+     sonra ayni slug'i isteyenler icin valueHash son ekini. */
+  const base=new Map();
+  for(const [k,names] of byKey){
+    const shown=[...names][0];
+    _personNames.set(k,shown);
+    base.set(k,slugPart(shown));
+  }
+  const seen=new Map();
+  for(const slug of base.values())seen.set(slug,(seen.get(slug)||0)+1);
+  for(const [k,slug] of base){
+    const final=slug&&seen.get(slug)>1?`${slug}-${valueHash([...byKey.get(k)][0])}`:slug;
+    _personSlugs.set(k,final);
+    /* Adres /kisi/<slug> slug ile gelir; sayfa isme gore arar. Bu harita
+       olmadan her yuklemede 5.299 isim taramak gerekirdi. */
+    if(final&&!_personBySlug.has(final))_personBySlug.set(final,_personNames.get(k));
+  }
+}
+function personSlug(name){return _personSlugs.get(personKey(name))||''}
+/** Kişi adresi. Bos slug (Kiril isim) link verilmez. */
+function personPath(name){
+  const slug=personSlug(name);
+  return slug?`/kisi/${slug}`:'';
+}
+function personChip(name){
+  const path=personPath(name);
+  if(!path)return `<span class="tag-chip is-plain" title="Bu ad için adres üretilemiyor">${esc(name)}</span>`;
+  return `<a class="tag-chip" href="${esc(hrefFor(path))}" data-route="${esc(path)}">${esc(name)}</a>`;
+}
+/** "Devamını gör" butonu: 5'te fazla kisi varsa ilk 5i goster, gerisini gizle.
+ *  Sheet'te film basina en cok 10 oyuncu var; 494 filmin 487'sinde buton
+ *  gerekiyor. Dizi ve senaryo icin de ayni kural (senaryoda en cok 16 kisi). */
+const PEOPLE_PREVIEW=5;
+function peopleRow(label,item,field,limit){
+  /* DIZI SIRASI KORUNUR: unique() alfabetik siralardi, oysa Sheet'teki
+     sira bas rolden yana (ilk 5 gosterilecek). Yalnizca tekrarlar elenir. */
+  const names=[...new Set(fieldValues(item,field))];
+  if(!names.length)return null;
+  const cap=limit||PEOPLE_PREVIEW;
+  const head=names.slice(0,cap).map(personChip).join('');
+  if(names.length<=cap)return [label,`<div class="detail-value-chips">${head}</div>`];
+  const rest=names.slice(cap).map(personChip).join('');
+  return [label,`<div class="detail-value-chips people-block">${head}<span class="people-rest" hidden>${rest}</span><button type="button" class="people-more" data-people-more="1">devamını gör</button></div>`];
+}
+/** Kişinin oynadığı / yönettiği / yazdığı tüm işler (film + dizi). */
+const PERSON_ROLE={
+  cast:'Oyuncu',
+  directors:'Yönetmen',
+  screenplay:'Senaryo',
+  story:'Hikaye'
+};
+function personWorks(key){
+  const out=[];
+  const rolesOf=(item,map)=>Object.keys(map).filter(field=>(item[field]||[]).some(name=>personKey(name)===key));
+  for(const item of D.films||[]){
+    const roles=rolesOf(item,{cast:1,directors:1,screenplay:1,story:1});
+    if(roles.length)out.push({item,roles});
+  }
+  for(const item of D.series||[]){
+    const roles=rolesOf(item,{cast:1});
+    if(roles.length)out.push({item,roles});
+  }
+  /* Yeni eski: once diziler sonra filmler, sonra yila gore. */
+  return out.sort((a,b)=>(a.item.sec==='series'?0:1)-(b.item.sec==='series'?0:1)
+    ||(b.item.yearNumber==null?-1:b.item.yearNumber)-(a.item.yearNumber==null?-1:a.item.yearNumber)
+    ||a.item.rowIndex-b.item.rowIndex);
+}
+/** ADRES /kisi/<slug> slug ile gelir; isim haritasindan bulunur.
+ *  Bulunamazsa notFound. (Onceki surum ismi bekliyordu ve her sayfa 404 donuyordu.) */
+function personPage(slug){
+  const shown=_personBySlug.get(String(slug));
+  if(!shown){notFound(slug);return}
+  const key=personKey(shown);
+  document.title=shown+' — versucher';
+  const works=personWorks(key);
+  if(!works.length){notFound(slug);return}
+  const films=works.filter(w=>w.item.sec==='films');
+  const series=works.filter(w=>w.item.sec==='series');
+  const roleCounts={};
+  for(const w of works)for(const r of w.roles)roleCounts[r]=(roleCounts[r]||0)+1;
+  const summary=[
+    films.length?`${films.length} film`:null,
+    series.length?`${series.length} dizi`:null,
+    Object.keys(roleCounts).map(r=>`${PERSON_ROLE[r]} ${roleCounts[r]}`).join(' · ')
+  ].filter(Boolean).join(' · ');
+  /* Kartlarda .cap-kind rol etiketini gosterir (poster()'in 3. argumani). */
+  const cards=list=>list.map(w=>poster(w.item,'',w.roles.map(r=>PERSON_ROLE[r]).join(' · '))).join('');
+  main.innerHTML=`<a class="back" href="${esc(hrefFor('/'))}" data-route="/">← Ana sayfa</a>`
+    +`<h1 style="margin-top:1rem">${esc(shown)}</h1>`
+    +`<p class="sub">${esc(summary)}</p>`
+    +(series.length?`<div class="sh"><h2>Diziler</h2></div><div class="niche"><div class="grid grid-3">${cards(series)}</div></div>`:'')
+    +(films.length?`<div class="sh"><h2>Filmler</h2></div><div class="niche"><div class="grid">${cards(films)}</div></div>`:'')
+    +`<p class="empty"><a class="link" href="${esc(hrefFor('/yonetenler'))}" data-route="/yonetenler">Yönetmenler dizini</a> · <a class="link" href="${esc(hrefFor('/yazarlar'))}" data-route="/yazarlar">Yazarlar dizini</a></p>`;
 }
 function mainLabelChips(item){
   return unique(fieldValues(item,'mainLabel')).map(value=>{
@@ -1296,8 +1474,14 @@ function detailPage(item){
         row('Uyarlama kaynağı',item.adaptation),
         row('Yapım yılı',item.year),
         chipRow('Yapım ülkesi',item,'country'),
+        chipRow('Dil',item,'language'),
         chipRow('Yönetmen',item,'director'),
         chipRow('Yönetmen köken',item,'directorOrigin'),
+        /* 03.10.2026: Sheet'teki Oyuncular / Senaryo / Hikaye sutunlari.
+           Her kisi /kisi/... sayfasina gider; 5'ten fazlasi gizlenir. */
+        peopleRow('Oyuncular',item,'cast'),
+        peopleRow('Senaryo',item,'screenplay'),
+        peopleRow('Hikaye',item,'story'),
                 row('Nasıl keşfettim',item.reasonFound),
         row('Neden izledim',item.reasonWhy),
         row('İzleme tarihi',item.watchDate),
@@ -1316,6 +1500,7 @@ function detailPage(item){
         row('Uyarlama kaynağı',item.adaptation),
         row('Yapım yılı',item.year),
         chipRow('Yapım ülkesi',item,'country'),
+        peopleRow('Oyuncular',item,'cast'),
         row('Creator / showrunner',item.creator),
                 row('Durumu',item.statusRaw),
         row('Format',item.format),
@@ -1476,6 +1661,7 @@ function renderPage(){
   if(state.route.kind==='tagIndex'){tagIndexView();return}
   if(state.route.kind==='authorsIndex'){authorIndexView();return}
   if(state.route.kind==='directorsIndex'){directorIndexView();return}
+  if(state.route.kind==='person'){personPage(state.route.slug);return}
   if(state.route.kind==='genre'){genrePage(state.route);return}
   if(state.route.kind==='genreIndex'){genreIndexView();return}
   if(state.route.kind==='search'){state.q=searchQuery();searchPage();return}
@@ -1513,6 +1699,16 @@ document.addEventListener('click',event=>{
   if(event.target.closest('[data-rand-redraw]')){
     randomState.picks=drawRandom(randomState.kind,randomState.picks);
     renderRandom();
+    return;
+  }
+  /* Kisi listelerinde "devamını gör": gizli olanlari acip butonu kaldirir.
+     Rota degistirmez, bu yuzden data-route tasimaz. */
+  const more=event.target.closest('[data-people-more]');
+  if(more){
+    const block=more.closest('.people-block');
+    const rest=block?block.querySelector('.people-rest'):null;
+    if(rest)rest.hidden=false;
+    more.remove();
     return;
   }
 });

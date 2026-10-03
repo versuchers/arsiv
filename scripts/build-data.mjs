@@ -102,6 +102,15 @@ const SCHEMAS = {
     genreMain: ['tür'],
     platform: ['ilk izlediğim platform', 'ilk kez hangi platformda'],
     director: ['yönetmen'],
+    /* Yeni sutunlar (03.10.2026). Oyuncular/Senaryo/Hikaye VIRGULLE ayrilmis
+       kisi listeleridir; splitPeople() ile diziye cevrilir. */
+    cast: ['oyuncular'],
+    screenplay: ['senaryo'],
+    story: ['hikaye'],
+    /* Onceki "Dili" sutunu "Dil" olarak yeniden adlandirildi. DIZILERDE ayri
+       bir "Dili" sutunu var ve onun alias'i 'dili' — ikisi karismasin diye
+       burada yalnizca 'dil' yaziyor. */
+    language: ['dil'],
     image: ['film afişi linki'],
     originalTitle: ['film orjinal adı', 'film orijinal adı'],
     /* Sheet'teki 'alternatif isim / arama terimleri' sutunu: yalnizca arama icin.
@@ -148,6 +157,8 @@ const SCHEMAS = {
     altTitle: ['alternatif isim / arama terimleri', 'alternatif isim', 'arama terimleri'],
     creator: ['creator / showrunner'],
     network: ['network'],
+    /* Yeni sutun (03.10.2026): virgulle ayrilmis oyuncu listesi. */
+    cast: ['oyuncular'],
     language: ['dili'],
     format: ['format'],
     density: ['yoğunluk', 'yoğunluk seviyesi'],
@@ -237,41 +248,13 @@ function parseReadDate(value) {
   const y = yearValue(s);
   return y ? { y, m: 0, d: 0, yearOnly: true } : null;
 }
-/** Yapim ulkeleri Sheet'te karisik (Ingilizce/Turkce, bazi yazim hatali) yaziliyor; hepsi Turkceye gecirilir. */
-const COUNTRY_TR = {
-  // Ana listingeler (Ingilizce)
-  'united states': 'Amerika Birleşik Devletleri',
-  'united kingdom': 'Birleşik Krallık', 'uk': 'Birleşik Krallık',
-  'south korea': 'Güney Kore', 'south korean': 'Güney Kore', 'north korea': 'Kuzey Kore',
-  'france': 'Fransa', 'germany': 'Almanya', 'canada': 'Kanada', 'spain': 'İspanya',
-  'australia': 'Avustralya', 'japan': 'Japonya', 'new zealand': 'Yeni Zelanda',
-  'belgium': 'Belçika', 'italy': 'İtalya', 'ireland': 'İrlanda', 'austria': 'Avusturya',
-  'mexico': 'Meksika', 'brazil': 'Brezilya', 'czechia': 'Çekya', 'czech republic': 'Çekya',
-  'china': 'Çin', 'poland': 'Polonya', 'denmark': 'Danimarka', 'iceland': 'İzlanda',
-  'sweden': 'İsveç', 'switzerland': 'İsviçre', 'luxembourg': 'Lüksemburg',
-  'latvia': 'Letonya', 'russia': 'Rusya', 'serbia': 'Sırbistan', 'thailand': 'Tayland',
-  'norway': 'Norveç', 'argentina': 'Arjantin', 'south africa': 'Güney Afrika',
-  'netherlands': 'Hollanda', 'holland': 'Hollanda', 'bulgaria': 'Bulgaristan',
-  'chile': 'Şili', 'romania': 'Romanya', 'greece': 'Yunanistan', 'india': 'Hindistan',
-  'finland': 'Finlandiya', 'hungary': 'Macaristan', 'colombia': 'Kolombiya',
-  'turkey': 'Türkiye', 'türkiye': 'Türkiye', 'turkiye': 'Türkiye',
-  'hong kong': 'Hong Kong', 'malta': 'Malta',
-  'bosnia hersek': 'Bosna-Hersek', 'north macedonia': 'Kuzey Makedonya',
-  'south macedonia': 'Kuzey Makedonya', 'guadeleope': 'Guadelup', 'guadeloupe': 'Guadelup',
-  'costa rica': 'Kosta Rika', 'el salvador': 'El Salvador', 'sri lanka': 'Sri Lanka',
-  'ivory coast': 'Fildişi Sahili', 'saudi arabia': 'Suudi Arabistan',
-  'united arab emirates': 'Birleşik Arap Emirlikleri',
-  // Sheet'te Turkce yazilmis olanlar (bas harf duzeltmesi icin haritalanir)
-  'hollanda': 'Hollanda', 'avusturalya': 'Avustralya', 'avusturya': 'Avusturya',
-  'bosna hersek': 'Bosna-Hersek', 'isvicre': 'İsviçre',
-  'bulgarisyan': 'Bulgaristan', 'kuzey makedonya': 'Kuzey Makedonya', 'katar': 'Katar'
-};
-function trCountry(value) {
-  const v = clean(value);
-  if (!v) return '';
-  /* Bilinmeyen ulke adi: sheet'teki yazim oldugu gibi gecer. */
-  return COUNTRY_TR[v.toLocaleLowerCase('tr-TR')] || v;
-}
+/* Yapim ulkesi cevirisi KALDIRILDI (03.10.2026).
+ * Sheet'teki ulkeler artik Turkce yaziliyor; tabloya gerek yoktu. Artik
+ * deger oldugu gibi gecer.
+ * DIZI sheet'indeki ulkeler hala Ingilizce — kullanici onlari da Turkceye
+ * cevirecek; o tarihe kadar dizilerde "United States" gorunur.
+ * DIKKAT: Film sheet'inde birkac yazim hatasi var ("Bulgarisyan", "Isveç",
+ * "Guadeleope"). Bunlar TABLO OLMAYINCE duzeltilmez; Sheet'te duzeltilmeli. */
 const missing = (s) => { const v = clean(s); return !v || /^[-–—]+$/.test(v); };
 
 function numberValue(value) {
@@ -284,6 +267,21 @@ function yearValue(value) {
 }
 function splitList(value) {
   return clean(value).split(/\s*(?:\/\/|,|;)\s*/).map(clean).filter((v) => !missing(v));
+}
+/* Oyuncu / senaryo / hikaye sutunlari: HER VIRGUL BIR KISI SONUDUR.
+ *
+ * splitList() burada KULLANILMAZ: o `//` ve `;` de ayirir, ki adlarinda
+ * bunlar anlamli olabilir. Burada yalnizca virgul ayirici.
+ *
+ * Sheet'te ayrica yer tutucu degerler var: "Oyuncu bulunamadı",
+ * "Yazar bulunamadı", ve Hikaye'de "-". Bunlar kisi DEGILDIR; sitede
+ * "Oyuncu bulunamadı" yazan tiklanabilir bir cip cikmasin diye atilirlar.
+ * (Boylece o film, oyunculari hic bulunamadigi icin listede oyuncusuz gorunur.) */
+function splitPeople(value) {
+  return clean(value)
+    .split(',')
+    .map(clean)
+    .filter((v) => v && !/bulunam/i.test(v) && !missing(v));
 }
 function safeUrl(value) {
   const v = clean(value);
@@ -524,9 +522,16 @@ function makeItems(type, headers, rows) {
         firstCity: get('firstCity'),
         watchDate: get('watchDate'),
         seriesOrder: get('seriesOrder'),
-        countryRaw: trCountry(get('country')),
-        countries: splitList(get('country')).map(trCountry),
+        countryRaw: get('country'),
+        countries: splitList(get('country')),
         directorOrigin: get('directorOrigin'),
+        /* Yeni sutunlar. cast en fazla 243 kisi olabiliyor; site 5'ini
+           gosterip gerisini "devamını gör" butonuna sakliyor. */
+        cast: splitPeople(get('cast')),
+        screenplay: splitPeople(get('screenplay')),
+        story: splitPeople(get('story')),
+        languageRaw: get('language'),
+        languages: splitList(get('language')),
         letterboxd: get('letterboxd'),
         tmdb: get('tmdb'),
         tmdbId: get('tmdbId'),
@@ -559,8 +564,9 @@ function makeItems(type, headers, rows) {
         completionCountRaw: get('completionCount'),
         completionCount: numberValue(get('completionCount')),
         watched: get('watched'),
-        countryRaw: trCountry(get('country')),
-        countries: splitList(get('country')).map(trCountry),
+        countryRaw: get('country'),
+        countries: splitList(get('country')),
+        cast: splitPeople(get('cast')),
         statusRaw: get('status'),
         originalTitle: get('originalTitle'),
         altTitle: get('altTitle'),

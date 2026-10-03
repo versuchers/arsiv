@@ -766,6 +766,144 @@ nav'ınki 15 px (oran **1.73**). Bu taban çizgisi hizasından gelmiyor, başlı
 gerçekten daha büyük olmasından. Logo/nav oranını değiştirmek istersen
 `.mark` font-size'u düşürmek yeterli (şu an `1.75rem`).
 
+### Oyuncular, dil, senaryo, hikaye + kişi sayfaları (`/kisi/<isim>`)
+
+#### Silinen sütun tespiti
+
+Eski başlıklar (02.10.2026 05:33 dökümü) ile canlı Sheet karşılaştırıldı:
+
+| Sheet | Silinen | Yeni |
+|---|---|---|
+| **films** | `Senaryo, Hikaye, Yazan` · `Dili` | `Oyuncular` · `Dil` · `Senaryo` · `Hikaye` |
+| **series** | — | `Oyuncular` |
+| books / playlists | — | — |
+
+**`Senaryo, Hikaye, Yazan` ikiye bölünmüş:** yerine ayrı `Senaryo` ve `Hikaye`
+sütunları geldi. **`Dili` yeniden adlandırıldı:** artık `Dil`. (Dizilerde
+ayrı bir `Dili` sütunu duruyor; ikisi karışmasın diye film alias'ı yalnızca
+`'dil'`.)
+
+**Hiçbir silinen sütun siteyi bozmadı** — çünkü `Senaryo, Hikaye, Yazan`
+hiçbir zaman `SCHEMAS`'ta alan olarak tanımlı değildi, dolayısıyla
+`columnMap` onu zaten yok sayıyordu. Doğrulandı: `columnMap`'in canlı
+veriyle gerçek bağlamaları temiz, aynı sütuna düşen tek çift kasıtlı olan
+`genre`+`genreMain`. Yani "Türkiye Yayın Yılı" türü sessiz yanlış sütuna
+bağlanma riski bu sefer **yok**.
+
+Kalan ölü alias'lar (veri hiç gelmiyor, zararı yok): `films.downloaded`
+("Afişimi İndirdim mi"), `books.seriesScore`, `playlists.feeling`.
+
+#### Film detay sayfası
+
+`Oyuncular` · `Dil` · `Senaryo` · `Hikaye` eklendi. Ölçülenler:
+
+| | dolu | en çok kişi | 5'i aşan → buton |
+|---|---|---|---|
+| films `Oyuncular` | 494/494 | 10 | **487** |
+| films `Senaryo` | 494/494 | 16 | 3 |
+| films `Hikaye` | 494/494 | 4 | 0 (429'unda `-`) |
+| series `Oyuncular` | 134/143 | 11 | **112** |
+
+`Dil` **tıklanabilir çip** (Yapım ülkesi gibi): `/film/filtre/language/ingilizce`.
+47 dil, en çok kullanılanı İngilizce (416 film).
+
+`Hikaye` çoğu filmde `-` olduğu için o satır o filmlerde hiç görünmez —
+`row()`/`peopleRow()` boş değerde `null` döner, `detailSection` de onu atar.
+
+#### "devamını gör"
+
+5'ten fazla kişi varsa ilk 5'i gösterilir, kalanlar gizli olur ve
+**devamını gör** butonu çıkar. Buton listeyi açar ve kendini siler; rota
+değişmez (`data-route` taşımaz, ayrı bir click işleyicisi yakalar).
+
+> `.people-rest{display:contents}` gizli isimleri aynı flex ızgaraya sokar,
+> araya girmezler. **Zorunlu olan nokta:** tarayıcının `[hidden]{display:none}`
+> kuralını ezmemek için `.people-rest[hidden]{display:none}` ayrıca yazıldı —
+> sınıf seçicisi (0,1,0) UA kuralını yenerdi, yazılmasaydı gizli isimler hep
+> görünür olurdu.
+
+#### Kişi sayfaları — `/kisi/<isim>`
+
+Oyuncu, senaryo ve hikaye yazarlarının her adı tıklanabilir. Sayfada o kişinin
+**oynadığı filmler ve diziler**, **yönettiği filmler**, **senaryo yazdığı
+filmler** ve **hikaye yazdığı filmler** rol etiketiyle listelenir. Kartlarda
+`.cap-kind` kullanıldı (Rastgele/Karışık satırındaki gibi, yeni tasarım yok).
+
+```
+/kisi/brad-pitt        15 film · Oyuncu 15
+/kisi/cem-yilmaz        9 film · Oyuncu 9 · Yönetmen 4 · Senaryo 7
+```
+
+**Eşleme kuralı `nameKey`** (yazar/yönetmen adları için zaten var olan anahtar):
+`"J.R.R. Tolkien" = "J. R. R. Tolkien"`, ayrıca Sheet'te 10 farklı yazımla
+geçenler de birleşiyor:
+
+```
+Bae Doona = Bae Doo Na          Adam McKay = Adam Mckay
+Fatih Akın = Fatih Akin         Kim Jee-woon = Kim Jee-Woon
+Guillermo del Toro = Guillermo Del Toro   (+6 tane)
+```
+
+7.431 ham isim → **5.299 tekil kişi**. Slug çakışmalarında (5 kişi) sitedeki
+`routeValueSlug` ile aynı kural: `valueHash` son eki
+(`/kisi/thomas-brodie-sangster-q346it`).
+
+**Kiril isimler (10 kişi, Rus dizisi):** `slugPart()` boş döndüğü için adres
+üretilemez. Kırık link yerine **düz çip** (`.tag-chip.is-plain`) basılır —
+kayıt kaybolmaz, ama o kişiye tıklanamaz.
+
+Kişi listeleri **arama dizinine eklenmedi** (`searchText`) — istenmemişti.
+Yani "Cusack" yazınca John Cusack'ın filmleri çıkmaz.
+
+#### Yapım ülkesi çevirisi kaldırıldı
+
+Film sheet'i Türkçeye geçtiği için `COUNTRY_TR` tablosu ve `trCountry()`
+tamamen silindi (34 satır). Filmlerde 49 tekil ülke, hepsi Türkçe.
+**Dizi sheet'i hâlâ İngilizce** ("United States", 23/25) — kullanıcı
+Türkçeleştirecek; o tarihe kadar dizilerde İngilizce görünür. `check-data`
+bölüm 6b filmde kalan İngilizce ülkeyi uyarı olarak bildirir.
+
+> Tablo kaldırıldığı için Sheet'teki yazım hataları da artık **düzeltilmez**:
+> `Isveç` (İsveç olmalı), `Guadeleope`, `Bosna Hersek` (tireli).
+> Bunlar Sheet'te düzeltilmeli — `check-data` uyarı veriyor.
+
+#### Doğrulama (gerçek tarayıcı, Chrome DevTools Protocol)
+
+`check-site.mjs` bu makinede çalışmıyor (`--dump-dom` 0 bayt döndürüyor),
+o yüzden CDP üzerinden doğrulandı — hatta `CSS.forcePseudoState` ile
+`:hover`'u zorlayarak:
+
+| Kontrol | Sonuç |
+|---|---|
+| Film detay: 4 satır, ilk 5 oyuncu, buton | ✅ |
+| Buton: `display:none` → tıklayınca `contents`, buton kayboluyor | ✅ |
+| `/kisi/brad-pitt` → 15 kart, ad metinde | ✅ |
+| `/kisi/cem-yilmaz` → çoklu rol etiketleri | ✅ |
+| Yazım varyantı birleşmesi | ✅ |
+| Kiril isim → düz çip, **kırık adres yok** | ✅ |
+| Slug çakışması → `-q346it` son eki, sayfa açılıyor | ✅ |
+| Bilinmeyen kişi → 404 | ✅ |
+| `/film/filtre/language/ingilizce` → 416 kart | ✅ |
+| 19 rota + 4 detay sayfası (regresyon) | ✅ |
+
+`check-site.mjs`'e 3 rota eklendi: `/kisi/<en çok işi olan kişi>`,
+`/film/filtre/language/<en çok kullanılan dil>` ve `/kisi/bilinmeyen`.
+Kişi ve dil **veriden seçiliyor**, sabit yazılmıyor. `mustContain`
+denetimi artık yalnızca detay sayfalarına bağlı değil.
+
+`check-data.mjs`'e **bölüm 6b** eklendi: `cast`/`screenplay`/`story`/`languages`
+alanları yüzde eşiğiyle denetleniyor (sütun adı bir gün değişirse CI
+kırılıyor, yoksa `/kisi/` sayfaları sessizce boş kalır), yer tutucu
+sızıntısı ("Oyuncu bulunamadı") ve film ülkesinin Türkçeliği kontrol ediliyor.
+
+#### Boyut
+
+| | önce | sonra |
+|---|---|---|
+| `data/films.json` | 430 KB | 554 KB |
+| `data/series.json` | 140 KB | 158 KB |
+| toplam `data/` | 831 KB | **972 KB (+%17)** |
+
 ### Kod denetimi turu: 3 bulgu düzeltildi
 
 Genel bir kod incelemesi yapıldı (index.html + 4 betik + workflow) ve üç

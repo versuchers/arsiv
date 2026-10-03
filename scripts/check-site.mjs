@@ -100,6 +100,62 @@ function pick(type, index = 0) { return data[type].items[index]; }
 const firstGenre = data.films.items.flatMap((i) => i.genres || [])[0] || 'drama';
 const firstLabel = data.books.items.map((i) => i.mainLabel).filter(Boolean)[0];
 
+/* ---- 03.10.2026: /kisi/ ve film dili filtresi ----
+   Kisi sayfalari ve "Dil" filtresi eklendigi icin rota listesine iki yeni
+   denetim giriyor. Kisi adi veriden SECILIR (sabit yazilirsa Sheet degisince
+   test sessizce yanlis kalir).
+
+   Slug hesabi index.html'deki buildPeople() ile AYNI olmak zorunda:
+     nameKey (bosluk+aksan duyarsiz) -> temel slug -> cakisma varsa valueHash
+   Suffix'i her zaman eklemek yanlış olurdu: en cok isi olan kisinin neredeyse
+   hicbir zaman cakismasi yoktur ve sitede de suffix kullanilmaz. */
+const valueHashOf = (value) => {
+  const s = String(value).replace(/\r/g, '').replace(/\n/g, ' ').replace(/\s+/g, ' ').trim().toLocaleLowerCase('tr-TR');
+  let hash = 0;
+  for (const c of s) hash = (Math.imul(hash, 31) + c.charCodeAt(0)) | 0;
+  return (hash >>> 0).toString(36);
+};
+const nameKeyOf = (value) =>
+  String(value).replace(/\r/g, '').replace(/\n/g, ' ').replace(/\s+/g, ' ').trim()
+    .toLocaleLowerCase('tr-TR')
+    .replace(/[ıİ]/g, 'i').replace(/[şŞ]/g, 's').replace(/[ğĞ]/g, 'g')
+    .replace(/[öÖ]/g, 'o').replace(/[üÜ]/g, 'u').replace(/[çÇ]/g, 'c')
+    .replace(/\s+/g, '');
+function topActor() {
+  const byKey = new Map();
+  for (const items of [data.films.items, data.series.items]) {
+    for (const item of items) {
+      for (const name of item.cast || []) {
+        const k = nameKeyOf(name);
+        if (!byKey.has(k)) byKey.set(k, { shown: name, works: 0 });
+        byKey.get(k).works++;
+      }
+    }
+  }
+  const entries = [...byKey.entries()];
+  const bases = new Map();
+  for (const [, v] of entries) {
+    const b = slugPart(v.shown);
+    if (!b) continue;
+    bases.set(b, (bases.get(b) || 0) + 1);
+  }
+  let best = null;
+  for (const [k, v] of entries) {
+    const base = slugPart(v.shown);
+    if (!base) continue;                       // Kiril isim: adres uretilemez
+    const slug = bases.get(base) > 1 ? `${base}-${valueHashOf(v.shown)}` : base;
+    if (!best || v.works > best.works) best = { slug, name: v.shown, works: v.works };
+  }
+  return best;
+}
+function topLanguage() {
+  const count = new Map();
+  for (const item of data.films.items) for (const l of item.languages || []) count.set(l, (count.get(l) || 0) + 1);
+  return [...count.entries()].sort((a, b) => b[1] - a[1])[0] || null;
+}
+const firstActor = topActor();
+const firstLang = topLanguage();
+
 const ROUTES = [
   { path: '', h1: /Film, dizi, kitap ve playlist/i, minCards: 1 },
   { path: 'films', h1: /^Filmler$/, minCards: 30 },
@@ -128,7 +184,14 @@ const ROUTES = [
   /* Yazar adiyla arama: "Isaac" tr-TR kucultmesiyle "ısaac" olurdu; foldText
      sayesinde "isaac" yazan kullanici da sonuc alir. */
   { path: 'ara?q=isaac', h1: /^Arama$/, minCards: 1 },
-  { path: 'ara?q=buradaboylebirkitapyok', h1: /^Arama$/, minCards: 0, maxCards: 0 }
+  { path: 'ara?q=buradaboylebirkitapyok', h1: /^Arama$/, minCards: 0, maxCards: 0 },
+  /* Kisi sayfasi (/kisi/<slug>): en cok isi olan oyuncu. Rol etiketi
+     (.cap-kind) ve tum islerin listelendigi dogrulanir. */
+  { path: `kisi/${firstActor ? firstActor.slug : 'keanu-reeves'}`, h1: null, mustContain: firstActor ? firstActor.name : 'Keanu Reeves', kind: 'person', minCards: 1 },
+  /* Film dili filtresi (/film/filtre/language/<slug>). */
+  { path: `film/filtre/language/${firstLang ? slugPart(firstLang[0]) : 'ingilizce'}`, h1: /^Dil:/, minCards: 1 },
+  /* Bilinmeyen kisi adresi 404 vermeli. */
+  { path: 'kisi/boyle-bir-kisi-yok-12345', expectMissing: true }
 ];
 
 /* ------------------------------------------------------------------ *
@@ -261,8 +324,10 @@ async function check(route) {
   }
   if (probe.missing && !route.kind) failures.push(`${route.path}: "Kayit bulunamadi" gorunuyor`);
   if (route.kind === 'detail' && !probe.detail) failures.push(`${route.path}: detay sayfasi acilmadi`);
-  if (route.kind === 'detail' && route.mustContain && !probe.text.includes(route.mustContain)) {
-    failures.push(`${route.path}: detayda "${route.mustContain}" yazisi yok`);
+  /* mustContain artik yalnizca detay sayfalarina bagli degil: /kisi/ sayfalari
+     da kendi kisi adini icermeli (03.10.2026). */
+  if (route.mustContain && !probe.text.includes(route.mustContain)) {
+    failures.push(`${route.path}: sayfada "${route.mustContain}" yazisi yok`);
   }
   if (route.h1 && !route.h1.test(probe.h1)) failures.push(`${route.path}: baslik "${probe.h1}" beklenen ${route.h1} degil`);
   if (route.minCards && probe.cards < route.minCards) failures.push(`${route.path}: ${probe.cards} kart, en az ${route.minCards} bekleniyordu`);
