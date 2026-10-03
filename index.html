@@ -245,13 +245,21 @@ p{margin-top:.55rem}
 .nav-arrow:hover{border-color:var(--link-hi);color:var(--link-hi)}
 @media (max-width:700px){.nav-arrow{width:34px;height:50px;font-size:1.7rem}.nav-arrow.prev{left:4px}.nav-arrow.next{right:4px}}
 @media (prefers-reduced-motion:reduce){.nav-arrow{transition:none}}
-.detail-heading{grid-column:1/-1;margin:0;padding:0;min-width:0}
+/* Konum JS ile hesaplanir (stickyTop) — bkz. .detail-art-column.
+   Sabitlenince arkadan kayan detay satirlari gorunmesin diye zemin
+   panel renginde; z-index ile detay sutununun uzerinde kalir.
+   padding/margin birbirini göturur: kutunun yuksekligi degismez. */
+.detail-heading{grid-column:1/-1;position:relative;z-index:2;background:var(--panel);padding:.25rem 0;margin:-.25rem 0;min-width:0;will-change:transform}
 .detail-heading h1{font-size:clamp(2rem,5vw,3.25rem);line-height:1.15;overflow-wrap:anywhere}
 .detail-subline{display:flex;flex-wrap:wrap;align-items:center;gap:.45rem;margin-top:.5rem;color:var(--muted);font-family:var(--ui);font-size:30px;line-height:1.3}
 .detail-subline .link-chip{font-size:1em;color:var(--muted);cursor:pointer}
 .detail-subline .link-chip:hover{color:var(--text);border-bottom-color:var(--line)}
 .detail-split{display:contents}
-.detail-art-column{grid-column:1;position:sticky;top:1rem;align-self:start;min-width:0;padding:0 calc(var(--gap) / 2) 25px 0}
+/* Konum JS ile hesaplanir (stickyTop): position:sticky yalnizca kutu
+   kendi grid alaninda hareket edebildigi icin ise yaramazdi — baslik
+   1. satırda, kapak 2. satırda; ikisi de once sayfayla birlikte yol aliyordu.
+   transform uygulandigi icin kutu akis yerinden oynamaz. */
+.detail-art-column{grid-column:1;position:relative;align-self:start;min-width:0;padding:0 calc(var(--gap) / 2) 25px 0;will-change:transform}
 /* Genislik siniri YOK: icerik sutunu .detail-page'in 1008px'lik
    siniriyla zaten ~788px (~82 karakter) kalir. Burada sinir olsaydi genis
    ekranda artan alan saga yigilir, iki kenar esit olmazdi. */
@@ -345,7 +353,7 @@ kbd{font-family:var(--ui);font-size:.72rem;background:var(--well);border:1px sol
 
 .detail-page .detail-subline,.detail-page .detail-score,.detail-page .detail-section,.detail-page .detail-row,.detail-page .detail-row dt,.detail-page .detail-row dd,.detail-page .back,.detail-page .tag-chip,.detail-page .compact-link{font-size:15px}
 .placeholder{background:var(--raise);border:1px dashed var(--line);border-radius:12px;padding:2rem 1.2rem;text-align:center;color:var(--muted);font-family:var(--ui)}
-@media (max-width:700px){.detail-page{grid-template-columns:minmax(0,1fr);row-gap:0}.detail-heading{grid-column:1;padding:0 0 1.25rem}.detail-art-column{grid-column:1;position:relative;top:auto;max-width:none;padding:0 0 1.2rem}.detail-content{grid-column:1;border-top:1px solid var(--line);padding:1.2rem 0 0}.detail-content::before{display:none}.detail-heading h1{font-size:2rem}}
+@media (max-width:700px){.detail-page{grid-template-columns:minmax(0,1fr);row-gap:0}.detail-heading{grid-column:1;padding:0 0 1.25rem;margin:0}.detail-art-column{grid-column:1;position:relative;top:auto;max-width:none;padding:0 0 1.2rem}.detail-content{grid-column:1;border-top:1px solid var(--line);padding:1.2rem 0 0}.detail-content::before{display:none}.detail-heading h1{font-size:2rem}}
 @media (max-width:650px){.detail-row{grid-template-columns:1fr;gap:.1rem}.detail-row dt{font-size:15px}.shelf{columns:1}}
 @media (max-width:430px){.detail-sections{grid-template-columns:1fr}}
 </style>
@@ -714,6 +722,7 @@ function navigate(path,replace=false){
   const target=isLocal?'#'+path:hrefFor(path);
   try{history[replace?'replaceState':'pushState']({},'',target)}catch(_){if(isLocal)location.hash=path;else location.href=target}
   state.route=parseRoute();resetFilters();
+  resetSticky();
   if(slowRoute(state.route)){showLoading();setTimeout(()=>render(),16)}
   else render();
   window.scrollTo(0,0);
@@ -1465,6 +1474,66 @@ function neighbours(item){
   if(at<0)return {prev:null,next:null};
   return {prev:at>0?list[at-1]:null,next:at<list.length-1?list[at+1]:null};
 }
+/* ------------------------------------------------------------------ *
+ * Baslik + kapak sabitleme (03.10.2026)
+ * ------------------------------------------------------------------ *
+ * Detay sayfasinda baslik ve kapak/afiş sayfa kayarken ekranda kalir;
+ * yalnizca sagdaki detay listesi kayar. CSS position:sticky burada
+ * calismiyor: baslik izgaranin 1. satirinda oldugu icin kendi satir
+ * yuksekligi kadar hareket alani var (yapisacak yer yok), kapak da
+ * basligin altinda oldugu icin once onunla birlikte yol aliyordu.
+ * Konum scroll olayinda hesaplanir (requestAnimationFrame ile tek
+ * karede bir kez). Mobilde (<=700px tek sutun) uygulanmaz.
+ *
+ * DIKKAT: getBoundingClientRect() bir onceki translateY'yi de icerir.
+ * Kayma birikiyormus gibi gorunmesin diye olculen degerden bir onceki
+ * kayma dusulur (headPrev/colPrev). */
+const STICKY_TOP=16;
+const STICKY_GAP=12;
+let stickyFrame=0;
+let headPrev=0;
+let colPrev=0;
+function resetSticky(){
+  headPrev=0;
+  colPrev=0;
+  for(const sel of ['.detail-heading','.detail-art-column']){
+    const el=$(sel);
+    if(el)el.style.transform='';
+  }
+}
+function stickyTop(){
+  const head=$('.detail-heading');
+  const col=$('.detail-art-column');
+  const content=$('.detail-content');
+  if(!head||!col||!content||matchMedia('(max-width:700px)').matches){resetSticky();return}
+  const headH=head.offsetHeight;
+  const colH=col.offsetHeight;
+  /* Dogal (kaydirmasiz) konumlar */
+  const headTop=head.getBoundingClientRect().top-headPrev;
+  const colTop0=col.getBoundingClientRect().top-colPrev;
+  const colPin=STICKY_TOP+headH+STICKY_GAP;
+  /* Sabitlenecek blok pencereye sigmiyorsa hic sabitleme: kisa ekranda
+     kapağın altındaki puan/çipler ekrandan çıkıp erişilemez olurdu. */
+  if(colPin+colH>window.innerHeight-8){resetSticky();return}
+  /* Birakma siniri YOK: baslik ve kapak sayfa sonuna kadar sabit kalir.
+     Cakisma olmaz — sabitlenen blok solda (dar sutun), alt bilgi ortada
+     ve sayfa sonunda ekranin altinda kalir. */
+  /* Baslik: tepesi 16px'nin altina dustugunde sabitlenir. */
+  const headDy=Math.max(0,STICKY_TOP-headTop);
+  /* Kapak: hedef konumu kilitlenmis basligin alti. Dogal konumu hedefin
+     altindaysa hic kipirdamaz (sayfa tepedeyken yer degistirmez). */
+  const colDy=Math.max(0,colPin-colTop0);
+  headPrev=Math.round(headDy);
+  colPrev=Math.round(colDy);
+  head.style.transform=headPrev?`translateY(${headPrev}px)`:'';
+  col.style.transform=colPrev?`translateY(${colPrev}px)`:'';
+}
+function requestStickyTop(){
+  if(stickyFrame)return;
+  stickyFrame=requestAnimationFrame(()=>{stickyFrame=0;stickyTop()});
+}
+addEventListener('scroll',requestStickyTop,{passive:true});
+addEventListener('resize',requestStickyTop);
 function detailNavArrows(item){
   const {prev,next}=neighbours(item);
   const arrow=(entry,side,word)=>{
@@ -1625,6 +1694,8 @@ function nav(){
 function render(){
   renderPage();
   markLoadedImages();
+  /* Sabitlenmis konum sayfa yeniden cizildikten sonra gecersizlesir. */
+  requestStickyTop();
 }
 function renderPage(){
   updateStatus();nav();

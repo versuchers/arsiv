@@ -2319,3 +2319,89 @@ Blok zaten `margin:0 auto` ile yatayda ortadaydı ama **metin sola yaslıydı**.
   `text-align:center`; footer metninin kutu içindeki sol/sağ boşluğu
   393px / 394px (1px fark, yani ortada).
 - Ekran görüntüsüyle gözden geçirildi.
+## v1.29 değişiklikleri
+
+### Detay sayfasında başlık ve kapak birlikte sabitleniyor
+
+İstek: dizi/film/kitap detayında sayfa aşağı kaydırılırken kapak solda sabit
+kalsın; sonra "başlık da sabit kalsın" — yani **sadece sağdaki detay listesi**
+kaysın.
+
+**Neden CSS `position:sticky` yetmedi.** `.detail-page` bir CSS ızgarası:
+başlık 1. satırda (iki sütunu birden kaplıyor), kapak 2. satırın 1. sütununda.
+Bir ızgara öğesi sticky ise **yalnızca kendi grid alanı içinde** hareket
+edebilir; başlık satırı kendi yüksekliğinde olduğu için yapışacak yeri yok.
+Kapak da başlığın altında olduğu için önce onunla birlikte yol alıyordu.
+v1.28 ölçümü (1440×900, gerçek tarayıcı):
+
+| sayfa | içerik | kapak tepesi (kaydırma boyunca) |
+|---|---|---|
+| dizi · Foundation | 845px | 271 → 225 → … → **16 → 16 → 16** |
+| dizi · Game of Thrones | 823px | 271 → 227 → … → **16 → 16** |
+| kitap · Yüzük Kardeşliği | 593px | 271 → 250 → … → 82 (sayfa sonu) |
+| film · 13 Sins | 608px | 271 → 243 → … → 50 (sayfa sonu) |
+
+Kapak **836/836** detay sayfasında ekrandan hiç çıkmıyordu, ama **481 sayfada
+hiç kenetlenmeden** sayfa sonuna geliyordu (sayfa çok kısa). 1408×1000
+penceresinde Foundation'da bile yalnızca 240px kaydırılabiliyordu.
+
+**Çözüm — JS (`stickyTop()`):** konum scroll olayında hesaplanır
+(`requestAnimationFrame`, kare başına bir kez):
+
+- **Başlık** 16px'de kilitlenir.
+- **Kapak**, kilitlenmiş başlığın altında (16 + başlık yüksekliği + 12px)
+  kilitlenir → üst üste binmezler.
+- **Bırakma yok:** ikisi de sayfa sonuna kadar sabit kalır. Sabitlenen blok
+  solda (dar sütun), alt bilgi ortada ve sayfa sonunda ekranın altında
+  kaldığı için çakışma yok.
+- **Mobilde (≤700px, tek sütun) hiç uygulanmaz.**
+- Sabitlenecek blok pencereye sığmıyorsa (kısa ekran) hiç sabitleme yapılmaz;
+  aksi halde kapağın altındaki puan/çipler ekrandan çıkardı.
+- Sayfa değişince (`navigate`) ve yeniden çizimde (`render`) temizlenip
+  yeniden hesaplanır; liste sayfalarında hiçbir etkisi yok.
+
+**Ölçülen sonuç** (1408×1000 = kullanıcı penceresi, gerçek tarayıcı):
+
+| sayfa | kaydırılabilir | başlık tepesi | kapak tepesi |
+|---|---|---|---|
+| dizi · Foundation | 240px | 155 → … → **16 → 16 → 16** | 271 → … → **128 → 128 → 128** |
+| dizi · The Sinner | 128px | 155 → … → 34 | 271 → … → 150 |
+| film · 13 Sins | 26px | 155 → … → 129 | 271 → … → 245 |
+| kitap · Empati | 0px | 155 | 271 |
+
+The Sinner / 13 Sins / Empati gibi kısa sayfalarda kaydırılacak yer olmadığı
+için sabitlenme tetiklenmiyor (zaten ekrandalar) — bu fiziksel sınır, kodla
+aşılamaz.
+
+### CSS değişiklikleri
+
+- `.detail-art-column`: `position:sticky;top:1rem` → `position:relative`
+  (+ `will-change:transform`). Konumu artık JS yönetiyor.
+- `.detail-heading`: `position:relative;z-index:2;background:var(--panel)`
+  eklendi — sabitlenince arkadan kayan detay satırlarının başlık yazısının
+  üstünden görünmemesi için. Zemin panel renginde olduğu için sayfa
+  görünümünde fark yaratmıyor. 4px `padding` + eksi `margin`: kutunun
+  yüksekliği değişmiyor.
+- Mobil kuralına `margin:0` eklendi; aksi halde yukarıdaki eksi kenar
+  mobilde 4px kayma yaratıyordu.
+
+### Dokunulmayanlar
+
+Sütun sayıları (4/3/2), kapak ölçüsü (208×311), sayfa başına kart kuralı
+(20–30), liste sayfaları, filtreler, arama, anasayfa ızgaraları, mobil düzen,
+renkler ve tipografi değişmedi.
+
+### Doğrulama (gerçek tarayıcı — Firefox 157, WebDriver BiDi)
+
+- 3 ekran boyutu (1408×1000, 1440×900, 1280×700) × 4 detay sayfası = 60 kontrol
+  **geçti**: başlık ve kapak hiç üst üste binmiyor; sabitlenen kapak her
+  zaman başlığın altında (128px); sabitlenen kapak ekranda tamamen görünüyor
+  (alt kenarı en fazla 439px); yatay taşma 0; konsol uyarı/hatası yok.
+- Mobil karşılaştırma: v1.28 ve v1.29 ayrı sunucularda, 390×844'te dizi detayı
+  + film + kitap liste sayfasında 10'ar kutu ölçüldü — **birebir aynı**
+  (başlık `t:126 h:89`, kapak `t:215 h:493`, taşma 0) ve mobilde transform
+  uygulanmıyor.
+
+- Ekran görüntüsüyle gözden geçirildi (açık ve koyu tema): başlık ve kapak üstte
+  sabit, sağdaki liste altlarından kayıyor; başlığın zemini panel rengiyle aynı
+  (açık `rgb(242,238,224)`, koyu `rgb(24,24,26)`) → birleşme izi yok.
